@@ -454,6 +454,13 @@ pub(crate) fn reveal_phrase(wallet: &Wallet, passphrase: &str) -> R<Value> {
     Ok(json!({ "phrase": text }))
 }
 
+/// Checks a passphrase by decrypting the keystore, and returns nothing but the verdict.
+/// The server uses this before a batch send so it never has to ask for the phrase itself.
+pub(crate) fn verify_passphrase(wallet: &Wallet, passphrase: &str) -> R<Value> {
+    wallet.keys.phrase(passphrase)?;
+    Ok(json!({ "verified": true }))
+}
+
 pub(crate) fn change_passphrase(wallet: &mut Wallet, old: &str, new: &str) -> R<Value> {
     wallet.keys.change_passphrase(&wallet.paths, old, new)?;
     Ok(json!({ "changed": true }))

@@ -224,7 +224,7 @@ export function createApp({ dataDir, engine, verified = engine?.simulated ? null
         const have = new Set(body.acknowledge ?? []);
         const missing = need.filter((c) => !have.has(c));
         if (missing.length) return fail(res, 409, 'acknowledgement_required', 'Confirm that you accept what this payment reveals before sending.', { required: missing });
-        const pk = await engineCall({ cmd: 'revealPhrase', passphrase: body.passphrase }).then((r) => (r.ok ? null : r.error));
+        const pk = await engineCall({ cmd: 'verifyPassphrase', passphrase: body.passphrase }).then((r) => (r.ok ? null : r.error));
         if (pk) return ok(res, { ok: false, error: pk });
         if ([...jobs.values()].some((j) => j.state === 'running')) return fail(res, 409, 'busy', 'A batch is already being sent.');
         const job = startBatch(body);
@@ -246,7 +246,7 @@ export function createApp({ dataDir, engine, verified = engine?.simulated ? null
       }
       default: {
         const cmd = path.slice('/api/engine/'.length);
-        const allowed = new Set(['create', 'balance', 'addresses', 'newAddress', 'revealPhrase', 'changePassphrase', 'upgrade', 'rescan', 'serverInfo', 'propose', 'shield', 'rebroadcast', 'history']);
+        const allowed = new Set(['create', 'balance', 'addresses', 'newAddress', 'revealPhrase', 'verifyPassphrase', 'changePassphrase', 'upgrade', 'rescan', 'serverInfo', 'propose', 'shield', 'rebroadcast', 'history']);
         if (!path.startsWith('/api/engine/') || !allowed.has(cmd)) return fail(res, 404, 'not_found', 'Unknown endpoint.');
         const r = await engineCall({ ...body, cmd, wallet, connection: connection() });
         return ok(res, r);

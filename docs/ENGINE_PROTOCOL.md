@@ -14,6 +14,7 @@ One process runs one command. Write a single JSON object on stdin; read NDJSON o
 | create | passphrase, network, optional phrase | addresses, phrase (new wallets only) |
 | balance, addresses, newAddress, history | wallet | per-pool balances / addresses / transactions (`limit`, `offset`, `txid`, `outputs`) |
 | revealPhrase, changePassphrase, upgrade, rescan | passphrase | – |
+| verifyPassphrase | passphrase | `{verified:true}`, or `wrong_passphrase`; checks a passphrase without returning the phrase |
 | sync | connection, `budgetSecs` | scan progress |
 | propose | `recipients[{address, amountZat, memo?}]`, `fundingPools?` | summary, privacy report, `fingerprint` (offline) |
 | send | propose fields + `passphrase`, `fingerprint`, `acknowledge[]` | `txids` |
