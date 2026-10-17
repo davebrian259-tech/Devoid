@@ -153,6 +153,7 @@ const commands = {
   addresses: (req) => load(req).addresses,
   newAddress: (req) => { const st = load(req); const a = freshUA(st.network); st.extra.push(a); save(req, st); return { shielded: a }; },
   revealPhrase: (req) => { const st = load(req); checkPass(st, req.passphrase); return { phrase: st.phrase }; },
+  verifyPassphrase: (req) => { const st = load(req); checkPass(st, req.passphrase); return { verified: true }; },
   changePassphrase: (req) => {
     const st = load(req); checkPass(st, req.passphrase);
     if (String(req.newPassphrase ?? '').length < 8) throw new Fail('weak_passphrase', 'Use a passphrase of at least 8 characters.');

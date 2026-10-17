@@ -35,6 +35,7 @@ pub(crate) const COMMANDS: &[&str] = &[
     "addresses",
     "newAddress",
     "revealPhrase",
+    "verifyPassphrase",
     "changePassphrase",
     "upgrade",
     "rescan",
@@ -175,6 +176,10 @@ pub(crate) async fn run(req: Value) -> R<Value> {
         "revealPhrase" => {
             let wallet = open_wallet(&req)?;
             wallet::reveal_phrase(&wallet, required_text(&req, "passphrase")?)
+        }
+        "verifyPassphrase" => {
+            let wallet = open_wallet(&req)?;
+            wallet::verify_passphrase(&wallet, required_text(&req, "passphrase")?)
         }
         "changePassphrase" => {
             let mut wallet = open_wallet(&req)?;

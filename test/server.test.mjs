@@ -110,3 +110,25 @@ test('a real engine that fails its self-test is rejected; simulated is flagged',
   assert.equal(s.body.result.engineVerified, false);
   await app.close();
 });
+
+test('a wrong passphrase is rejected before sending, and no phrase is handed back', async () => {
+  const { app, call } = await boot();
+  const c = await call('/api/engine/create', { passphrase: PASS, network: 'main' });
+  assert.equal(c.body.ok, true);
+  const to = c.body.result.addresses.shielded;
+
+  const v = await call('/api/engine/verifyPassphrase', { passphrase: PASS });
+  assert.equal(v.body.ok, true);
+  assert.equal(v.body.result.verified, true);
+  assert.equal(v.body.result.phrase, undefined);
+
+  const bad = await call('/api/engine/verifyPassphrase', { passphrase: 'not the one' });
+  assert.equal(bad.body.ok, false);
+  assert.equal(bad.body.error.code, 'wrong_passphrase');
+
+  const send = await call('/api/batch/send', { recipients: [{ address: to, amountZat: '100000' }], passphrase: 'not the one' });
+  assert.equal(send.body.ok, false);
+  assert.equal(send.body.error.code, 'wrong_passphrase');
+  assert.equal(JSON.stringify(send.body).includes('phrase"'), false);
+  await app.close();
+});
