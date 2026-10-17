@@ -1,0 +1,26 @@
+name: ci
+on: [push, pull_request, workflow_dispatch]
+jobs:
+  js:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
+      - run: npm test
+  engine:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: Swatinem/rust-cache@v2
+        with: { workspaces: engine }
+      - name: Build (no --locked: see README)
+        run: cargo build --release --manifest-path engine/Cargo.toml
+      - name: Unit tests
+        run: cargo test --release --manifest-path engine/Cargo.toml
+      - name: Self-test
+        run: ./engine/target/release/devoid-engine selftest
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with: { name: devoid-engine-linux, path: engine/target/release/devoid-engine, if-no-files-found: ignore }

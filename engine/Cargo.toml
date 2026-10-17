@@ -1,0 +1,59 @@
+[package]
+name = "devoid-engine"
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.88"
+license = "MIT OR Apache-2.0"
+description = "Wallet engine for Devoid: Zcash sync, keys and multi-recipient shielded sends, driven over JSON on stdin/stdout."
+publish = false
+
+[[bin]]
+name = "devoid-engine"
+path = "src/main.rs"
+
+# Dependency versions and feature sets deliberately mirror zcash/zcash-devtool (MIT OR Apache-2.0),
+# whose Cargo.lock is checked in next to this file, so every transitive crate resolves to a version
+# that is already known to build together. Devoid's network, key-handling and send flow follow
+# that tool's code; see NOTICE.md.
+[dependencies]
+anyhow = "1"
+bip0039 = { version = "0.14", features = ["std", "all-languages"] }
+futures-util = "0.3"
+hex = "0.4"
+hyper-util = { version = "0.1", features = ["tokio"] }
+prost = "0.14"
+rand = { version = "0.8", default-features = false }
+rusqlite = { version = "0.37", features = ["time"] }
+schemerz = "0.2"
+secrecy = "0.8"
+serde_json = "1"
+sha2 = "0.10"
+tokio = { version = "1.21.0", features = ["fs", "io-std", "macros", "rt-multi-thread", "signal", "time"] }
+tokio-socks = "0.5"
+tonic = { version = "0.14", features = ["gzip", "tls-webpki-roots"] }
+tower = { version = "0.5", features = ["util"] }
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter", "fmt"] }
+uuid = "1"
+
+# Zcash
+orchard = { version = "0.15.0", default-features = false }
+sapling = { package = "sapling-crypto", version = "0.7" }
+transparent = { package = "zcash_transparent", version = "0.10.0", features = ["test-dependencies", "transparent-inputs"] }
+zcash_address = "0.13.0"
+zcash_client_backend = { version = "0.24.0", features = ["lightwalletd-tonic-tls-webpki-roots", "orchard", "pczt", "tor", "unstable"] }
+zcash_client_sqlite = { version = "0.22.0", features = ["transparent-inputs", "unstable", "orchard", "serde", "test-dependencies"] }
+zcash_keys = { version = "0.16.1", features = ["orchard", "sapling", "unstable", "unstable-frost"] }
+zcash_primitives = "0.30.0"
+zcash_proofs = { version = "0.30.0", features = ["bundled-prover"] }
+zcash_protocol = { version = "0.10.3", features = ["local-consensus"] }
+zcash_script = "0.4"
+zip321 = "0.9"
+
+# Passphrase encryption of the recovery phrase
+age = { version = "0.12", features = ["armor"] }
+
+[profile.release]
+opt-level = 3
+lto = "thin"
+codegen-units = 4
