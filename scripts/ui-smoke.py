@@ -13,7 +13,10 @@ assert url, 'server did not start'
 errors = []
 try:
     with sync_playwright() as p:
-        b = p.chromium.launch()
+        # Containers and CI images often ship a Chromium that Playwright did not download
+        # itself; point DEVOID_CHROMIUM at it rather than fetching another copy.
+        exe = os.environ.get('DEVOID_CHROMIUM')
+        b = p.chromium.launch(executable_path=exe) if exe else p.chromium.launch()
         pg = b.new_page(viewport={'width': 1280, 'height': 900})
         pg.on('console', lambda m: errors.append(m.text) if m.type == 'error' else None)
         pg.on('pageerror', lambda e: errors.append(str(e)))
@@ -29,7 +32,13 @@ try:
         pg.wait_for_selector('.redact')
         expect(pg.locator('.redact .figure')).not_to_have_text('—')
         pg.screenshot(path='shots/03-home-hidden.png')
-        pg.click('.redact'); pg.screenshot(path='shots/04-home-revealed.png')
+        expect(pg.locator('.redact')).to_have_attribute('aria-pressed', 'false')
+        pg.click('.redact')
+        # The bar slides away over 0.22s, so wait for the state and the paint before shooting,
+        # otherwise this captures the hidden balance again and proves nothing.
+        expect(pg.locator('.redact')).to_have_attribute('aria-pressed', 'true')
+        pg.wait_for_timeout(400)
+        pg.screenshot(path='shots/04-home-revealed.png')
         # receive
         pg.click('a[data-view=receive]'); pg.wait_for_selector('svg.qr'); pg.screenshot(path='shots/05-receive.png', full_page=True)
         sh = pg.locator('.addr-text').first.inner_text()
