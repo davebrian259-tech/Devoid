@@ -7,9 +7,9 @@
 
 use std::{fmt, net::SocketAddr, time::Duration};
 
-use anyhow::anyhow;
+use anyhow::{Context, anyhow};
 use serde_json::{Value, json};
-use tonic::transport::{Channel, ClientTlsConfig, Endpoint, Uri};
+use tonic::transport::{Certificate, Channel, ClientTlsConfig, Endpoint, Uri};
 use tracing::{info, warn};
 use zcash_client_backend::{
     proto::service::{self, compact_tx_streamer_client::CompactTxStreamerClient},
@@ -114,6 +114,26 @@ impl Server {
         )
     }
 
+    /// TLS for a lightwalletd connection: the built-in root certificates, plus any in the PEM
+    /// bundle named by `DEVOID_CA_FILE`. That variable is for networks that terminate TLS with
+    /// their own certificate authority, such as an inspecting corporate proxy; the extra
+    /// certificates are added to the built-in roots and never replace them. Tor connections do not
+    /// use it: Tor carries its own protection and the server is reached through the onion circuit.
+    fn tls_config(&self) -> anyhow::Result<ClientTlsConfig> {
+        let mut tls = ClientTlsConfig::new()
+            .domain_name(self.host.clone())
+            .assume_http2(true)
+            .with_webpki_roots();
+        if let Some(path) = std::env::var_os("DEVOID_CA_FILE") {
+            let shown = std::path::Path::new(&path).display().to_string();
+            let pem = std::fs::read(&path)
+                .with_context(|| format!("reading the CA bundle in DEVOID_CA_FILE ({shown})"))?;
+            warn!("Trusting the extra certificate authorities in {shown}");
+            tls = tls.ca_certificate(Certificate::from_pem(pem));
+        }
+        Ok(tls)
+    }
+
     async fn connect_direct(&self) -> anyhow::Result<CompactTxStreamerClient<Channel>> {
         info!("Connecting to {}", self);
 
@@ -124,11 +144,7 @@ impl Server {
             .keep_alive_while_idle(false);
 
         let endpoint = if self.use_tls() {
-            let tls = ClientTlsConfig::new()
-                .domain_name(self.host.clone())
-                .assume_http2(true)
-                .with_webpki_roots();
-            endpoint.tls_config(tls)?
+            endpoint.tls_config(self.tls_config()?)?
         } else {
             endpoint
         };
@@ -164,12 +180,7 @@ impl Server {
 
         // `.onion` services are encrypted by Tor already; everything else gets TLS on top.
         if self.use_tls() {
-            endpoint = endpoint.tls_config(
-                ClientTlsConfig::new()
-                    .domain_name(self.host.clone())
-                    .assume_http2(true)
-                    .with_webpki_roots(),
-            )?;
+            endpoint = endpoint.tls_config(self.tls_config()?)?;
         }
 
         let channel = endpoint.connect_with_connector(connector).await?;
