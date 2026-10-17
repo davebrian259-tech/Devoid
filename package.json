@@ -1,0 +1,19 @@
+{
+  "name": "devoid",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Devoid: a Zcash wallet built around one move, paying many recipients in a single shielded transaction.",
+  "type": "module",
+  "license": "MIT",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "start": "node server/index.mjs",
+    "demo": "node server/index.mjs --demo",
+    "test": "node scripts/test.mjs",
+    "engine:build": "cargo build --release --manifest-path engine/Cargo.toml",
+    "engine:selftest": "node scripts/engine-selftest.mjs",
+    "test:ui": "python3 scripts/ui-smoke.py"
+  }
+}
