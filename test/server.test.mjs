@@ -7,6 +7,7 @@ import { join } from 'node:path';
 import { createApp, pickEngine, chunkRecipients, validateBatch } from '../server/index.mjs';
 
 const PASS = 'correct horse battery';
+const keysOf = (v) => (v && typeof v === 'object' ? Object.entries(v).flatMap(([k, x]) => [k, ...keysOf(x)]) : []);
 async function boot() {
   const app = createApp({ dataDir: mkdtempSync(join(tmpdir(), 'devoid-')), engine: pickEngine({ forceMock: true }) });
   const port = await app.listen();
@@ -113,22 +114,29 @@ test('a real engine that fails its self-test is rejected; simulated is flagged',
 
 test('a wrong passphrase is rejected before sending, and no phrase is handed back', async () => {
   const { app, call } = await boot();
-  const c = await call('/api/engine/create', { passphrase: PASS, network: 'main' });
-  assert.equal(c.body.ok, true);
-  const to = c.body.result.addresses.shielded;
+  try {
+    const c = await call('/api/engine/create', { passphrase: PASS, network: 'main' });
+    assert.equal(c.body.ok, true);
+    const phrase = c.body.result.phrase;
+    const to = c.body.result.addresses.shielded;
 
-  const v = await call('/api/engine/verifyPassphrase', { passphrase: PASS });
-  assert.equal(v.body.ok, true);
-  assert.equal(v.body.result.verified, true);
-  assert.equal(v.body.result.phrase, undefined);
+    const v = await call('/api/engine/verifyPassphrase', { passphrase: PASS });
+    assert.equal(v.body.ok, true);
+    assert.equal(v.body.result.verified, true);
+    assert.equal(v.body.result.phrase, undefined);
 
-  const bad = await call('/api/engine/verifyPassphrase', { passphrase: 'not the one' });
-  assert.equal(bad.body.ok, false);
-  assert.equal(bad.body.error.code, 'wrong_passphrase');
+    const bad = await call('/api/engine/verifyPassphrase', { passphrase: 'not the one' });
+    assert.equal(bad.body.ok, false);
+    assert.equal(bad.body.error.code, 'wrong_passphrase');
 
-  const send = await call('/api/batch/send', { recipients: [{ address: to, amountZat: '100000' }], passphrase: 'not the one' });
-  assert.equal(send.body.ok, false);
-  assert.equal(send.body.error.code, 'wrong_passphrase');
-  assert.equal(JSON.stringify(send.body).includes('phrase"'), false);
-  await app.close();
+    // The server checks the passphrase before it starts sending, and the check never carries the
+    // recovery phrase back out of the engine.
+    const send = await call('/api/batch/send', { recipients: [{ address: to, amountZat: '100000' }], fundingPools: ['ironwood'], passphrase: 'not the one' });
+    assert.equal(send.body.ok, false);
+    assert.equal(send.body.error.code, 'wrong_passphrase');
+    assert.ok(!JSON.stringify(send.body).includes(phrase));
+    assert.deepEqual(keysOf(send.body).filter((k) => /phrase/i.test(k)), []);
+  } finally {
+    await app.close();
+  }
 });
