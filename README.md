@@ -17,6 +17,8 @@ npm run engine:build      # builds engine/target/release/devoid-engine
 npm run engine:selftest   # offline checks
 node server/index.mjs     # uses the real engine automatically, data in ~/.devoid
 ```
+If your network inspects TLS with its own certificate authority, point `DEVOID_CA_FILE` at a PEM
+bundle; those certificates are added to the built-in roots, never replacing them.
 Do not pass `--locked` (the lockfile mirrors zcash-devtool, which carries one unused crate that cargo prunes).
 
 ## What it does
@@ -32,11 +34,21 @@ Server binds 127.0.0.1, requires a bearer token (delivered in the URL fragment, 
 
 ## Verification status (honest)
 
-See `docs/STATUS.md` for the exact blocked list. Real transactions are **not** claimed to work until the engine builds and passes `selftest`.
+See `docs/STATUS.md` for detail. In short, as of 2026-10-17:
 
+- The Rust engine **builds and runs**: `cargo test` passes (11 tests) and `devoid-engine selftest`
+  passes all 10 checks, including the bundled Sapling proving parameters.
+- Verified against the **real Zcash testnet** (`testnet.zec.rocks`, ECC LightWalletD v0.5.4):
+  wallet creation, chain sync to the tip, balance, history, real ZIP 317 fee quotes, and the
+  recipient and funding checks that refuse a bad batch.
+- Verified here without Rust: 230 JS tests (address/amount/CSV parsing, server API incl. auth and
+  a 2-transaction batch), a UI smoke test with screenshots (`npm run test:ui`), and a QR encoder
+  decoded by an independent decoder for versions 2-24.
+- **No transaction has been broadcast yet.** Building, signing and broadcasting needs funded
+  testnet ZEC, so that last step is still unproven. Treat real sends as unverified until you have
+  done a testnet run yourself.
+- ZIP 318 migration is not implemented (notice only). TEX addresses are rejected. Fonts are
+  system fonts.
 
-- Verified here: 229 JS tests (address/amount/CSV parsing, server API incl. auth and 2-transaction batch), a UI smoke test with screenshots (`python3 scripts/ui-smoke.py`), QR encoder decoded by an independent decoder for versions 2–24.
-- **The Rust engine has not been compiled or run.** The build sandbox had no crates.io access. It was written against librustzcash 0.24 sources and reviewed by reading only. Expect to fix some compile errors on first build; the protocol and tests (`engine/src/*` unit tests, `selftest`) will tell you quickly.
-- ZIP 318 migration is not implemented (notice only). TEX addresses are rejected. Fonts are system fonts.
-
-Layout: `engine/` Rust, `server/` Node API + batch parsing, `mock-engine/` simulator, `ui/` frontend, `docs/` protocol, `test/` tests.
+Layout: `engine/` Rust, `server/` Node API + batch parsing, `mock-engine/` simulator, `ui/`
+frontend, `docs/` protocol, `test/` tests.
