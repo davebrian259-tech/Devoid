@@ -141,7 +141,6 @@ async fn sync(req: &Value) -> R<Value> {
     let report = sync_slice(
         &mut link.client,
         wallet.params,
-        &wallet.paths,
         &mut wallet.db,
         &mut cache,
         &Budget::from_secs(budget_secs),
