@@ -6,13 +6,12 @@
 use bip0039::{Count, English, Mnemonic};
 use secrecy::ExposeSecret;
 use serde_json::{Value, json};
-use tonic::transport::Channel;
 use zcash_client_backend::{
     data_api::{
         Account, AccountBirthday, Balance, WalletRead, WalletWrite, chain::ChainState,
         wallet::ConfirmationsPolicy,
     },
-    proto::service::{self, compact_tx_streamer_client::CompactTxStreamerClient},
+    proto::service,
 };
 use zcash_client_sqlite::{
     AccountUuid,
@@ -25,8 +24,8 @@ use crate::{
     data::{Db, WalletPaths, init_dbs, network_name, open_db},
     failure::{Failure, R},
     keystore::{self, Keys},
+    platform::{BlockCache, Client, files},
     remote::Connection,
-    sync::clear_block_cache,
 };
 
 pub(crate) const DEFAULT_ACCOUNT_NAME: &str = "Devoid";
@@ -101,7 +100,7 @@ pub(crate) fn ironwood_active_at(params: &Network, height: BlockHeight) -> bool 
         .is_some_and(|activation| height >= activation)
 }
 
-async fn chain_tip(client: &mut CompactTxStreamerClient<Channel>) -> R<u32> {
+async fn chain_tip(client: &mut Client) -> R<u32> {
     let latest = client
         .get_latest_block(service::ChainSpec::default())
         .await
@@ -118,7 +117,7 @@ async fn chain_tip(client: &mut CompactTxStreamerClient<Channel>) -> R<u32> {
 /// Builds the account birthday: the chain state (note commitment tree frontiers and block hash) as
 /// of the block *prior* to the birthday height.
 async fn wallet_birthday(
-    client: &mut CompactTxStreamerClient<Channel>,
+    client: &mut Client,
     params: &Network,
     birthday_height: BlockHeight,
     recover_until: Option<BlockHeight>,
@@ -193,10 +192,10 @@ pub(crate) fn wipe_wallet_files(paths: &WalletPaths) {
         "blockmeta.sqlite-shm",
         "blockmeta.sqlite-journal",
     ] {
-        let _ = std::fs::remove_file(paths.root().join(name));
+        let _ = files::remove_file(&paths.root().join(name));
     }
-    clear_block_cache(paths);
-    let _ = std::fs::remove_dir(paths.blocks_dir());
+    BlockCache::clear(paths);
+    let _ = files::remove_dir(&paths.blocks_dir());
 }
 
 pub(crate) struct CreateArgs<'a> {
@@ -496,8 +495,8 @@ pub(crate) async fn rescan(
 
     // Move the old state aside until the new one exists, so a failure loses nothing.
     let backup = paths.root().join("rescan-backup");
-    let _ = std::fs::remove_dir_all(&backup);
-    std::fs::create_dir_all(&backup)?;
+    let _ = files::remove_dir_all(&backup);
+    files::create_dir_all(&backup)?;
     for name in [
         "data.sqlite",
         "data.sqlite-wal",
@@ -505,11 +504,11 @@ pub(crate) async fn rescan(
         "blockmeta.sqlite",
     ] {
         let from = paths.root().join(name);
-        if from.exists() {
-            std::fs::rename(&from, backup.join(name))?;
+        if files::exists(&from) {
+            files::rename(&from, &backup.join(name))?;
         }
     }
-    clear_block_cache(paths);
+    BlockCache::clear(paths);
 
     let rebuilt = (|| -> R<()> {
         let mut db = init_dbs(keys.network, paths)?;
@@ -519,7 +518,7 @@ pub(crate) async fn rescan(
 
     match rebuilt {
         Ok(()) => {
-            let _ = std::fs::remove_dir_all(&backup);
+            let _ = files::remove_dir_all(&backup);
             Ok(json!({ "rescanFrom": keys.birthday }))
         }
         Err(e) => {
@@ -530,13 +529,13 @@ pub(crate) async fn rescan(
                 "data.sqlite-shm",
                 "blockmeta.sqlite",
             ] {
-                let _ = std::fs::remove_file(paths.root().join(name));
+                let _ = files::remove_file(&paths.root().join(name));
                 let saved = backup.join(name);
-                if saved.exists() {
-                    let _ = std::fs::rename(&saved, paths.root().join(name));
+                if files::exists(&saved) {
+                    let _ = files::rename(&saved, &paths.root().join(name));
                 }
             }
-            let _ = std::fs::remove_dir_all(&backup);
+            let _ = files::remove_dir_all(&backup);
             Err(e)
         }
     }

@@ -24,6 +24,7 @@ mod failure;
 mod history;
 mod keystore;
 mod out;
+mod platform;
 mod remote;
 mod selftest;
 mod socks;
