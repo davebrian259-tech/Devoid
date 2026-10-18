@@ -27,8 +27,9 @@
       <a href="#status">Status</a>
     </nav>
     <button class="theme-toggle" type="button" data-theme-toggle aria-label="Switch theme"><svg class="i-moon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20.985 12.486a9 9 0 1 1-9.473-9.472c.405-.022.617.46.402.803a6 6 0 0 0 8.268 8.268c.344-.215.825-.004.803.401"/></svg><svg class="i-sun" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg></button>
-    <a class="btn small ghost" href="https://github.com/davebrian259-tech/Devoid">GitHub
+    <a class="btn small ghost gh" href="https://github.com/davebrian259-tech/Devoid">GitHub
       <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17 17 7M8 7h9v9"/></svg></a>
+    <a class="btn small" href="app/">Open wallet</a>
   </div>
 </header>
 
@@ -39,11 +40,11 @@
         <h1>Pay everyone at once. <em>Privately.</em></h1>
         <p class="lede">Devoid is a Zcash wallet for paying a list of people in one go. Paste the addresses and amounts, see exactly what the chain will reveal, then sign once. Recipients, amounts and memos stay shielded.</p>
         <div class="ctas">
-          <a class="btn" href="#start">Get started
+          <a class="btn" href="app/" id="open-wallet">Open the wallet
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
-          <a class="btn ghost" href="https://github.com/davebrian259-tech/Devoid">View the source</a>
+          <a class="btn ghost" href="#start">Install it yourself</a>
         </div>
-        <p class="fine">Non-custodial: your keys stay on your device.</p>
+        <p class="fine">Opens right here, on any phone or computer. The web version is a testnet demo kept in your browser; for real ZEC, run the desktop app. Non-custodial either way: keys never leave your device.</p>
       </div>
       <figure class="stage">
         <div class="browser">
@@ -158,10 +159,11 @@
       <ul class="checks">
         <li class="done"><b>Rust engine builds and passes its self-test</b><span>10 of 10 checks, including the bundled Sapling proving parameters.</span></li>
         <li class="done"><b>Verified against the Zcash testnet</b><span>Wallet creation, sync to the chain tip, balances, history and fee quotes against a live lightwalletd server.</span></li>
-        <li class="done"><b>Tested end to end</b><span>236 automated tests, plus a browser test that drives every screen.</span></li>
+        <li class="done"><b>Tested end to end</b><span>241 automated tests, plus browser tests that drive every screen, on the desktop and in the web demo.</span></li>
+        <li class="done"><b>Web demo in any browser</b><span>The full app on a simulated testnet chain, running entirely in the page. No install, no account, nothing sent to a server.</span></li>
         <li class="next"><b>First testnet broadcast</b><span>Next. Real sends count as unverified until a batch is confirmed on chain.</span></li>
         <li class="next"><b>Mainnet</b><span>After testnet, starting with small amounts.</span></li>
-        <li class="next"><b>Web app and Chrome extension</b><span>In development. The wallet engine moves into the browser, so keys stay on your device there too.</span></li>
+        <li class="next"><b>Real wallet on the web, and a Chrome extension</b><span>In development. The Rust engine compiles to WebAssembly and replaces the simulator in the page, so keys stay on your device there too.</span></li>
       </ul>
     </div>
   </section>
@@ -170,7 +172,7 @@
     <div class="wrap narrow">
       <p class="kicker">Get started</p>
       <h2>Try it in a minute.</h2>
-      <p class="lede">The demo runs on a simulated chain: nothing to install but Node 20. Build the Rust engine when you want real Zcash.</p>
+      <p class="lede">No computer needed for a first look: <a href="app/">open the web demo</a> on your phone. To run it yourself, the demo needs nothing but Node 20; build the Rust engine when you want real Zcash.</p>
       <pre class="code"><code><span class="c"># get the code</span>
 git clone https://github.com/davebrian259-tech/Devoid.git
 cd Devoid

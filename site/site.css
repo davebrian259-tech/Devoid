@@ -149,6 +149,8 @@ p { margin: 0; }
   .phone { width: 38%; right: -6px; }
   .lede { font-size: 17px; }
   .shot-card { padding: 18px; }
+  .nav-in { gap: 12px; }
+  .nav .gh { display: none; }
 }
 @media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } * { transition: none !important; } }
 

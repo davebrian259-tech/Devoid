@@ -2,6 +2,13 @@
 
 A Zcash wallet built around one job: **pay many people at once, privately.** One shielded transaction carries up to 30 recipients; bigger lists are split into sequential transactions of 25.
 
+## Try it in a browser (no install)
+
+Open the product page and press **Open the wallet**: the full app runs at `/app/` on any phone or
+computer. It is a demo on a simulated testnet chain, kept in your browser: no real money, no
+server, and it never asks for a recovery phrase. Build it locally with `npm run build:site`
+(writes `dist/`).
+
 ## Run it (works now, simulated chain)
 
 ```
@@ -25,15 +32,15 @@ On Windows, use WSL: [`docs/WSL.md`](docs/WSL.md) walks through everything from 
 
 ## Deploy
 
-The product page in `site/` deploys to Cloudflare as static files (`wrangler.jsonc`, plus a GitHub
-workflow that publishes it on merge once two secrets are set). The wallet is non-custodial and
-never runs on a server. Steps, Cloudflare settings and variables: [`docs/DEPLOY.md`](docs/DEPLOY.md).
+The product page (`site/`) and the web demo (`ui/`, at `/app/`) deploy to Cloudflare as static
+files: `wrangler.jsonc` runs `scripts/build-site.mjs` and a GitHub workflow publishes on merge once
+two secrets are set. The wallet is non-custodial and never runs on a server. Steps, Cloudflare settings and variables: [`docs/DEPLOY.md`](docs/DEPLOY.md).
 
 ## Roadmap
 
 - **Testnet broadcast**, then mainnet with small amounts.
-- **Web app**: the engine compiled to WebAssembly so it runs in the browser, served from
-  Cloudflare. Keys stay on the user's device.
+- **Real web wallet**: the engine compiled to WebAssembly, replacing the simulator behind the web
+  demo's backend (`ui/local/backend.js`). Keys stay on the user's device.
 - **Chrome extension** on the same in-browser engine, for the Chrome Web Store.
 
 ## What it does
@@ -71,7 +78,7 @@ JetBrains Mono for addresses, all SIL OFL and vendored in `ui/fonts`. Icons are 
 Lucide's SVG sources (ISC). There are still no runtime dependencies: the UI is plain ES modules
 served under a strict CSP.
 
-A product page lives in `site/` (static, ready for GitHub Pages). Its images come from the real UI on
+A product page lives in `site/` (static, deployed with the web demo, see Deploy). Its images come from the real UI on
 the simulated engine: `python3 scripts/site-shots.py`.
 
 ## Security model
@@ -87,10 +94,12 @@ See `docs/STATUS.md` for detail. In short, as of 2026-10-18:
 - Verified against the **real Zcash testnet** (`testnet.zec.rocks`, ECC LightWalletD v0.5.4):
   wallet creation, chain sync to the tip, balance, history, real ZIP 317 fee quotes, and the
   recipient and funding checks that refuse a bad batch.
-- Verified here without Rust: 236 JS tests (address/amount/CSV parsing, fee and ZIP 321 helpers,
-  server API incl. auth and a 2-transaction batch), a browser test that drives every screen and
+- Verified here without Rust: 241 JS tests (address/amount/CSV parsing, SHA-256 against FIPS
+  vectors, fee and ZIP 321 helpers, server API incl. auth and a 2-transaction batch, the web
+  backend's testnet-only and no-phrase rules), a browser test that drives every screen and
   feature and fails on any console error or leaked `null` (`npm run test:ui`, screenshots in
-  `shots/`), and a QR encoder decoded by an independent decoder for versions 2-24.
+  `shots/`), a browser test of the built site and web demo under its real CSP on desktop and
+  phone (`npm run test:web`), and a QR encoder decoded by an independent decoder for versions 2-24.
 - **No transaction has been broadcast yet.** Building, signing and broadcasting needs funded
   testnet ZEC, so that last step is still unproven. Treat real sends as unverified until you have
   done a testnet run yourself.
@@ -98,4 +107,4 @@ See `docs/STATUS.md` for detail. In short, as of 2026-10-18:
   system fonts.
 
 Layout: `engine/` Rust, `server/` Node API + batch parsing, `mock-engine/` simulator, `ui/`
-frontend, `docs/` protocol, `test/` tests.
+frontend (`ui/local/` is the web demo's in-page backend), `site/` product page, `docs/` protocol, `test/` tests.

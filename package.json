@@ -14,6 +14,8 @@
     "test": "node scripts/test.mjs",
     "engine:build": "cargo build --release --manifest-path engine/Cargo.toml",
     "engine:selftest": "node scripts/engine-selftest.mjs",
-    "test:ui": "python3 scripts/ui-smoke.py"
+    "test:ui": "python3 scripts/ui-smoke.py",
+    "build:site": "node scripts/build-site.mjs",
+    "test:web": "python3 scripts/web-smoke.py"
   }
 }

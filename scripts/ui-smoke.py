@@ -15,7 +15,7 @@ for _ in range(50):
     if m: url = m.group(1); break
 assert url, 'server did not start'
 os.makedirs('shots', exist_ok=True)
-for old in glob.glob('shots/*.png'): os.remove(old)
+for old in glob.glob('shots/[0-9]*.png'): os.remove(old)  # web-smoke.py owns shots/web-*
 errors = []
 
 def shot(pg, name, full=False):

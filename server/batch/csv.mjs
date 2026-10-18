@@ -1,4 +1,5 @@
 // CSV / pasted-text parsing for batch recipients. No dependencies.
+import { utf8Length } from './sha256.mjs';
 
 export const DEFAULT_LIMITS = Object.freeze({ maxBytes: 2_000_000, maxRows: 5_000 });
 
@@ -24,7 +25,7 @@ const HEADER_SYNONYMS = {
 export function parseCsv(text, limits = {}) {
   const { maxBytes, maxRows } = { ...DEFAULT_LIMITS, ...limits };
   if (typeof text !== 'string') return bad('format', 'Input must be text');
-  if (Buffer.byteLength(text, 'utf8') > maxBytes) {
+  if (utf8Length(text) > maxBytes) {
     return bad('too_big', `File is larger than ${(maxBytes / 1e6).toFixed(0)} MB`);
   }
   if (text.charCodeAt(0) === 0xfeff) text = text.slice(1);

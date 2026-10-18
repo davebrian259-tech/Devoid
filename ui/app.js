@@ -1,5 +1,5 @@
 // Devoid UI: boot, shell, router, sidebar, shortcuts, balance refresh. Each screen lives in views/.
-import { S, nav, api, h, iconBtn, errorNote, isTest, storage, loadLists, fill, sens, unit, modal } from './lib.js';
+import { S, nav, api, h, iconBtn, errorNote, isTest, storage, loadLists, fill, sens, unit, modal, WEB } from './lib.js';
 import { icon, mark } from './icons.js';
 import { fmtZec } from './calc.js';
 import { applyTheme, themeChoice, themeSwitch, themeButton, toggleTheme } from './theme.js';
@@ -29,6 +29,7 @@ const TABS = ['home', 'send', 'receive', 'activity', 'more'];
 const narrow = matchMedia('(max-width: 1040px)');
 
 (function loadToken() {
+  if (WEB) { S.token = 'web'; return; } // no server to authenticate to
   const m = /token=([\w-]+)/.exec(location.hash);
   try {
     if (m) { sessionStorage.setItem('devoid-token', m[1]); history.replaceState(null, '', location.pathname); }
@@ -44,7 +45,7 @@ async function boot() {
   }
   const r = await api('/api/status');
   if (!r.ok) {
-    renderGate(root, 'Cannot reach the wallet', h('div', { class: 'stack' }, errorNote(r.error), h('p', { class: 'sub' }, 'Restart the server and open the new link it prints.')));
+    renderGate(root, 'Cannot reach the wallet', h('div', { class: 'stack' }, errorNote(r.error), h('p', { class: 'sub' }, WEB ? 'Reload the page. If it keeps failing, this browser may be blocking scripts or storage.' : 'Restart the server and open the new link it prints.')));
     return;
   }
   S.status = r.result;
@@ -129,6 +130,7 @@ function renderShell() {
 }
 
 function band() {
+  if (WEB) return h('div', { class: 'band sim', role: 'note' }, icon('info'), h('span', null, h('b', null, 'Web demo. '), 'Testnet play money on a simulated chain, kept only in this browser. To hold real ZEC, use the desktop app.'));
   if (S.status.simulated) return h('div', { class: 'band sim', role: 'note' }, icon('info'), h('span', null, h('b', null, 'Simulated chain. '), 'This is the demo engine: no network, no real ZEC. Build the Rust engine to use real funds.'));
   if (isTest()) return h('div', { class: 'band testnet', role: 'note' }, 'Testnet · play money, no real value');
   return null;
@@ -211,7 +213,7 @@ function viewMore(el) {
   el.append(h('div', { class: 'stack-lg' },
     h('div', { class: 'card' }, h('div', { class: 'menu-list' }, ['lists', 'contacts', 'settings'].map(item))),
     h('div', { class: 'card row between' }, h('span', null, h('b', null, 'Theme'), h('div', { class: 'small muted' }, 'Light or dark')), themeSwitch()),
-    h('p', { class: 'hint' }, S.status.simulated ? 'Engine: simulated demo.' : `Engine: devoid-engine, self-test ${S.status.engineVerified ? 'passed' : 'not run'}.`)));
+    h('p', { class: 'hint' }, WEB ? 'Web demo: simulated engine in this browser.' : S.status.simulated ? 'Engine: simulated demo.' : `Engine: devoid-engine, self-test ${S.status.engineVerified ? 'passed' : 'not run'}.`)));
 }
 
 nav.go = go;

@@ -4,9 +4,10 @@
 
 | Piece | Where it runs | Status |
 |---|---|---|
-| Product page (`site/`) | Cloudflare, as static files | Ready to deploy |
+| Product page (`site/`, at `/`) | Cloudflare, as static files | Ready to deploy |
+| Web demo (`ui/`, at `/app/`) | Cloudflare, as static files; the wallet runs in the visitor's browser on a simulated testnet chain | Ready to deploy |
 | Wallet (`ui/` + `server/` + Rust engine) | The user's own computer | Works today |
-| Web app | Cloudflare (static files) + the engine compiled to WebAssembly, running in the user's browser | Needs engineering, see below |
+| Real web wallet | Same files, with the engine compiled to WebAssembly in place of the simulator | Needs engineering, see below |
 | Chrome extension | Chrome Web Store, same in-browser engine | Needs engineering, see below |
 
 ## The rule that decides everything: never host keys
@@ -20,10 +21,22 @@ makes Devoid custodial: a single place to steal from, a regulated business, and 
 what the product promises. So it is off the table. The web app and the extension both keep the
 engine on the user's device, inside the browser.
 
-## 1. Deploy the product page to Cloudflare
+## 1. Deploy the product page and the web demo to Cloudflare
 
-`site/` is plain static files with no scripts. `wrangler.jsonc` serves it with Cloudflare Workers
-static assets (Cloudflare's current recommendation for static sites). No Worker code runs.
+`scripts/build-site.mjs` assembles `dist/`: the product page from `site/` at `/`, and the wallet UI
+from `ui/` at `/app/`, marked as the web version. In the web version the request core
+(`server/core.mjs`) and the simulated engine (`mock-engine/core.mjs`) run inside the page, and
+everything is kept in the visitor's browser storage. It is always testnet, never asks for a recovery
+phrase, and sends nothing to any server. Anyone can open it from the front page, on a phone too.
+
+`wrangler.jsonc` runs that build and serves `dist/` with Cloudflare Workers static assets
+(Cloudflare's current recommendation for static sites). No Worker code runs. To build and look at
+it locally:
+
+```bash
+node scripts/build-site.mjs         # writes dist/
+python3 scripts/web-smoke.py        # builds, serves dist/ with site/_headers, drives it in Chromium
+```
 
 ### One-time setup
 
@@ -46,7 +59,8 @@ Cloudflare builds and deploys on every push; no API token or GitHub secret is ne
 3. Settings:
    - **Project name:** `devoid-site`. Keep it the same as `name` in `wrangler.jsonc`, or change both.
    - **Production branch:** `main`.
-   - **Build command:** leave empty (the site needs no build).
+   - **Build command:** leave empty. `wrangler deploy` runs `node scripts/build-site.mjs` itself,
+     from the `build` entry in `wrangler.jsonc`.
    - **Deploy command:** `npx wrangler deploy`.
    - **Non-production branch deploy command:** `npx wrangler versions upload` (gives each branch a
      preview link without touching production).
@@ -61,7 +75,8 @@ the GitHub secrets unset and the workflow skips itself.
 1. In the repository: Settings → Secrets and variables → Actions → New repository secret. Add:
    - `CLOUDFLARE_API_TOKEN`: the token from step 2.
    - `CLOUDFLARE_ACCOUNT_ID`: the ID from step 3.
-2. Merge to `main`. `.github/workflows/deploy-site.yml` deploys whenever `site/` changes. To deploy
+2. Merge to `main`. `.github/workflows/deploy-site.yml` deploys whenever `site/`, `ui/` or the shared
+   modules the web demo uses change. To deploy
    now, open Actions → deploy-site → Run workflow. Without the secrets the workflow skips cleanly.
 
 ### Option C: deploy from your computer
@@ -69,7 +84,7 @@ the GitHub secrets unset and the workflow skips itself.
 ```bash
 cd ~/Devoid
 npx wrangler@4 login        # opens a browser; or export CLOUDFLARE_API_TOKEN and CLOUDFLARE_ACCOUNT_ID
-npx wrangler@4 deploy --dry-run   # checks the config and lists what would upload
+npx wrangler@4 deploy --dry-run   # runs the build, checks the config, lists what would upload
 npx wrangler@4 deploy
 ```
 
@@ -90,12 +105,12 @@ Set these in the dashboard for the domain:
 - **DNS → Settings:** enable DNSSEC.
 - **Turn off anything that injects scripts or rewrites pages:** Rocket Loader (Speed →
   Optimization), Email Address Obfuscation (Scrape Shield), Web Analytics automatic setup, and
-  Zaraz. The site's content security policy blocks every script, so these would only break or
-  log errors, and the analytics would contradict the privacy policy.
+  Zaraz. The site's content security policy blocks every script that is not the site's own, so
+  these would only break or log errors, and the analytics would contradict the privacy policy.
 - **Security → Bots:** Bot Fight Mode is fine to turn on.
 
-The site's own headers come from `site/_headers`: a strict content security policy (no scripts, no
-frames, no forms), HSTS, `nosniff`, `no-referrer`, a locked-down Permissions-Policy, and caching for
+The site's own headers come from `site/_headers`: a strict content security policy (only the site's own
+scripts, no network requests, no frames, no forms), HSTS, `nosniff`, `no-referrer`, a locked-down Permissions-Policy, and caching for
 fonts and images. After a deploy, check they are live:
 
 ```bash
@@ -111,7 +126,7 @@ If nothing prints, add the same headers under Rules → Transform Rules → Modi
 | `CLOUDFLARE_API_TOKEN` | GitHub repository secret, or your shell for Option B | Yes | Lets Wrangler deploy |
 | `CLOUDFLARE_ACCOUNT_ID` | GitHub repository secret, or your shell | No, but keep it private | Which account to deploy to |
 
-The site has no runtime variables and must never contain a secret: everything in `site/` is public.
+The site has no runtime variables and must never contain a secret: everything in `site/` and `ui/` is public.
 
 The wallet itself reads these, all optional:
 
@@ -126,9 +141,11 @@ The wallet itself reads these, all optional:
 Server flags: `--demo` (simulated chain), `--mock` (simulated engine, real data folder),
 `--port=N` (default 8787).
 
-## 2. The web app (next)
+## 2. The real web wallet (next)
 
-What it takes to make Devoid a website that is still non-custodial:
+The web demo already has the shape it needs: the UI calls a backend object
+(`ui/local/backend.js`) that runs the request core with an engine in the page. Making it real means
+replacing the simulated engine there with a real one, while the wallet stays non-custodial:
 
 1. **Engine in WebAssembly.** Compile the wallet logic to Wasm with an in-browser storage backend
    (IndexedDB), instead of the native binary and SQLite. ChainSafe's WebZjs is prior art: a
@@ -142,7 +159,7 @@ What it takes to make Devoid a website that is still non-custodial:
    blocks from the 2022 spam period is the worst case. Multithreaded proving needs
    `SharedArrayBuffer`.
 
-Extra Cloudflare rules the web app will need (not the product page):
+Extra Cloudflare rules the real web wallet will need under `/app/*` (not the product page):
 
 ```
 Cross-Origin-Opener-Policy: same-origin

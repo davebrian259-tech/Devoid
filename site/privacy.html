@@ -45,9 +45,18 @@
     <p>Devoid sends nothing else anywhere. There is no analytics, no crash reporting, no telemetry, no advertising and no third-party code.</p>
 
     <h2>This website</h2>
-    <p>This site is a set of static pages with no cookies and no analytics. Its only script remembers whether you chose the light or dark theme, in your browser's storage; nothing is sent anywhere. It is hosted on Cloudflare, which, like any web host, processes the technical data of each request (such as your IP address and browser) to deliver the page and protect it from abuse. See <a href="https://www.cloudflare.com/privacypolicy/">Cloudflare’s privacy policy</a>.</p>
+    <p>This site is a set of static pages with no cookies and no analytics. The product page's only script remembers whether you chose the light or dark theme, in your browser's storage; nothing is sent anywhere. The web demo is described below. It is hosted on Cloudflare, which, like any web host, processes the technical data of each request (such as your IP address and browser) to deliver the page and protect it from abuse. See <a href="https://www.cloudflare.com/privacypolicy/">Cloudflare’s privacy policy</a>.</p>
 
-    <h2>The web app and Chrome extension</h2>
+    <h2>The web demo</h2>
+    <p>The wallet at <a href="app/">/app</a> is a demo. It runs entirely in your browser on a simulated testnet chain: it holds no real ZEC and connects to no Zcash server. The page downloads its code from this site and then sends nothing anywhere.</p>
+    <ul>
+      <li><b>What it stores.</b> The demo wallet (its made-up recovery words, a salted hash of the passphrase you chose, simulated balances and history), your demo lists and contacts, and your theme and sidebar choices. All of it is in this browser's local storage for this site.</li>
+      <li><b>What it never asks for.</b> A real recovery phrase. The web version has no restore option, and its demo words cannot restore a real wallet.</li>
+      <li><b>Deleting it.</b> Settings, then Reset the demo; or clear this site's data in your browser.</li>
+    </ul>
+    <p>Because the passphrase hash is kept in your browser, make one up for the demo rather than reusing a real password.</p>
+
+    <h2>The real web wallet and Chrome extension</h2>
     <p>Both are in development. They follow the same rules: the wallet runs on your device, your keys never leave it, and nothing is collected. Before either is released, this policy will be updated to describe exactly what it stores and what it sends.</p>
 
     <h2>Changes and contact</h2>
