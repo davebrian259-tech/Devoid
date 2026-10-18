@@ -150,6 +150,25 @@ try:
         shot(pg, '13-settings', full=True)
         pg.click('.seg button:has-text("Dark")')
         assert pg.get_attribute('html', 'data-theme') == 'dark'
+        pg.click('.seg button:has-text("Light")')
+        assert pg.get_attribute('html', 'data-theme') == 'light'
+
+        # ---- sidebar: live counts, the theme switch, the icon rail, keyboard shortcuts --------------
+        expect(pg.locator('.side [data-badge=contacts]')).to_have_text('2')
+        expect(pg.locator('.side [data-badge=lists]')).to_have_text('1')
+        pg.click('.side .theme-switch button[data-mode=dark]')
+        assert pg.get_attribute('html', 'data-theme') == 'dark'
+        expect(pg.locator('.side .theme-switch')).to_have_attribute('data-on', 'dark')
+        expect(pg.locator('.seg button:has-text("Dark")')).to_have_attribute('aria-pressed', 'true')  # settings follows
+        pg.click('#main'); pg.keyboard.press('[')
+        expect(pg.locator('.app')).to_have_class(re.compile('side-collapsed'))
+        pg.hover('.side a[data-view=activity]'); pg.wait_for_timeout(200)
+        shot(pg, '19-rail-dark')
+        pg.keyboard.press('[')
+        expect(pg.locator('.app')).not_to_have_class(re.compile('side-collapsed'))
+        pg.keyboard.press('g'); pg.keyboard.press('a'); pg.wait_for_selector('.chips')
+        assert pg.url.endswith('#activity'), pg.url
+        pg.keyboard.press('?'); expect(pg.locator('dialog .shortcuts')).to_be_visible(); pg.keyboard.press('Escape')
         nav(pg, 'home'); pg.wait_for_selector('.poolbar')
         shot(pg, '14-home-dark')
         nav(pg, 'send'); pg.wait_for_selector('#batch')
@@ -177,6 +196,9 @@ try:
         pg.click('.menu-list a:has-text("Contacts")'); expect(pg.locator('a[data-tab=more]')).to_have_attribute('aria-current', 'page')
         pg.click('a[data-tab=receive]'); pg.wait_for_selector('svg.qr')
         shot(pg, '18-phone-receive', full=True)
+        pg.click('.top .top-theme'); assert pg.get_attribute('html', 'data-theme') == 'dark'
+        pg.click('a[data-tab=home]'); pg.wait_for_selector('.poolbar')
+        shot(pg, '20-phone-dark', full=True)
         b.close()
 finally:
     srv.terminate()

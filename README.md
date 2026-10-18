@@ -57,7 +57,12 @@ never runs on a server. Steps, Cloudflare settings and variables: [`docs/DEPLOY.
 - **Setup**: create or restore (24 words), a backup check of three random words, testnet or
   mainnet. Settings: theme, connection (direct, Tor, SOCKS5), phrase reveal, passphrase change,
   shielding.
-- Light and dark themes, a phone layout with a bottom tab bar. Testnet is marked on every screen.
+- **Navigation**: a sidebar with grouped sections, live counts (pending payments, lists, contacts),
+  the wallet's network, balance and sync state, and a light/dark switch. It collapses to an icon
+  rail (`[`), and the keyboard gets you anywhere: `N` new batch, `G` then a letter to jump, `T`
+  theme, `.` show or hide balances, `?` for the list.
+- Light and dark themes (follow the system or pick one), a phone layout with a bottom tab bar.
+  Testnet is marked on every screen.
 
 ## Design
 

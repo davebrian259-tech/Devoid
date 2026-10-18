@@ -12,6 +12,7 @@
 <link rel="icon" href="mark.svg" type="image/svg+xml">
 <link rel="preload" href="fonts/outfit.woff2" as="font" type="font/woff2" crossorigin>
 <link rel="preload" href="fonts/righteous.woff2" as="font" type="font/woff2" crossorigin>
+<script src="theme.js"></script>
 <link rel="stylesheet" href="site.css">
 </head>
 <body>
@@ -25,6 +26,7 @@
       <a href="#privacy">Privacy</a>
       <a href="#status">Status</a>
     </nav>
+    <button class="theme-toggle" type="button" data-theme-toggle aria-label="Switch theme"><svg class="i-moon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20.985 12.486a9 9 0 1 1-9.473-9.472c.405-.022.617.46.402.803a6 6 0 0 0 8.268 8.268c.344-.215.825-.004.803.401"/></svg><svg class="i-sun" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg></button>
     <a class="btn small ghost" href="https://github.com/davebrian259-tech/Devoid">GitHub
       <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17 17 7M8 7h9v9"/></svg></a>
   </div>
@@ -46,9 +48,10 @@
       <figure class="stage">
         <div class="browser">
           <div class="chrome"><i></i><i></i><i></i><span>127.0.0.1:8787</span></div>
-          <img src="img/overview.jpg" alt="The Devoid overview: spendable balance, where the money sits across shielded and transparent pools, recent activity and contacts." width="1440" height="900">
+          <img class="img-light" src="img/overview.jpg" alt="The Devoid overview: spendable balance, where the money sits across shielded and transparent pools, recent activity and contacts." width="1440" height="900">
+          <img class="img-dark" src="img/overview-dark.jpg" alt="The Devoid overview: spendable balance, where the money sits across shielded and transparent pools, recent activity and contacts." width="1440" height="900">
         </div>
-        <div class="phone"><img src="img/phone.jpg" alt="Devoid on a phone: the balance card with quick actions above the pool breakdown." width="390" height="844"></div>
+        <div class="phone"><img class="img-light" src="img/phone.jpg" alt="Devoid on a phone: the balance card with quick actions above the pool breakdown." width="390" height="844"><img class="img-dark" src="img/phone-dark.jpg" alt="Devoid on a phone: the balance card with quick actions above the pool breakdown." width="390" height="844"></div>
         <figcaption>Screens show demo data from Devoid’s simulated engine.</figcaption>
       </figure>
     </div>
@@ -86,7 +89,8 @@
           </li>
         </ol>
         <figure class="shot-card">
-          <img src="img/review.jpg" alt="The confirm screen: 1.26 ZEC to 12 recipients, with the source pools, network, fee and total listed before signing." loading="lazy">
+          <img class="img-light" src="img/review.jpg" alt="The confirm screen: 1.26 ZEC to 12 recipients, with the source pools, network, fee and total listed before signing." loading="lazy">
+          <img class="img-dark" src="img/review-dark.jpg" alt="The confirm screen: 1.26 ZEC to 12 recipients, with the source pools, network, fee and total listed before signing." loading="lazy">
         </figure>
       </div>
     </div>

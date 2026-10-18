@@ -1,26 +1,28 @@
 # Captures the product images for the landing page (site/img) from the real UI running on the
-# simulated engine. The demo banner is hidden for these shots; the page captions them as demo data.
+# simulated engine, once in the light theme and once in the dark. The demo banner is hidden for
+# these shots; the page captions them as demo data.
 #
 #   DEVOID_CHROMIUM=/path/to/chrome python3 scripts/site-shots.py
 import subprocess, os, re, tempfile
 from playwright.sync_api import sync_playwright
 
-home = tempfile.mkdtemp()
-srv = subprocess.Popen(['node', 'server/index.mjs', '--demo', '--port=0'], env=dict(os.environ, DEVOID_HOME=home), stdout=subprocess.PIPE, text=True)
-url = None
-for _ in range(50):
-    m = re.search(r'Open:\s+(\S+)', srv.stdout.readline())
-    if m: url = m.group(1); break
-assert url, 'server did not start'
-os.makedirs('site/img', exist_ok=True)
 HIDE = '.band.sim { display: none !important; } .toast { display: none !important; }'
+TEAM = ['Alice', 'Bilal', 'Chen', 'Dara', 'Emeka', 'Farah', 'Goran', 'Hana', 'Ivo', 'Jun', 'Kofi', 'Lena']
 
-try:
-    with sync_playwright() as p:
-        exe = os.environ.get('DEVOID_CHROMIUM')
-        b = p.chromium.launch(executable_path=exe) if exe else p.chromium.launch()
+
+def start_server():
+    srv = subprocess.Popen(['node', 'server/index.mjs', '--demo', '--port=0'], env=dict(os.environ, DEVOID_HOME=tempfile.mkdtemp()), stdout=subprocess.PIPE, text=True)
+    for _ in range(50):
+        m = re.search(r'Open:\s+(\S+)', srv.stdout.readline())
+        if m: return srv, m.group(1)
+    srv.terminate(); raise SystemExit('server did not start')
+
+
+def capture(b, scheme, suffix):
+    srv, url = start_server()
+    try:
         # bypass_csp only so the capture can hide the demo banner; the app itself never needs it
-        ctx = b.new_context(viewport={'width': 1440, 'height': 900}, device_scale_factor=2, bypass_csp=True)
+        ctx = b.new_context(viewport={'width': 1440, 'height': 900}, device_scale_factor=2, bypass_csp=True, color_scheme=scheme)
         pg = ctx.new_page()
         pg.goto(url)
         pg.fill('#p1', 'correct horse battery'); pg.fill('#p2', 'correct horse battery'); pg.click('text=Create wallet')
@@ -43,25 +45,33 @@ try:
 
         # one sent batch so the overview has history
         pg.click('a[data-view=send]')
-        team = ['Alice', 'Bilal', 'Chen', 'Dara', 'Emeka', 'Farah', 'Goran', 'Hana', 'Ivo', 'Jun', 'Kofi', 'Lena']
-        rows = ['address,amount,memo,label'] + [f'{ua},{0.05 + i * 0.01:.2f},October grant,{n}' for i, n in enumerate(team)]
+        rows = ['address,amount,memo,label'] + [f'{ua},{0.05 + i * 0.01:.2f},October grant,{n}' for i, n in enumerate(TEAM)]
         pg.fill('#batch', '\n'.join(rows)); pg.click('text=Check recipients'); pg.wait_for_selector('.ledger')
-        pg.wait_for_timeout(400)
         pg.click('#review'); pg.wait_for_selector('.sheet'); pg.wait_for_timeout(300)
-        pg.locator('.sheet > .card').first.screenshot(path='site/img/review.jpg', type='jpeg', quality=90)
+        pg.locator('.sheet > .card').first.screenshot(path=f'site/img/review{suffix}.jpg', type='jpeg', quality=90)
         pg.fill('#pw', 'correct horse battery'); pg.click('#confirm'); pg.wait_for_selector('#sent-total', timeout=120_000)  # only on the finished screen
 
         pg.click('a[data-view=home]'); pg.wait_for_selector('.poolbar'); pg.wait_for_selector('.item:has-text("Sent to")')
         pg.click('#syncbtn'); pg.wait_for_function("!document.querySelector('#syncbtn .spin')"); pg.click('.redact'); pg.wait_for_timeout(600)
-        pg.screenshot(path='site/img/overview.jpg', type='jpeg', quality=88)
+        pg.mouse.move(1000, 600)
+        pg.screenshot(path=f'site/img/overview{suffix}.jpg', type='jpeg', quality=88)
 
-        phone = b.new_context(viewport={'width': 390, 'height': 844}, device_scale_factor=3, bypass_csp=True)
+        phone = b.new_context(viewport={'width': 390, 'height': 844}, device_scale_factor=3, bypass_csp=True, color_scheme=scheme)
         ph = phone.new_page()
         ph.goto(url.split('#')[0] + '#home')
         ph.evaluate(f"sessionStorage.setItem('devoid-token', '{url.split('token=')[1]}')"); ph.reload()
         ph.wait_for_selector('.poolbar'); ph.add_style_tag(content=HIDE); ph.click('.redact'); ph.wait_for_timeout(600)
-        ph.screenshot(path='site/img/phone.jpg', type='jpeg', quality=88)
-        b.close()
-finally:
-    srv.terminate()
+        ph.screenshot(path=f'site/img/phone{suffix}.jpg', type='jpeg', quality=88)
+        ctx.close(); phone.close()
+    finally:
+        srv.terminate()
+
+
+os.makedirs('site/img', exist_ok=True)
+with sync_playwright() as p:
+    exe = os.environ.get('DEVOID_CHROMIUM')
+    b = p.chromium.launch(executable_path=exe) if exe else p.chromium.launch()
+    capture(b, 'light', '')
+    capture(b, 'dark', '-dark')
+    b.close()
 print('site shots written to site/img')

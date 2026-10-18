@@ -150,7 +150,7 @@ export function viewSend(el) {
             btn('Contacts', 'xs ghost', () => pickContacts(), 'contacts'),
             btn('Lists', 'xs ghost', () => pickList(), 'lists'),
             btn('Save as list', 'xs ghost', () => saveAsList(), 'plus'))),
-        h('div', { class: 'stack' }, ta, tray, h('div', { class: 'row' }, btn('Check recipients', 'sm', check, 'check'), h('span', { class: 'hint' }, 'Devoid checks as you type.')), msg));
+        h('div', { class: 'stack' }, ta, tray, h('div', { class: 'row' }, btn('Check recipients', 'sm soft', check, 'check'), h('span', { class: 'hint' }, 'Devoid checks as you type.')), msg));
     ledger.className = 'a-led';
     queueMicrotask(() => {
       drawSummary();

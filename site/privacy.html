@@ -7,12 +7,14 @@
 <meta name="description" content="How Devoid handles your data: it runs on your device, collects nothing, and never sees your keys.">
 <meta name="theme-color" content="#0b0b0e">
 <link rel="icon" href="mark.svg" type="image/svg+xml">
+<script src="theme.js"></script>
 <link rel="stylesheet" href="site.css">
 </head>
 <body>
 <header class="nav">
   <div class="wrap nav-in">
     <a class="brand" href="index.html" aria-label="Devoid home"><img src="mark.svg" alt="" width="32" height="32"><span class="wordmark">devoid</span></a>
+    <button class="theme-toggle" type="button" data-theme-toggle aria-label="Switch theme"><svg class="i-moon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20.985 12.486a9 9 0 1 1-9.473-9.472c.405-.022.617.46.402.803a6 6 0 0 0 8.268 8.268c.344-.215.825-.004.803.401"/></svg><svg class="i-sun" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg></button>
     <a class="btn small ghost push" href="index.html">Back to the site</a>
   </div>
 </header>
@@ -43,7 +45,7 @@
     <p>Devoid sends nothing else anywhere. There is no analytics, no crash reporting, no telemetry, no advertising and no third-party code.</p>
 
     <h2>This website</h2>
-    <p>This site is a set of static pages with no cookies, no scripts and no analytics. It is hosted on Cloudflare, which, like any web host, processes the technical data of each request (such as your IP address and browser) to deliver the page and protect it from abuse. See <a href="https://www.cloudflare.com/privacypolicy/">Cloudflare’s privacy policy</a>.</p>
+    <p>This site is a set of static pages with no cookies and no analytics. Its only script remembers whether you chose the light or dark theme, in your browser's storage; nothing is sent anywhere. It is hosted on Cloudflare, which, like any web host, processes the technical data of each request (such as your IP address and browser) to deliver the page and protect it from abuse. See <a href="https://www.cloudflare.com/privacypolicy/">Cloudflare’s privacy policy</a>.</p>
 
     <h2>The web app and Chrome extension</h2>
     <p>Both are in development. They follow the same rules: the wallet runs on your device, your keys never leave it, and nothing is collected. Before either is released, this policy will be updated to describe exactly what it stores and what it sends.</p>

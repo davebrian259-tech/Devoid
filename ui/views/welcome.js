@@ -1,6 +1,7 @@
 // First run: what Devoid is, then create or restore a wallet, then prove the phrase was written down.
 import { h, btn, api, errorNote, note, fill } from '../lib.js';
 import { icon, mark } from '../icons.js';
+import { themeButton } from '../theme.js';
 
 const NS = 'http://www.w3.org/2000/svg';
 
@@ -38,7 +39,7 @@ function strengthOf(p) {
 export function renderWelcome(root, onDone) {
   let mode = 'create'; let network = 'main';
   const side = h('section', { class: 'panel-side' });
-  fill(root, h('div', { class: 'welcome' }, hero(), side));
+  fill(root, h('div', { class: 'welcome' }, hero(), side, themeButton('icon-btn welcome-theme')));
 
   const seg = (items, current, pick, label) => h('div', { class: 'seg block', role: 'group', 'aria-label': label },
     items.map(([v, l, ic]) => h('button', { type: 'button', 'aria-pressed': String(current === v), onclick: () => pick(v) }, ic ? icon(ic) : null, l)));
@@ -117,5 +118,5 @@ export function renderWelcome(root, onDone) {
 }
 
 export function renderGate(root, title, body) {
-  fill(root, h('div', { class: 'welcome' }, hero(), h('section', { class: 'panel-side' }, h('div', { class: 'form-card stack' }, h('h2', null, title), body))));
+  fill(root, h('div', { class: 'welcome' }, themeButton('icon-btn welcome-theme'), hero(), h('section', { class: 'panel-side' }, h('div', { class: 'form-card stack' }, h('h2', null, title), body))));
 }
