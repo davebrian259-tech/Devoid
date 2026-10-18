@@ -29,13 +29,34 @@ static assets (Cloudflare's current recommendation for static sites). No Worker 
 
 1. Create a Cloudflare account and, if you have one, add your domain to it (Websites → Add a site,
    then point your registrar's nameservers at Cloudflare).
+Steps 2 and 3 are only for Options B and C; the dashboard route (Option A) needs neither.
+
 2. Create an API token: My Profile → API Tokens → Create Token → use the **Edit Cloudflare
    Workers** template. Under Account Resources pick only your account; under Zone Resources pick
    only the domain you will use (or none, if you will use the free `*.workers.dev` address).
    Copy the token: it is shown once.
 3. Find your **Account ID**: Workers & Pages → Overview, right-hand column.
 
-### Option A: deploy from GitHub (recommended)
+### Option A: connect the repository in the Cloudflare dashboard (simplest)
+
+Cloudflare builds and deploys on every push; no API token or GitHub secret is needed.
+
+1. Merge the pull request that adds `wrangler.jsonc`, so `main` has it.
+2. Workers & Pages → Create → **Import a repository** → connect GitHub and pick this repository.
+3. Settings:
+   - **Project name:** `devoid-site`. Keep it the same as `name` in `wrangler.jsonc`, or change both.
+   - **Production branch:** `main`.
+   - **Build command:** leave empty (the site needs no build).
+   - **Deploy command:** `npx wrangler deploy`.
+   - **Non-production branch deploy command:** `npx wrangler versions upload` (gives each branch a
+     preview link without touching production).
+   - **Root directory:** `/`. **Build variables:** none.
+4. Save and deploy. The address appears in the Worker's overview.
+
+Use either this or Option B, not both: two deployers would race each other. With this option, leave
+the GitHub secrets unset and the workflow skips itself.
+
+### Option B: deploy from GitHub Actions
 
 1. In the repository: Settings → Secrets and variables → Actions → New repository secret. Add:
    - `CLOUDFLARE_API_TOKEN`: the token from step 2.
@@ -43,7 +64,7 @@ static assets (Cloudflare's current recommendation for static sites). No Worker 
 2. Merge to `main`. `.github/workflows/deploy-site.yml` deploys whenever `site/` changes. To deploy
    now, open Actions → deploy-site → Run workflow. Without the secrets the workflow skips cleanly.
 
-### Option B: deploy from your computer
+### Option C: deploy from your computer
 
 ```bash
 cd ~/Devoid
