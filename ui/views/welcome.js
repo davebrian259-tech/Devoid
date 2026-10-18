@@ -1,0 +1,121 @@
+// First run: what Devoid is, then create or restore a wallet, then prove the phrase was written down.
+import { h, btn, api, errorNote, note, fill } from '../lib.js';
+import { icon, mark } from '../icons.js';
+
+const NS = 'http://www.w3.org/2000/svg';
+
+function flowArt() {
+  const rows = [['u1qz…7hk2', '0.25'], ['zs1x…m9wf', '1.10'], ['u1r8…c4p0', '0.40'], ['u1lm…z2e6', '0.75']];
+  const svg = document.createElementNS(NS, 'svg'); svg.setAttribute('viewBox', '0 0 64 150'); svg.setAttribute('class', 'lines'); svg.setAttribute('aria-hidden', 'true');
+  for (const y of [18, 55, 92, 129]) { const p = document.createElementNS(NS, 'path'); p.setAttribute('d', `M0 ${y} C 36 ${y}, 30 75, 64 75`); svg.append(p); }
+  return h('div', { class: 'flow', 'aria-hidden': 'true' },
+    h('div', { class: 'rows' }, rows.map(([a, v]) => h('i', null, a, h('b', null, v)))),
+    svg,
+    h('div', { class: 'one' }, h('div', { class: 'row' }, icon('shielded'), h('span', { class: 'small' }, '1 shielded transaction')),
+      h('b', null, '4 recipients'), h('div', { class: 'redline' }), h('div', { class: 'redline w2' })));
+}
+
+function hero() {
+  return h('section', { class: 'hero' },
+    h('div', { class: 'brand' }, mark(), h('span', { class: 'wordmark' }, 'devoid')),
+    h('div', { class: 'stack-lg' },
+      h('h1', null, 'Pay everyone at once. ', h('em', null, 'Privately.')),
+      h('p', { class: 'lede' }, 'Devoid sends Zcash to a whole list of people in one shielded transaction: payroll, grants, DAO payouts. Recipients, amounts and memos stay hidden on chain.')),
+    flowArt(),
+    h('div', { class: 'points' },
+      h('div', null, h('span', { class: 'tile-ico' }, icon('lock')), h('span', null, h('b', null, 'Your keys stay here'), 'Encrypted on this computer. Devoid never asks for your phrase after setup.')),
+      h('div', null, h('span', { class: 'tile-ico' }, icon('eye')), h('span', null, h('b', null, 'See what is visible first'), 'Before you sign, Devoid shows exactly what the chain will reveal.')),
+      h('div', null, h('span', { class: 'tile-ico' }, icon('layers')), h('span', null, h('b', null, 'Up to 2,000 recipients'), 'Large lists go out as a few transactions of 25, in order.'))));
+}
+
+function strengthOf(p) {
+  if (p.length < 8) return 0;
+  const kinds = [/[a-z]/, /[A-Z]/, /\d/, /[^\w\s]/].filter((r) => r.test(p)).length + (/\s/.test(p) ? 1 : 0);
+  if (p.length >= 16 || (p.length >= 12 && kinds >= 3)) return 3;
+  return p.length >= 10 || kinds >= 3 ? 2 : 1;
+}
+
+export function renderWelcome(root, onDone) {
+  let mode = 'create'; let network = 'main';
+  const side = h('section', { class: 'panel-side' });
+  fill(root, h('div', { class: 'welcome' }, hero(), side));
+
+  const seg = (items, current, pick, label) => h('div', { class: 'seg block', role: 'group', 'aria-label': label },
+    items.map(([v, l, ic]) => h('button', { type: 'button', 'aria-pressed': String(current === v), onclick: () => pick(v) }, ic ? icon(ic) : null, l)));
+
+  function form() {
+    const err = h('div');
+    const pass = h('input', { type: 'password', autocomplete: 'new-password', id: 'p1', placeholder: 'At least 8 characters' });
+    const pass2 = h('input', { type: 'password', autocomplete: 'new-password', id: 'p2' });
+    const words = h('textarea', { id: 'ph', rows: 3, placeholder: 'word1 word2 word3 …', spellcheck: 'false', autocomplete: 'off' });
+    const meter = h('div', { class: 'strength' }, h('i'));
+    const meterText = h('span', { class: 'hint' }, 'Encrypts your keys on this computer.');
+    pass.addEventListener('input', () => {
+      const s = strengthOf(pass.value);
+      meter.className = `strength s${s}`; meter.firstChild.style.width = `${[6, 34, 67, 100][s]}%`;
+      meterText.textContent = ['Too short: use at least 8 characters.', 'Weak. Longer is stronger; a few random words work well.', 'Good.', 'Strong.'][s];
+    });
+    const go = btn(mode === 'create' ? 'Create wallet' : 'Restore wallet', 'lg block', async () => {
+      err.replaceChildren();
+      if (pass.value.length < 8) return err.append(errorNote({ message: 'Use a passphrase of at least 8 characters.' }));
+      if (pass.value !== pass2.value) return err.append(errorNote({ message: 'The two passphrases are different.' }));
+      go.disabled = true; go.lastChild.textContent = mode === 'create' ? 'Creating…' : 'Restoring…';
+      const r = await api('/api/engine/create', { passphrase: pass.value, network, phrase: mode === 'restore' ? words.value : undefined });
+      go.disabled = false; go.lastChild.textContent = mode === 'create' ? 'Create wallet' : 'Restore wallet';
+      if (!r.ok) return err.append(errorNote(r.error));
+      pass.value = pass2.value = '';
+      if (r.result.phrase) showPhrase(r.result.phrase); else onDone();
+    }, 'arrowRight');
+    fill(side, h('div', { class: 'form-card stack-lg' },
+      h('div', null, h('h2', null, mode === 'create' ? 'Create your wallet' : 'Restore a wallet'),
+        h('p', { class: 'sub' }, mode === 'create' ? 'It takes a minute. You will get 24 words that can restore it anywhere.' : 'Enter your 24-word recovery phrase. Devoid then scans the chain for your funds.')),
+      seg([['create', 'New wallet', 'plus'], ['restore', 'Restore', 'refresh']], mode, (v) => { mode = v; form(); }, 'Wallet setup'),
+      mode === 'restore' ? h('div', { class: 'field' }, h('label', { for: 'ph' }, 'Recovery phrase'), words) : null,
+      h('div', { class: 'field' }, h('span', { class: 'label' }, 'Network'),
+        seg([['main', 'Mainnet', 'globe'], ['test', 'Testnet', 'info']], network, (v) => { network = v; form(); }, 'Network'),
+        h('span', { class: 'hint' }, network === 'main' ? 'Real ZEC. Use small amounts until you know the flow.' : 'Play money (TAZ) from a faucet. Nothing here has value.')),
+      h('div', { class: 'field' }, h('label', { for: 'p1' }, 'Passphrase'), pass, meter, meterText),
+      h('div', { class: 'field' }, h('label', { for: 'p2' }, 'Repeat passphrase'), pass2),
+      err, go,
+      h('p', { class: 'hint' }, 'If you forget the passphrase, only the recovery phrase can bring your funds back.')));
+  }
+
+  function showPhrase(phrase) {
+    const ok = h('input', { type: 'checkbox', id: 'wrote' });
+    const next = btn('Continue', 'lg block', () => verify(phrase), 'arrowRight'); next.disabled = true;
+    ok.addEventListener('change', () => { next.disabled = !ok.checked; });
+    fill(side, h('div', { class: 'form-card stack-lg' },
+      h('div', null, h('h2', null, 'Write down your recovery phrase'),
+        h('p', { class: 'sub' }, 'These 24 words are your wallet. Anyone with them can take your funds, and nobody can recover them for you. Write them on paper, in order.')),
+      h('div', { class: 'phrase' }, phrase.split(' ').map((w) => h('span', null, w))),
+      note('warn', 'Never type these words into a website or share a photo of them.', 'Devoid will not ask for them again unless you restore.'),
+      h('label', { class: 'check', for: 'wrote' }, ok, 'I wrote the phrase down and stored it somewhere safe.'), next));
+  }
+
+  // Asks for three random words, so a skipped backup is caught now rather than when it is needed.
+  function verify(phrase) {
+    const list = phrase.split(' ');
+    const picks = [];
+    while (picks.length < 3) { const i = Math.floor(Math.random() * list.length); if (!picks.includes(i)) picks.push(i); }
+    picks.sort((a, b) => a - b);
+    const err = h('div');
+    const inputs = picks.map((i) => h('input', { type: 'text', autocomplete: 'off', spellcheck: 'false', 'data-word': String(i + 1), id: `w${i + 1}`, autocapitalize: 'off' }));
+    const done = btn('Open my wallet', 'lg block', () => {
+      err.replaceChildren();
+      const wrong = picks.filter((i, k) => inputs[k].value.trim().toLowerCase() !== list[i]);
+      if (wrong.length) return err.append(errorNote({ message: `Word ${wrong.map((i) => i + 1).join(', ')} does not match. Check your paper copy.` }));
+      onDone();
+    }, 'arrowRight');
+    fill(side, h('div', { class: 'form-card stack-lg' },
+      h('div', null, h('h2', null, 'Check your backup'), h('p', { class: 'sub' }, 'Type these words from your paper copy.')),
+      h('div', { class: 'stack' }, picks.map((i, k) => h('div', { class: 'field' }, h('label', { for: `w${i + 1}` }, `Word #${i + 1}`), inputs[k]))),
+      err, done, btn('Show the phrase again', 'ghost block', () => showPhrase(phrase), 'arrowLeft')));
+    inputs[0].focus();
+  }
+
+  form();
+}
+
+export function renderGate(root, title, body) {
+  fill(root, h('div', { class: 'welcome' }, hero(), h('section', { class: 'panel-side' }, h('div', { class: 'form-card stack' }, h('h2', null, title), body))));
+}
