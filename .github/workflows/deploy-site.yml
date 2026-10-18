@@ -1,10 +1,11 @@
 name: deploy-site
-# Publishes site/ to Cloudflare when it changes on main. Needs two repository secrets,
+# Builds dist/ (the product page and the web demo) and publishes it to Cloudflare when either
+# changes on main; wrangler runs the build from wrangler.jsonc. Needs two repository secrets,
 # CLOUDFLARE_API_TOKEN and CLOUDFLARE_ACCOUNT_ID (see docs/DEPLOY.md); without them it skips.
 on:
   push:
     branches: [main]
-    paths: ['site/**', 'wrangler.jsonc', '.github/workflows/deploy-site.yml']
+    paths: ['site/**', 'ui/**', 'server/core.mjs', 'server/batch/**', 'mock-engine/core.mjs', 'scripts/build-site.mjs', 'wrangler.jsonc', '.github/workflows/deploy-site.yml']
   workflow_dispatch:
 permissions:
   contents: read
@@ -16,6 +17,8 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
       - name: Check for Cloudflare credentials
         id: creds
         env:

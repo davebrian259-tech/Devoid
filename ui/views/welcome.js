@@ -1,5 +1,5 @@
 // First run: what Devoid is, then create or restore a wallet, then prove the phrase was written down.
-import { h, btn, api, errorNote, note, fill } from '../lib.js';
+import { h, btn, api, errorNote, note, fill, WEB } from '../lib.js';
 import { icon, mark } from '../icons.js';
 import { themeButton } from '../theme.js';
 
@@ -24,7 +24,7 @@ function hero() {
       h('p', { class: 'lede' }, 'Devoid sends Zcash to a whole list of people in one shielded transaction: payroll, grants, DAO payouts. Recipients, amounts and memos stay hidden on chain.')),
     flowArt(),
     h('div', { class: 'points' },
-      h('div', null, h('span', { class: 'tile-ico' }, icon('lock')), h('span', null, h('b', null, 'Your keys stay here'), 'Encrypted on this computer. Devoid never asks for your phrase after setup.')),
+      h('div', null, h('span', { class: 'tile-ico' }, icon('lock')), h('span', null, h('b', null, 'Your keys stay here'), WEB ? 'This demo keeps everything in your browser. Nothing is sent to a server.' : 'Encrypted on this computer. Devoid never asks for your phrase after setup.')),
       h('div', null, h('span', { class: 'tile-ico' }, icon('eye')), h('span', null, h('b', null, 'See what is visible first'), 'Before you sign, Devoid shows exactly what the chain will reveal.')),
       h('div', null, h('span', { class: 'tile-ico' }, icon('layers')), h('span', null, h('b', null, 'Up to 2,000 recipients'), 'Large lists go out as a few transactions of 25, in order.'))));
 }
@@ -37,7 +37,8 @@ function strengthOf(p) {
 }
 
 export function renderWelcome(root, onDone) {
-  let mode = 'create'; let network = 'main';
+  // The web demo is testnet only and never takes a recovery phrase: see local/backend.js.
+  let mode = 'create'; let network = WEB ? 'test' : 'main';
   const side = h('section', { class: 'panel-side' });
   fill(root, h('div', { class: 'welcome' }, hero(), side, themeButton('icon-btn welcome-theme')));
 
@@ -50,7 +51,7 @@ export function renderWelcome(root, onDone) {
     const pass2 = h('input', { type: 'password', autocomplete: 'new-password', id: 'p2' });
     const words = h('textarea', { id: 'ph', rows: 3, placeholder: 'word1 word2 word3 …', spellcheck: 'false', autocomplete: 'off' });
     const meter = h('div', { class: 'strength' }, h('i'));
-    const meterText = h('span', { class: 'hint' }, 'Encrypts your keys on this computer.');
+    const meterText = h('span', { class: 'hint' }, WEB ? 'Asked before each send, as in the real app. Make one up; do not reuse a real password.' : 'Encrypts your keys on this computer.');
     pass.addEventListener('input', () => {
       const s = strengthOf(pass.value);
       meter.className = `strength s${s}`; meter.firstChild.style.width = `${[6, 34, 67, 100][s]}%`;
@@ -68,17 +69,18 @@ export function renderWelcome(root, onDone) {
       if (r.result.phrase) showPhrase(r.result.phrase); else onDone();
     }, 'arrowRight');
     fill(side, h('div', { class: 'form-card stack-lg' },
-      h('div', null, h('h2', null, mode === 'create' ? 'Create your wallet' : 'Restore a wallet'),
-        h('p', { class: 'sub' }, mode === 'create' ? 'It takes a minute. You will get 24 words that can restore it anywhere.' : 'Enter your 24-word recovery phrase. Devoid then scans the chain for your funds.')),
-      seg([['create', 'New wallet', 'plus'], ['restore', 'Restore', 'refresh']], mode, (v) => { mode = v; form(); }, 'Wallet setup'),
+      h('div', null, h('h2', null, WEB ? 'Create a demo wallet' : mode === 'create' ? 'Create your wallet' : 'Restore a wallet'),
+        h('p', { class: 'sub' }, WEB ? 'A demo wallet with test coins, so you can try every screen. It lives in this browser only.' : mode === 'create' ? 'It takes a minute. You will get 24 words that can restore it anywhere.' : 'Enter your 24-word recovery phrase. Devoid then scans the chain for your funds.')),
+      WEB ? note('test', 'Web demo: testnet play money', 'Payments here are simulated and have no value. The web version never asks for a recovery phrase; to restore a real wallet, use the desktop app.')
+        : seg([['create', 'New wallet', 'plus'], ['restore', 'Restore', 'refresh']], mode, (v) => { mode = v; form(); }, 'Wallet setup'),
       mode === 'restore' ? h('div', { class: 'field' }, h('label', { for: 'ph' }, 'Recovery phrase'), words) : null,
-      h('div', { class: 'field' }, h('span', { class: 'label' }, 'Network'),
+      WEB ? null : h('div', { class: 'field' }, h('span', { class: 'label' }, 'Network'),
         seg([['main', 'Mainnet', 'globe'], ['test', 'Testnet', 'info']], network, (v) => { network = v; form(); }, 'Network'),
         h('span', { class: 'hint' }, network === 'main' ? 'Real ZEC. Use small amounts until you know the flow.' : 'Play money (TAZ) from a faucet. Nothing here has value.')),
       h('div', { class: 'field' }, h('label', { for: 'p1' }, 'Passphrase'), pass, meter, meterText),
       h('div', { class: 'field' }, h('label', { for: 'p2' }, 'Repeat passphrase'), pass2),
       err, go,
-      h('p', { class: 'hint' }, 'If you forget the passphrase, only the recovery phrase can bring your funds back.')));
+      h('p', { class: 'hint' }, WEB ? 'Forgot it later? Reset the demo in Settings and start again.' : 'If you forget the passphrase, only the recovery phrase can bring your funds back.')));
   }
 
   function showPhrase(phrase) {
@@ -89,7 +91,8 @@ export function renderWelcome(root, onDone) {
       h('div', null, h('h2', null, 'Write down your recovery phrase'),
         h('p', { class: 'sub' }, 'These 24 words are your wallet. Anyone with them can take your funds, and nobody can recover them for you. Write them on paper, in order.')),
       h('div', { class: 'phrase' }, phrase.split(' ').map((w) => h('span', null, w))),
-      note('warn', 'Never type these words into a website or share a photo of them.', 'Devoid will not ask for them again unless you restore.'),
+      WEB ? note('info', 'These are demo words.', 'They show how a real backup works, but they cannot restore a real wallet. Never type a real recovery phrase into any website.')
+        : note('warn', 'Never type these words into a website or share a photo of them.', 'Devoid will not ask for them again unless you restore.'),
       h('label', { class: 'check', for: 'wrote' }, ok, 'I wrote the phrase down and stored it somewhere safe.'), next));
   }
 

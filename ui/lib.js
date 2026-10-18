@@ -10,7 +10,21 @@ export const S = {
 // The app registers its router here so views can navigate without importing app.js.
 export const nav = { go: () => {}, refresh: async () => {}, paintSide: () => {}, setReveal: () => {} };
 
+// The web version runs the whole wallet in this page (see local/backend.js); its index.html says so
+// with <meta name="devoid-backend" content="web">. Otherwise the page talks to the local server.
+export const WEB = document.querySelector('meta[name="devoid-backend"]')?.content === 'web';
+let backend = null;
+
 export async function api(path, body = {}) {
+  if (WEB) {
+    try {
+      backend ??= import('./local/backend.js').then((m) => m.createBackend());
+      return await (await backend).call(path, body);
+    } catch {
+      backend = null;
+      return { ok: false, error: { code: 'offline', message: 'The demo wallet could not start in this browser.' } };
+    }
+  }
   try {
     const r = await fetch(path, { method: 'POST', headers: { 'content-type': 'application/json', authorization: `Bearer ${S.token}` }, body: JSON.stringify(body) });
     return await r.json();
