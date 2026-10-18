@@ -57,13 +57,21 @@ base = f'http://127.0.0.1:{srv.server_address[1]}'
 os.makedirs('shots', exist_ok=True)
 for old in glob.glob('shots/web-*.png'): os.remove(old)
 errors, requests = [], []
+LAYOUT_CHECK = open(os.path.join(ROOT, 'scripts', 'overlap.js')).read()
 
 
-def shot(pg, name, full=False):
+def check(pg, name):
     pg.wait_for_timeout(250)
     text = pg.evaluate('document.body.innerText')
     for leak in ('null', 'undefined', 'NaN', '[object Object]'):
         assert not re.search(r'(?<![\w-])' + re.escape(leak) + r'(?![\w-])', text), f'{name}: "{leak}" is showing on screen'
+    # Nothing may sit on top of anything else, spill out of its box, or hide under the tab bar.
+    problems = pg.evaluate(LAYOUT_CHECK)
+    assert not problems, f'{name}: layout problems:\n  ' + '\n  '.join(problems)
+
+
+def shot(pg, name, full=False):
+    check(pg, name)
     pg.screenshot(path=f'shots/web-{name}.png', full_page=full)
 
 
@@ -135,6 +143,17 @@ try:
         assert pg.evaluate("Object.keys(localStorage).filter((k) => k.startsWith('devoid-web:')).length") == 0
         ctx.close()
 
+        # ---- the site's pages at every common width, light and dark ------------------------------------
+        for scheme in ('light', 'dark'):
+            for w in (1440, 1100, 820, 390, 320):
+                ctx = b.new_context(viewport={'width': w, 'height': 860}, color_scheme=scheme); pg = ctx.new_page(); watch(pg)
+                for path in ('/', '/privacy.html'):
+                    pg.goto(base + path); expect(pg.locator('footer .foot-grid')).to_be_visible()
+                    name = f'site-{scheme}-{w}{path.replace("/", "-").replace(".html", "")}'
+                    if path == '/' and w in (1440, 390): pg.locator('footer').screenshot(path=f'shots/web-footer-{scheme}-{w}.png')
+                    check(pg, name)
+                ctx.close()
+
         # ---- phone: the whole thing on a small screen ------------------------------------------------
         ctx = b.new_context(viewport={'width': 390, 'height': 844}, device_scale_factor=2, is_mobile=True, has_touch=True)
         pg = ctx.new_page(); watch(pg)
@@ -148,6 +167,15 @@ try:
         shot(pg, '07-phone-home', full=True)
         pg.click('a[data-tab=send]'); pg.wait_for_selector('#batch')
         shot(pg, '08-phone-send', full=True)
+        # The smallest phones still in use: every screen at 320px wide.
+        pg.set_viewport_size({'width': 320, 'height': 640})
+        for tab in ('home', 'send', 'receive', 'activity'):
+            pg.click(f'a[data-tab={tab}]'); pg.wait_for_timeout(300); check(pg, f'320-{tab}')
+        pg.click('a[data-tab=more]'); pg.click('.menu-list a:has-text("Settings")'); pg.wait_for_selector('text=Reset the demo'); check(pg, '320-settings')
+
+        # The layout check itself must catch a real overlap, or the passes above mean nothing.
+        pg.evaluate("document.querySelectorAll('#view .card + .card').forEach((c) => c.style.setProperty('margin-top', '-60px', 'important'))")
+        assert any(p.startswith('overlap:') for p in pg.evaluate(LAYOUT_CHECK)), 'the layout check missed a planted overlap'
         ctx.close()
 
         # ---- a direct visit to /app works, and unknown pages get the 404 page -------------------------
