@@ -41,9 +41,7 @@ p { margin: 0; }
 /* hero */
 .hero { padding: 54px 0 40px; overflow: hidden; }
 .hero-in { display: grid; grid-template-columns: minmax(0, 0.92fr) minmax(0, 1.08fr); gap: 56px; align-items: center; }
-.eyebrow { display: inline-flex; align-items: center; gap: 9px; height: 34px; padding: 0 14px; border-radius: 999px; background: #fff; border: 1px solid var(--line); font-size: 14px; font-weight: 500; color: var(--ink-2); }
-.dot { width: 8px; height: 8px; border-radius: 50%; background: var(--green); box-shadow: 0 0 0 4px rgb(18 161 80 / 0.14); }
-.hero h1 { font-size: clamp(46px, 6vw, 80px); line-height: 1.04; font-weight: 700; letter-spacing: -0.05em; margin: 22px 0 22px; }
+.hero h1 { font-size: clamp(46px, 6vw, 80px); line-height: 1.04; font-weight: 700; letter-spacing: -0.05em; margin: 0 0 22px; }
 .hero h1 em { font-style: normal; white-space: nowrap; background: var(--ink); color: #fff; padding: 0 0.12em; border-radius: 0.14em; display: inline-block; line-height: 1.08; margin-top: 0.06em; }
 .lede { font-size: 19px; color: var(--ink-2); max-width: 54ch; }
 .ctas { display: flex; gap: 12px; flex-wrap: wrap; margin: 30px 0 16px; }
