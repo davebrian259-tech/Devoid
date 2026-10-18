@@ -1,6 +1,6 @@
 # Devoid
 
-A Zcash wallet built around one job: **pay many people at once, privately.** One shielded transaction carries up to 30 recipients; bigger lists are split into sequential transactions of 25. Built for ZECATHON.
+A Zcash wallet built around one job: **pay many people at once, privately.** One shielded transaction carries up to 30 recipients; bigger lists are split into sequential transactions of 25.
 
 ## Run it (works now, simulated chain)
 
