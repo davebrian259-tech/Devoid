@@ -143,7 +143,9 @@ p { margin: 0; }
 .grid { display: grid; gap: 18px; }
 .grid > .card + .card, .stack > .card + .card, .stack-lg > .card + .card { margin-top: 0; }
 .g-main { grid-template-columns: minmax(0, 1.55fr) minmax(300px, 1fr); align-items: start; }
-.g-send { grid-template-columns: minmax(0, 1fr) 340px; align-items: start; }
+.g-send { grid-template-columns: minmax(0, 1fr) 340px; grid-template-areas: "rec sum" "led sum"; align-items: start; }
+.a-rec { grid-area: rec; } .a-sum { grid-area: sum; } .a-led { grid-area: led; min-width: 0; }
+.a-led:empty { display: none; }
 .g-2 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 .g-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 .stack { display: flex; flex-direction: column; gap: 14px; }
@@ -487,7 +489,7 @@ dialog.modal[open] { animation: pop 0.2s cubic-bezier(.2,.8,.2,1); }
 /* ---- responsive ----------------------------------------------------------------------------- */
 @media (max-width: 1180px) {
   .g-main { grid-template-columns: minmax(0, 1fr); }
-  .g-send { grid-template-columns: minmax(0, 1fr); }
+  .g-send { grid-template-columns: minmax(0, 1fr); grid-template-areas: "rec" "sum" "led"; }
   .sticky { position: static; }
   .g-3 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
@@ -522,6 +524,7 @@ dialog.modal[open] { animation: pop 0.2s cubic-bezier(.2,.8,.2,1); }
   .tabbar a[aria-current="page"] { color: var(--on-primary); background: var(--primary); }
   .tabbar a.send-tab .ic { width: 22px; height: 22px; }
   .tx .detail { margin-left: 8px; }
+  .card-h:has(.toolbar) { flex-direction: column; align-items: flex-start; }
   .tx > button { grid-template-columns: 42px minmax(0, 1fr) auto; }
   .tx .chev { display: none; }
   .kv { grid-template-columns: 1fr; }

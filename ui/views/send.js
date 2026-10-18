@@ -143,16 +143,15 @@ export function viewSend(el) {
       draw();
     };
 
-    const left = h('div', { class: 'stack-lg' },
-      h('section', { class: 'card' },
+    const editor = h('section', { class: 'card a-rec' },
         h('div', { class: 'card-h' }, h('h2', null, 'Recipients'),
           h('div', { class: 'toolbar' },
             h('label', { class: 'btn xs ghost', for: 'file' }, icon('upload'), 'Import CSV'), file,
             btn('Contacts', 'xs ghost', () => pickContacts(), 'contacts'),
             btn('Lists', 'xs ghost', () => pickList(), 'lists'),
             btn('Save as list', 'xs ghost', () => saveAsList(), 'plus'))),
-        h('div', { class: 'stack' }, ta, tray, h('div', { class: 'row' }, btn('Check recipients', 'sm', check, 'check'), h('span', { class: 'hint' }, 'Devoid checks as you type.')), msg)),
-      ledger);
+        h('div', { class: 'stack' }, ta, tray, h('div', { class: 'row' }, btn('Check recipients', 'sm', check, 'check'), h('span', { class: 'hint' }, 'Devoid checks as you type.')), msg));
+    ledger.className = 'a-led';
     queueMicrotask(() => {
       drawSummary();
       if (S.draft.text.trim()) check();
@@ -210,7 +209,8 @@ export function viewSend(el) {
       });
     }
 
-    return h('div', { class: 'grid g-send' }, left, h('aside', { class: 'card sticky' }, summary));
+    // On a phone the summary, with its Review button, sits between the editor and the table.
+    return h('div', { class: 'grid g-send' }, editor, h('aside', { class: 'card sticky a-sum' }, summary), ledger);
   }
 
   function amountDialog(title, hint, onApply) {

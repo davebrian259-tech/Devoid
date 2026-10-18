@@ -1,0 +1,194 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Devoid · Private batch payments on Zcash</title>
+<meta name="description" content="Devoid is an open-source Zcash wallet for paying a whole list of people in shielded transactions. Paste a CSV, see what the chain will reveal, sign once.">
+<meta property="og:title" content="Devoid · Pay everyone at once. Privately.">
+<meta property="og:description" content="An open-source Zcash wallet for private batch payments: payroll, grants, DAO payouts.">
+<meta property="og:image" content="img/overview.jpg">
+<meta name="theme-color" content="#0b0b0e">
+<link rel="icon" href="mark.svg" type="image/svg+xml">
+<link rel="preload" href="fonts/outfit.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="preload" href="fonts/righteous.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="site.css">
+</head>
+<body>
+
+<header class="nav">
+  <div class="wrap nav-in">
+    <a class="brand" href="#top" aria-label="Devoid home"><img src="mark.svg" alt="" width="32" height="32"><span class="wordmark">devoid</span></a>
+    <nav class="links" aria-label="Sections">
+      <a href="#how">How it works</a>
+      <a href="#features">Features</a>
+      <a href="#privacy">Privacy</a>
+      <a href="#status">Status</a>
+    </nav>
+    <a class="btn small ghost" href="https://github.com/davebrian259-tech/Devoid">GitHub
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17 17 7M8 7h9v9"/></svg></a>
+  </div>
+</header>
+
+<main id="top">
+  <section class="hero">
+    <div class="wrap hero-in">
+      <div class="hero-copy">
+        <span class="eyebrow"><span class="dot"></span>Open source · Zcash · Built for ZECATHON</span>
+        <h1>Pay everyone at once. <em>Privately.</em></h1>
+        <p class="lede">Devoid is a Zcash wallet for paying a list of people in one go. Paste the addresses and amounts, see exactly what the chain will reveal, then sign once. Recipients, amounts and memos stay shielded.</p>
+        <div class="ctas">
+          <a class="btn" href="#start">Run it locally
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+          <a class="btn ghost" href="https://github.com/davebrian259-tech/Devoid">View the source</a>
+        </div>
+        <p class="fine">Runs on your computer. Your keys never leave it.</p>
+      </div>
+      <figure class="stage">
+        <div class="browser">
+          <div class="chrome"><i></i><i></i><i></i><span>127.0.0.1:8787</span></div>
+          <img src="img/overview.jpg" alt="The Devoid overview: spendable balance, where the money sits across shielded and transparent pools, recent activity and contacts." width="1440" height="900">
+        </div>
+        <div class="phone"><img src="img/phone.jpg" alt="Devoid on a phone: the balance card with quick actions above the pool breakdown." width="390" height="844"></div>
+        <figcaption>Screens show demo data from Devoid’s simulated engine.</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <section class="facts" aria-label="At a glance">
+    <div class="wrap facts-in">
+      <div><b>25</b><span>recipients in one shielded transaction</span></div>
+      <div><b>2,000</b><span>recipients in one batch, sent in order</span></div>
+      <div><b>0.00125</b><span>ZEC network fee to pay 25 people (ZIP 317)</span></div>
+      <div><b>0</b><span>runtime dependencies in the app</span></div>
+    </div>
+  </section>
+
+  <section class="section" id="how">
+    <div class="wrap">
+      <p class="kicker">How it works</p>
+      <h2>From a spreadsheet to one signature.</h2>
+      <div class="how">
+        <ol class="steps">
+          <li>
+            <span class="n">1</span>
+            <div><h3>Bring your list</h3>
+            <p>Paste rows, import a CSV, or pick people from your contacts and saved lists. Devoid checks every row as you type: the wrong network, duplicates, missing amounts, addresses it cannot read.</p></div>
+          </li>
+          <li>
+            <span class="n">2</span>
+            <div><h3>See what the chain will see</h3>
+            <p>Before you sign you get the total, the fee, what you have left, and a privacy report. Paying a transparent address, or moving money between pools, needs your explicit OK.</p></div>
+          </li>
+          <li>
+            <span class="n">3</span>
+            <div><h3>Sign once</h3>
+            <p>Up to 25 people go in each shielded transaction. Longer lists go out in order, each checked against what you reviewed. You get a receipt with every transaction ID.</p></div>
+          </li>
+        </ol>
+        <figure class="shot-card">
+          <img src="img/review.jpg" alt="The confirm screen: 1.26 ZEC to 12 recipients, with the source pools, network, fee and total listed before signing." loading="lazy">
+        </figure>
+      </div>
+    </div>
+  </section>
+
+  <section class="section alt" id="features">
+    <div class="wrap">
+      <p class="kicker">Features</p>
+      <h2>Everything a payout needs, nothing it doesn’t.</h2>
+      <div class="grid">
+        <article class="feat">
+          <span class="ico"><svg viewBox="0 0 24 24"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg></span>
+          <h3>Batch payments</h3>
+          <p>CSV import with address, amount, memo and label columns. Give everyone the same amount, or split a total evenly to the zatoshi.</p>
+        </article>
+        <article class="feat">
+          <span class="ico"><svg viewBox="0 0 24 24"><rect x="4" y="2" width="16" height="20" rx="2"/><path d="M8 6h8M8 10h8M8 14h3M14 14h2M8 18h3M14 18h2"/></svg></span>
+          <h3>Live totals</h3>
+          <p>Recipient count, total, estimated fee and the balance you will have left, updated as you edit. Short of funds? It says why.</p>
+        </article>
+        <article class="feat">
+          <span class="ico"><svg viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg></span>
+          <h3>Contacts and lists</h3>
+          <p>An address book checked against your network, and reusable lists for payroll, grants and DAO payouts.</p>
+        </article>
+        <article class="feat">
+          <span class="ico"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><path d="M14 14h3v3h-3zM20 14v.01M14 20h.01M17 20h4v-3"/></svg></span>
+          <h3>Payment requests</h3>
+          <p>ZIP 321 links and QR codes with the amount and an encrypted memo filled in, so the payer cannot get it wrong.</p>
+        </article>
+        <article class="feat">
+          <span class="ico"><svg viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5M12 7v5l4 2"/></svg></span>
+          <h3>Activity and receipts</h3>
+          <p>Pending, confirmed and expired payments, grouped by day and exportable to CSV. If a long batch stops halfway, the receipt shows who was paid.</p>
+        </article>
+        <article class="feat">
+          <span class="ico"><svg viewBox="0 0 24 24"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg></span>
+          <h3>Balances behind bars</h3>
+          <p>Amounts sit behind redaction bars until you choose to show them, which is handy on a screen share.</p>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <section class="section dark" id="privacy">
+    <div class="wrap">
+      <p class="kicker">Privacy and security</p>
+      <h2>Built so nothing leaks by accident.</h2>
+      <div class="sec-grid">
+        <div><h3>Keys stay on your machine</h3><p>The recovery phrase is encrypted with age. Your passphrase unlocks it for one signature at a time and is never stored.</p></div>
+        <div><h3>A local-only server</h3><p>The wallet listens on 127.0.0.1 behind a one-time token, checks Host and Origin, and serves a strict content security policy.</p></div>
+        <div><h3>What you review is what you sign</h3><p>A fingerprint ties the reviewed proposal to the signed one. If anything changes in between, the send is refused.</p></div>
+        <div><h3>No trackers, no accounts</h3><p>No analytics and no third-party scripts. Fonts and icons ship with the app; the only server it talks to is the Zcash node you choose.</p></div>
+        <div><h3>Your route to the chain</h3><p>Connect directly, through the built-in Tor client, or through your own SOCKS5 proxy.</p></div>
+        <div><h3>Visible when it matters</h3><p>Testnet and mainnet look different on every screen, and the simulated demo engine is always labelled as such.</p></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="status">
+    <div class="wrap narrow">
+      <p class="kicker">Where it stands</p>
+      <h2>No fake confirmations.</h2>
+      <p class="lede">Devoid only claims what has been checked. Here is the honest list.</p>
+      <ul class="checks">
+        <li class="done"><b>Rust engine builds and passes its self-test</b><span>10 of 10 checks, including the bundled Sapling proving parameters.</span></li>
+        <li class="done"><b>Verified against the Zcash testnet</b><span>Wallet creation, sync to the chain tip, balances, history and fee quotes against a live lightwalletd server.</span></li>
+        <li class="done"><b>Tested end to end</b><span>236 automated tests, plus a browser test that drives every screen.</span></li>
+        <li class="next"><b>First testnet broadcast</b><span>Next. Real sends count as unverified until a batch is confirmed on chain.</span></li>
+        <li class="next"><b>Mainnet</b><span>After testnet, starting with small amounts.</span></li>
+      </ul>
+    </div>
+  </section>
+
+  <section class="section alt" id="start">
+    <div class="wrap narrow">
+      <p class="kicker">Get started</p>
+      <h2>Try it in a minute.</h2>
+      <p class="lede">The demo runs on a simulated chain: nothing to install but Node 20. Build the Rust engine when you want real Zcash.</p>
+      <pre class="code"><code><span class="c"># get the code</span>
+git clone https://github.com/davebrian259-tech/Devoid.git
+cd Devoid
+
+<span class="c"># try it on the simulated chain</span>
+node server/index.mjs --demo
+
+<span class="c"># real Zcash: build the engine (Rust 1.88+), then run</span>
+npm run engine:build
+node server/index.mjs</code></pre>
+      <p class="fine">Linux, macOS, or Windows through WSL. The server prints a private link; open it in your browser.</p>
+    </div>
+  </section>
+</main>
+
+<footer class="foot">
+  <div class="wrap foot-in">
+    <a class="brand" href="#top"><img src="mark.svg" alt="" width="28" height="28"><span class="wordmark">devoid</span></a>
+    <p>Open source under the MIT licence; the engine is MIT or Apache-2.0. Built on librustzcash.<br>
+    Type: Righteous, Outfit and JetBrains Mono (SIL Open Font License). Icons: Lucide (ISC).</p>
+  </div>
+</footer>
+
+</body>
+</html>

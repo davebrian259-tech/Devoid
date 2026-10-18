@@ -122,7 +122,7 @@ try:
         pg.fill('#pw', 'wrong-passphrase'); pg.click('#confirm')
         expect(pg.locator('.note.err')).to_contain_text('passphrase')
         pg.fill('#pw', 'correct horse battery'); pg.click('#confirm')
-        pg.wait_for_selector('text=Broadcast', timeout=120_000)
+        pg.wait_for_selector('#sent-total', timeout=120_000)  # only on the finished screen
         expect(pg.locator('.txid')).to_have_count(2)
         shot(pg, '10-sent')
         with pg.expect_download() as d: pg.click('#receipt')
