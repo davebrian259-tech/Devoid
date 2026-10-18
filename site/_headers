@@ -1,8 +1,9 @@
 # Response headers for the product page on Cloudflare (Workers static assets read this file).
-# The site has no scripts at all, so the policy forbids every script, frame and form.
+# The only script is the site's own theme.js, so scripts are limited to this origin: nothing inline,
+# nothing from elsewhere. Frames and forms are forbidden.
 
 /*
-  Content-Security-Policy: default-src 'none'; script-src 'none'; style-src 'self'; img-src 'self' data:; font-src 'self'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'; upgrade-insecure-requests
+  Content-Security-Policy: default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data:; font-src 'self'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'; upgrade-insecure-requests
   Strict-Transport-Security: max-age=31536000
   X-Content-Type-Options: nosniff
   X-Frame-Options: DENY

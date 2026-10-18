@@ -8,7 +8,7 @@ export const S = {
 };
 
 // The app registers its router here so views can navigate without importing app.js.
-export const nav = { go: () => {}, refresh: async () => {} };
+export const nav = { go: () => {}, refresh: async () => {}, paintSide: () => {}, setReveal: () => {} };
 
 export async function api(path, body = {}) {
   try {
@@ -118,12 +118,14 @@ export function emptyState(ic, title, body, action) {
 export async function loadLists() {
   const r = await api('/api/lists');
   if (r.ok) S.lists = { lists: r.result.lists ?? [], contacts: r.result.contacts ?? [] };
+  nav.paintSide?.();
   return r;
 }
 
 export async function saveLists(patch) {
   const r = await api('/api/lists', patch);
   if (r.ok) S.lists = { lists: r.result.lists ?? [], contacts: r.result.contacts ?? [] };
+  nav.paintSide?.();
   return r;
 }
 

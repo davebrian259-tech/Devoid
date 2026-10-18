@@ -1,13 +1,8 @@
 // Settings: appearance, connection, recovery phrase, passphrase, shielding, and what is running.
-import { S, nav, api, h, btn, note, errorNote, storage, unit, fill } from '../lib.js';
+import { S, nav, api, h, btn, note, errorNote, unit, fill } from '../lib.js';
 import { icon } from '../icons.js';
 import { fmtZec } from '../calc.js';
-
-/** Applies "light", "dark" or null (follow the system). */
-export function applyTheme(mode) {
-  if (mode === 'light' || mode === 'dark') document.documentElement.dataset.theme = mode;
-  else delete document.documentElement.dataset.theme;
-}
+import { themeChoice, setTheme, onThemeChange } from '../theme.js';
 
 const card = (title, sub, ...body) => h('section', { class: 'card' }, h('div', { class: 'card-h' }, h('div', null, h('h2', null, title), sub ? h('p', { class: 'small muted' }, sub) : null)), h('div', { class: 'stack' }, ...body));
 const seg = (items, current, pick, label) => h('div', { class: 'seg', role: 'group', 'aria-label': label },
@@ -19,12 +14,13 @@ export async function viewSettings(el) {
   // appearance
   const themeBox = h('div');
   const drawTheme = () => {
-    const cur = storage('devoid-theme') ?? 'system';
+    const cur = themeChoice() ?? 'system';
     fill(themeBox, seg([['system', 'System', 'monitor'], ['light', 'Light', 'sun'], ['dark', 'Dark', 'moon']], cur, (v) => {
-      storage('devoid-theme', v === 'system' ? null : v); applyTheme(v === 'system' ? null : v); drawTheme();
+      setTheme(v === 'system' ? null : v); drawTheme();
     }, 'Theme'));
   };
   drawTheme();
+  const offTheme = onThemeChange(() => { if (themeBox.isConnected) drawTheme(); else offTheme(); });
 
   // connection
   let mode = st.mode;
