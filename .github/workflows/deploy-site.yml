@@ -1,0 +1,34 @@
+name: deploy-site
+# Publishes site/ to Cloudflare when it changes on main. Needs two repository secrets,
+# CLOUDFLARE_API_TOKEN and CLOUDFLARE_ACCOUNT_ID (see docs/DEPLOY.md); without them it skips.
+on:
+  push:
+    branches: [main]
+    paths: ['site/**', 'wrangler.jsonc', '.github/workflows/deploy-site.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: deploy-site
+  cancel-in-progress: false
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check for Cloudflare credentials
+        id: creds
+        env:
+          TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          ACCOUNT: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+        run: |
+          if [ -n "$TOKEN" ] && [ -n "$ACCOUNT" ]; then echo "ok=true" >> "$GITHUB_OUTPUT"
+          else echo "::notice::Cloudflare secrets are not set; skipping the deploy."; echo "ok=false" >> "$GITHUB_OUTPUT"; fi
+      - name: Deploy to Cloudflare
+        if: steps.creds.outputs.ok == 'true'
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          wranglerVersion: '4.108.0'
+          command: deploy
