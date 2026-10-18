@@ -24,6 +24,8 @@ use zcash_protocol::consensus::BlockHeight;
 use crate::{data::WalletPaths, error, failure::R};
 
 pub(crate) use std::time::{Instant, SystemTime, UNIX_EPOCH};
+/// The clock the wallet database records times with.
+pub(crate) use zcash_client_sqlite::util::SystemClock as WalletClock;
 
 /// The transport under the lightwalletd client.
 pub(crate) type Transport = tonic::transport::Channel;
@@ -58,6 +60,25 @@ pub(crate) type Prover = LocalTxProver;
 /// (the browser build only loads the large spend parameters when it does).
 pub(crate) async fn prover(_needs_spend: bool) -> R<Prover> {
     Ok(LocalTxProver::bundled())
+}
+
+/// The self-test's name for its prover check.
+pub(crate) const PROVER_CHECK: &str = "bundled-prover-parameters";
+
+/// Self-test: the Sapling parameters load. Loading parses and validates them; the proofs
+/// themselves are exercised the first time a payment is built.
+pub(crate) fn check_prover() -> Result<String, String> {
+    let _prover = LocalTxProver::bundled();
+    Ok("the Sapling proving parameters are bundled and load".to_string())
+}
+
+/// A folder for the self-test's throw-away wallet.
+pub(crate) fn scratch_dir() -> std::path::PathBuf {
+    let nanos = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .map(|d| d.as_nanos())
+        .unwrap_or(0);
+    std::env::temp_dir().join(format!("devoid-selftest-{}-{nanos}", std::process::id()))
 }
 
 /// Files in the wallet folder.

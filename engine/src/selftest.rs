@@ -8,17 +8,13 @@
 //! it is the first thing to run after building the engine on a new machine
 //! (`node scripts/engine-selftest.mjs`).
 
-use std::{
-    path::{Path, PathBuf},
-    time::{SystemTime, UNIX_EPOCH},
-};
+use std::path::Path;
 
 use bip0039::{Count, English, Mnemonic};
 use secrecy::ExposeSecret;
 use serde_json::{Value, json};
 use zcash_client_backend::data_api::{AccountBirthday, WalletWrite, chain::ChainState};
 use zcash_primitives::block::BlockHash;
-use zcash_proofs::prover::LocalTxProver;
 use zcash_protocol::consensus::{BlockHeight, Network, NetworkUpgrade, Parameters};
 use zip321::TransactionRequest;
 
@@ -28,8 +24,8 @@ use crate::{
     history,
     keystore::{self, Keys},
     out,
-    remote::Connection,
-    spend,
+    platform::{self, files},
+    remote, spend,
     wallet::{self, Wallet, ironwood_active_at},
 };
 
@@ -65,14 +61,6 @@ fn expect_code<T>(result: R<T>, code: &str, what: &str) -> Result<(), String> {
     }
 }
 
-fn scratch_dir() -> PathBuf {
-    let nanos = SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .map(|d| d.as_nanos())
-        .unwrap_or(0);
-    std::env::temp_dir().join(format!("devoid-selftest-{}-{nanos}", std::process::id()))
-}
-
 // ---------------------------------------------------------------------------------------------
 // Checks that need no wallet
 // ---------------------------------------------------------------------------------------------
@@ -95,42 +83,6 @@ fn check_consensus() -> Result<String, String> {
         u32::from(main),
         u32::from(test)
     ))
-}
-
-fn check_connection_settings() -> Result<String, String> {
-    let name_of = |value: Option<Value>, network: Network| -> Result<String, String> {
-        Connection::from_json(value.as_ref(), network)
-            .map(|c| c.mode().name())
-            .map_err(describe)
-    };
-
-    let main = Network::MainNetwork;
-    if name_of(None, main)? != "direct" {
-        return Err("the default connection is not direct".to_string());
-    }
-    if name_of(Some(json!({ "mode": "tor" })), main)? != "tor" {
-        return Err("Tor mode was not recognised".to_string());
-    }
-    if name_of(Some(json!({ "mode": "socks5://127.0.0.1:9050" })), main)?
-        != "socks5://127.0.0.1:9050"
-    {
-        return Err("SOCKS5 mode was not recognised".to_string());
-    }
-    if name_of(Some(json!({ "mode": "carrier-pigeon" })), main).is_ok() {
-        return Err("an unknown connection mode was accepted".to_string());
-    }
-    name_of(None, Network::TestNetwork)?;
-    if name_of(Some(json!({ "servers": "ywallet" })), Network::TestNetwork).is_ok() {
-        return Err("a server preset without testnet servers was accepted for testnet".to_string());
-    }
-    Ok("direct, Tor and SOCKS5 settings parse; bad ones are refused".to_string())
-}
-
-fn check_prover() -> Result<String, String> {
-    // Loading the parameters parses and validates them; the proofs themselves are exercised the
-    // first time a payment is built.
-    let _prover = LocalTxProver::bundled();
-    Ok("the Sapling proving parameters are bundled and load".to_string())
 }
 
 // ---------------------------------------------------------------------------------------------
@@ -447,16 +399,12 @@ pub(crate) async fn run(_req: &Value) -> R<Value> {
     let mut checks: Vec<Check> = Vec::new();
 
     run_check(&mut checks, "consensus-parameters", check_consensus);
-    run_check(
-        &mut checks,
-        "connection-settings",
-        check_connection_settings,
-    );
-    run_check(&mut checks, "bundled-prover-parameters", check_prover);
+    run_check(&mut checks, "connection-settings", remote::check_settings);
+    run_check(&mut checks, platform::PROVER_CHECK, platform::check_prover);
 
-    let dir = scratch_dir();
+    let dir = platform::scratch_dir();
     let setup = offline_wallet(&mut checks, &dir);
-    let _ = std::fs::remove_dir_all(&dir);
+    let _ = files::remove_dir_all(&dir);
     if let Err(why) = setup {
         checks.push(Check {
             name: "offline-wallet-setup",

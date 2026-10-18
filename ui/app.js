@@ -1,5 +1,5 @@
 // Devoid UI: boot, shell, router, sidebar, shortcuts, balance refresh. Each screen lives in views/.
-import { S, nav, api, h, iconBtn, errorNote, isTest, storage, loadLists, fill, sens, unit, modal, WEB } from './lib.js';
+import { S, nav, api, h, iconBtn, errorNote, isTest, storage, loadLists, fill, sens, unit, modal, WEB, webEngine } from './lib.js';
 import { icon, mark } from './icons.js';
 import { fmtZec } from './calc.js';
 import { applyTheme, themeChoice, themeSwitch, themeButton, toggleTheme } from './theme.js';
@@ -97,7 +97,7 @@ function sidebar() {
     h('div', { class: 'side-foot' },
       h('button', { class: 'wallet-card', type: 'button', 'data-tip': isTest() ? 'Testnet wallet' : 'Mainnet wallet', onclick: () => go('home') },
         h('span', { class: 'wc-top' }, h('span', { class: `dot ${isTest() ? 'test' : ''}` }), h('b', null, isTest() ? 'Testnet' : 'Mainnet'),
-          h('span', { class: `pill ${S.status.simulated ? 'public' : 'ok'}` }, S.status.simulated ? 'Demo' : S.status.engineVerified ? 'Verified' : 'Engine')),
+          h('span', { class: `pill ${S.status.simulated ? 'public' : 'ok'}` }, S.status.simulated ? 'Demo' : WEB ? 'Web' : S.status.engineVerified ? 'Verified' : 'Engine')),
         h('span', { class: 'wc-bal', id: 'wc-bal' }), h('span', { class: 'wc-sync', id: 'wc-sync' })),
       h('div', { class: 'nav' }, navLink('settings')),
       h('div', { class: 'side-row' }, themeSwitch(), themeButton('side-icon'),
@@ -130,6 +130,7 @@ function renderShell() {
 }
 
 function band() {
+  if (WEB && webEngine() === 'real') return h('div', { class: 'band testnet', role: 'note' }, h('span', null, h('b', null, 'Testnet wallet in your browser. '), 'Real transactions with test coins of no value. Your keys never leave this browser.'));
   if (WEB) return h('div', { class: 'band sim', role: 'note' }, icon('info'), h('span', null, h('b', null, 'Web demo. '), 'Testnet play money on a simulated chain, kept only in this browser. To hold real ZEC, use the desktop app.'));
   if (S.status.simulated) return h('div', { class: 'band sim', role: 'note' }, icon('info'), h('span', null, h('b', null, 'Simulated chain. '), 'This is the demo engine: no network, no real ZEC. Build the Rust engine to use real funds.'));
   if (isTest()) return h('div', { class: 'band testnet', role: 'note' }, 'Testnet · play money, no real value');
@@ -213,7 +214,7 @@ function viewMore(el) {
   el.append(h('div', { class: 'stack-lg' },
     h('div', { class: 'card' }, h('div', { class: 'menu-list' }, ['lists', 'contacts', 'settings'].map(item))),
     h('div', { class: 'card row between' }, h('span', null, h('b', null, 'Theme'), h('div', { class: 'small muted' }, 'Light or dark')), themeSwitch()),
-    h('p', { class: 'hint' }, WEB ? 'Web demo: simulated engine in this browser.' : S.status.simulated ? 'Engine: simulated demo.' : `Engine: devoid-engine, self-test ${S.status.engineVerified ? 'passed' : 'not run'}.`)));
+    h('p', { class: 'hint' }, WEB ? (webEngine() === 'real' ? 'Engine: devoid-engine (WebAssembly) in this browser.' : 'Web demo: simulated engine in this browser.') : S.status.simulated ? 'Engine: simulated demo.' : `Engine: devoid-engine, self-test ${S.status.engineVerified ? 'passed' : 'not run'}.`)));
 }
 
 nav.go = go;

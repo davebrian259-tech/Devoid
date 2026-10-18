@@ -243,7 +243,8 @@ impl Keys {
         }
 
         let previous = std::mem::replace(&mut self.phrase_ciphertext, new_ciphertext);
-        if let Err(e) = files::replace_private(&keys_path(paths), self.to_json_string().as_bytes()) {
+        if let Err(e) = files::replace_private(&keys_path(paths), self.to_json_string().as_bytes())
+        {
             self.phrase_ciphertext = previous;
             return Err(e.into());
         }

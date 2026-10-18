@@ -5,9 +5,9 @@
 | Piece | Where it runs | Status |
 |---|---|---|
 | Product page (`site/`, at `/`) | Cloudflare, as static files | Ready to deploy |
-| Web demo (`ui/`, at `/app/`) | Cloudflare, as static files; the wallet runs in the visitor's browser on a simulated testnet chain | Ready to deploy |
+| Web wallet (`ui/`, at `/app/`) | Cloudflare, as static files; the wallet engine (Rust, compiled to WebAssembly) runs in the visitor's browser. Testnet, plus an offline demo | Ready to deploy |
 | Wallet (`ui/` + `server/` + Rust engine) | The user's own computer | Works today |
-| Real web wallet | Same files, with the engine compiled to WebAssembly in place of the simulator | Needs engineering, see below |
+| Web wallet on mainnet | The same, once web payments are verified on testnet | Next |
 | Chrome extension | Chrome Web Store, same in-browser engine | Needs engineering, see below |
 
 ## The rule that decides everything: never host keys
@@ -21,13 +21,26 @@ makes Devoid custodial: a single place to steal from, a regulated business, and 
 what the product promises. So it is off the table. The web app and the extension both keep the
 engine on the user's device, inside the browser.
 
-## 1. Deploy the product page and the web demo to Cloudflare
+## 1. Deploy the product page and the web wallet to Cloudflare
 
 `scripts/build-site.mjs` assembles `dist/`: the product page from `site/` at `/`, and the wallet UI
 from `ui/` at `/app/`, marked as the web version. In the web version the request core
-(`server/core.mjs`) and the simulated engine (`mock-engine/core.mjs`) run inside the page, and
-everything is kept in the visitor's browser storage. It is always testnet, never asks for a recovery
-phrase, and sends nothing to any server. Anyone can open it from the front page, on a phone too.
+(`server/core.mjs`) runs inside the page with one of two engines:
+
+- **the real engine** (`ui/engine/`): the Rust wallet code of `engine/`, compiled to WebAssembly by
+  `web-engine/` and run in a Web Worker. It reaches lightwalletd through ChainSafe's gRPC-web proxy
+  and keeps the wallet in the browser's IndexedDB, the recovery phrase encrypted with the
+  passphrase. Testnet only for now.
+- **the simulated engine** (`mock-engine/core.mjs`) for the offline demo.
+
+The web version never asks for a recovery phrase and has no Devoid server. Anyone can open it from
+the front page, on a phone too.
+
+The compiled engine is committed (`ui/engine/devoid_web_engine_bg.wasm`, built by
+`node scripts/build-web-engine.mjs`), because the Cloudflare build has no Rust. The build downloads
+the Sapling proving parameters from `download.z.cash` (checked against their published BLAKE2b
+hashes, cached in `.cache/`) and serves them from `/app/engine/params/`, the 48 MB spend file in two
+parts to stay under the 25 MiB per-file limit.
 
 `wrangler.jsonc` runs that build and serves `dist/` with Cloudflare Workers static assets
 (Cloudflare's current recommendation for static sites). No Worker code runs. To build and look at
@@ -36,6 +49,16 @@ it locally:
 ```bash
 node scripts/build-site.mjs         # writes dist/
 python3 scripts/web-smoke.py        # builds, serves dist/ with site/_headers, drives it in Chromium
+python3 scripts/web-live.py         # the real web wallet against the live testnet (needs the network)
+```
+
+Rebuilding the engine after changing `engine/src` or `web-engine/` needs Rust with the
+`wasm32-unknown-unknown` target and `wasm-bindgen-cli` at the version in `web-engine/Cargo.lock`:
+
+```bash
+rustup target add wasm32-unknown-unknown
+cargo install wasm-bindgen-cli --version 0.2.126
+node scripts/build-web-engine.mjs   # writes ui/engine/devoid_web_engine.js and _bg.wasm
 ```
 
 ### One-time setup
@@ -76,7 +99,7 @@ the GitHub secrets unset and the workflow skips itself.
    - `CLOUDFLARE_API_TOKEN`: the token from step 2.
    - `CLOUDFLARE_ACCOUNT_ID`: the ID from step 3.
 2. Merge to `main`. `.github/workflows/deploy-site.yml` deploys whenever `site/`, `ui/` or the shared
-   modules the web demo uses change. To deploy
+   modules the web wallet uses change. To deploy
    now, open Actions → deploy-site → Run workflow. Without the secrets the workflow skips cleanly.
 
 ### Option C: deploy from your computer
@@ -141,34 +164,25 @@ The wallet itself reads these, all optional:
 Server flags: `--demo` (simulated chain), `--mock` (simulated engine, real data folder),
 `--port=N` (default 8787).
 
-## 2. The real web wallet (next)
+## 2. How the web wallet works, and what comes next
 
-The web demo already has the shape it needs: the UI calls a backend object
-(`ui/local/backend.js`) that runs the request core with an engine in the page. Making it real means
-replacing the simulated engine there with a real one, while the wallet stays non-custodial:
+- **One engine, two builds.** `web-engine/` compiles the engine's own files (`sync`, `spend`,
+  `wallet`, `keystore`, `history`, `commands`, `selftest`) for the browser. Everything platform
+  specific sits in `engine/src/platform.rs` (native) and `web-engine/src/platform.rs` (browser):
+  the lightwalletd transport, timeouts, the clock, files, the block cache and the Sapling prover.
+- **Storage.** The wallet database is SQLite in memory (sqlite-wasm-rs), saved to IndexedDB after
+  every command that can change it, and loaded back on start.
+- **Server.** A browser can only speak gRPC-web, so the wallet uses ChainSafe's gRPC-web proxies in
+  front of lightwalletd. They see what any lightwalletd sees: the visitor's IP address and the
+  transactions they broadcast. There is no Tor in a browser; the desktop app has it.
+- **Proving** runs on one thread. Building one transaction with Sapling and Orchard proofs takes
+  about a minute on a laptop; each further recipient adds a few seconds. Threads would make it
+  several times faster but need cross-origin isolation (`Cross-Origin-Embedder-Policy`) and a
+  nightly Rust build; that is the next performance step.
+- **The policy** for `/app/*` is in `site/_headers`: `'wasm-unsafe-eval'` to compile the engine,
+  `worker-src 'self'`, and `connect-src` limited to this site and the two gRPC-web servers.
 
-1. **Engine in WebAssembly.** Compile the wallet logic to Wasm with an in-browser storage backend
-   (IndexedDB), instead of the native binary and SQLite. ChainSafe's WebZjs is prior art: a
-   librustzcash-based browser wallet library, used for a MetaMask Snap, that has sent shielded
-   transactions entirely in the browser. Evaluate building on it before writing a new port.
-2. **A gRPC-web endpoint.** Browsers cannot speak plain gRPC, so the app needs a gRPC-web proxy
-   in front of a lightwalletd server. It sees what any lightwalletd sees (your IP, your broadcast
-   transactions), so let users pick their own, as the desktop app does.
-3. **Keys encrypted at rest in the browser** with the passphrase, as today.
-4. **Expected costs.** First sync and proving are slower in a browser than natively; scanning old
-   blocks from the 2022 spam period is the worst case. Multithreaded proving needs
-   `SharedArrayBuffer`.
-
-Extra Cloudflare rules the real web wallet will need under `/app/*` (not the product page):
-
-```
-Cross-Origin-Opener-Policy: same-origin
-Cross-Origin-Embedder-Policy: require-corp
-Content-Security-Policy: default-src 'none'; script-src 'self' 'wasm-unsafe-eval'; style-src 'self'; img-src 'self' data:; font-src 'self'; connect-src 'self' https://YOUR-GRPC-WEB-PROXY; worker-src 'self'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'
-```
-
-The first two enable `SharedArrayBuffer` for threaded proving. The proxy address is a public,
-build-time setting, not a secret.
+Next: mainnet on the web once payments from the web wallet are verified on testnet, and threads.
 
 ## 3. The Chrome extension (next)
 

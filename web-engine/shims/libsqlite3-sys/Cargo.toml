@@ -1,0 +1,35 @@
+# Stands in for libsqlite3-sys 0.35 when the web engine is built for wasm32-unknown-unknown, where
+# the real crate cannot compile SQLite (it needs a C library the target does not have). It re-exports
+# sqlite-wasm-rs, which builds SQLite for this target and exposes the same FFI; rusqlite 0.39 and
+# later do exactly this themselves. zcash_client_sqlite 0.22 still pins rusqlite 0.37, hence the
+# shim. The features are rusqlite 0.37's forwards, accepted and ignored.
+[package]
+name = "libsqlite3-sys"
+version = "0.35.0"
+edition = "2021"
+links = "sqlite3"
+build = "build.rs"
+license = "MIT"
+publish = false
+
+[dependencies]
+sqlite-wasm-rs = { version = "=0.5.5", default-features = false }
+
+[features]
+default = []
+bundled = []
+bundled-sqlcipher = []
+bundled-sqlcipher-vendored-openssl = []
+bundled-windows = []
+bundled_bindings = []
+buildtime_bindgen = []
+column_metadata = []
+in_gecko = []
+loadable_extension = []
+preupdate_hook = []
+session = []
+sqlcipher = []
+unlock_notify = []
+wasm32-wasi-vfs = []
+with-asan = []
+min_sqlite_version_3_14_0 = []

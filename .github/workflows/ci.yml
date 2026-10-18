@@ -40,3 +40,15 @@ jobs:
       - uses: actions/upload-artifact@v4
         if: always()
         with: { name: devoid-engine-linux, path: engine/target/release/devoid-engine, if-no-files-found: ignore }
+  web-engine:
+    # The engine's browser build (the same wallet code, compiled to WebAssembly). The committed
+    # ui/engine/ is rebuilt from it with scripts/build-web-engine.mjs; this keeps it compiling.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+        with: { targets: wasm32-unknown-unknown }
+      - uses: Swatinem/rust-cache@v2
+        with: { workspaces: web-engine }
+      - name: Build for the browser
+        run: cargo build --release --target wasm32-unknown-unknown --manifest-path web-engine/Cargo.toml

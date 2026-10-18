@@ -45,19 +45,24 @@
     <p>Devoid sends nothing else anywhere. There is no analytics, no crash reporting, no telemetry, no advertising and no third-party code.</p>
 
     <h2>This website</h2>
-    <p>This site is a set of static pages with no cookies and no analytics. The product page's only script remembers whether you chose the light or dark theme, in your browser's storage; nothing is sent anywhere. The web demo is described below. It is hosted on Cloudflare, which, like any web host, processes the technical data of each request (such as your IP address and browser) to deliver the page and protect it from abuse. See <a href="https://www.cloudflare.com/privacypolicy/">Cloudflare’s privacy policy</a>.</p>
+    <p>This site is a set of static pages with no cookies and no analytics. The product page's only script remembers whether you chose the light or dark theme, in your browser's storage; nothing is sent anywhere. The web wallet is described below. It is hosted on Cloudflare, which, like any web host, processes the technical data of each request (such as your IP address and browser) to deliver the page and protect it from abuse. See <a href="https://www.cloudflare.com/privacypolicy/">Cloudflare’s privacy policy</a>.</p>
 
-    <h2>The web demo</h2>
-    <p>The wallet at <a href="app/">/app</a> is a demo. It runs entirely in your browser on a simulated testnet chain: it holds no real ZEC and connects to no Zcash server. The page downloads its code from this site and then sends nothing anywhere.</p>
+    <h2>The web wallet</h2>
+    <p>The wallet at <a href="app/">/app</a> runs entirely in your browser. There is no Devoid server: the page downloads its code from this site, and the wallet engine (the same Rust code as the desktop app, compiled to WebAssembly) runs on your device. You choose one of two kinds of wallet.</p>
+    <p><b>A testnet wallet</b> is a real Zcash wallet on the test network, whose coins have no value.</p>
     <ul>
-      <li><b>What it stores.</b> The demo wallet (its made-up recovery words, a salted hash of the passphrase you chose, simulated balances and history), your demo lists and contacts, and your theme and sidebar choices. All of it is in this browser's local storage for this site.</li>
-      <li><b>What it never asks for.</b> A real recovery phrase. The web version has no restore option, and its demo words cannot restore a real wallet.</li>
-      <li><b>Deleting it.</b> Settings, then Reset the demo; or clear this site's data in your browser.</li>
+      <li><b>What it stores, in this browser only.</b> Your recovery phrase, encrypted with your passphrase (the same age encryption as the desktop app), and the wallet database: balances, addresses, transactions and memos. They are kept in this site's IndexedDB storage. Your passphrase is never stored.</li>
+      <li><b>What leaves your browser.</b> To sync and to send, the wallet talks to a lightwalletd server through a gRPC-web proxy run by ChainSafe (<code>zcash-testnet.chainsafe.dev</code>). That server sees your IP address and the transactions you broadcast; shielded transactions hide recipients, amounts and memos from it. A browser cannot use Tor; the desktop app can. The first payment also downloads the Sapling proving parameters from this site.</li>
     </ul>
-    <p>Because the passphrase hash is kept in your browser, make one up for the demo rather than reusing a real password.</p>
+    <p><b>A demo</b> runs on a simulated chain with play money and connects to no Zcash server. It stores a made-up wallet (with words that cannot restore a real one and a salted hash of the passphrase you chose) in this browser's local storage.</p>
+    <ul>
+      <li><b>What the web version never asks for.</b> A recovery phrase. It has no restore option; restore a wallet in the desktop app.</li>
+      <li><b>Deleting it.</b> Settings, then Delete this wallet (or Reset the demo); or clear this site's data in your browser. A deleted testnet wallet can only be restored from its recovery phrase.</li>
+      <li><b>Your lists, contacts and settings</b> are kept in this browser's local storage, separately for each kind of wallet.</li>
+    </ul>
 
-    <h2>The real web wallet and Chrome extension</h2>
-    <p>Both are in development. They follow the same rules: the wallet runs on your device, your keys never leave it, and nothing is collected. Before either is released, this policy will be updated to describe exactly what it stores and what it sends.</p>
+    <h2>Mainnet on the web and the Chrome extension</h2>
+    <p>Both follow once payments from the web wallet are verified on testnet, with the same rules: the wallet runs on your device, your keys never leave it, and nothing is collected. This policy will be updated before either is released.</p>
 
     <h2>Changes and contact</h2>
     <p>If this policy changes, the date above changes with it, and the history is public in the project’s repository. Questions are welcome as an issue on <a href="https://github.com/davebrian259-tech/Devoid/issues">GitHub</a>.</p>
@@ -82,7 +87,7 @@
       <div class="foot-about">
         <a class="brand" href="./#top" aria-label="Devoid home"><img src="mark.svg" alt="" width="30" height="30"><span class="wordmark">devoid</span></a>
         <p>A non-custodial Zcash wallet for paying many people in one shielded transaction. Keys stay on your device.</p>
-        <p class="foot-state"><span class="dot" aria-hidden="true"></span>Testnet verified · web demo live · mainnet next</p>
+        <p class="foot-state"><span class="dot" aria-hidden="true"></span>Testnet verified · web wallet live · mainnet next</p>
       </div>
       <nav class="foot-col" aria-label="Product">
         <h3>Product</h3>
