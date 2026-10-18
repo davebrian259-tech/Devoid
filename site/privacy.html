@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Privacy policy · Devoid</title>
+<meta name="description" content="How Devoid handles your data: it runs on your device, collects nothing, and never sees your keys.">
+<meta name="theme-color" content="#0b0b0e">
+<link rel="icon" href="mark.svg" type="image/svg+xml">
+<script src="theme.js"></script>
+<link rel="stylesheet" href="site.css">
+</head>
+<body>
+<header class="nav">
+  <div class="wrap nav-in">
+    <a class="brand" href="index.html" aria-label="Devoid home"><img src="mark.svg" alt="" width="32" height="32"><span class="wordmark">devoid</span></a>
+    <button class="theme-toggle" type="button" data-theme-toggle aria-label="Switch theme"><svg class="i-moon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20.985 12.486a9 9 0 1 1-9.473-9.472c.405-.022.617.46.402.803a6 6 0 0 0 8.268 8.268c.344-.215.825-.004.803.401"/></svg><svg class="i-sun" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg></button>
+    <a class="btn small ghost push" href="index.html">Back to the site</a>
+  </div>
+</header>
+
+<main class="section prose">
+  <div class="wrap narrow">
+    <p class="kicker">Privacy policy</p>
+    <h1>Devoid collects nothing.</h1>
+    <p class="lede">Devoid is a non-custodial Zcash wallet. It runs on your device, it has no accounts, and the people who make it never receive your keys, your balances or your payments. This page explains exactly what stays on your device and what leaves it.</p>
+    <p class="fine">Last updated 18 October 2026.</p>
+
+    <h2>What stays on your device</h2>
+    <ul>
+      <li><b>Your recovery phrase.</b> Encrypted with your passphrase (the age format) and stored in the wallet folder on your device. It is decrypted only for a moment, to sign, when you enter your passphrase.</li>
+      <li><b>Your passphrase.</b> Never stored. It is sent from the Devoid page to the Devoid process on your own device for each action that needs it, and then discarded.</li>
+      <li><b>Your wallet data.</b> Balances, addresses, transaction history and memos, in a database in the wallet folder.</li>
+      <li><b>Your contacts, saved lists and settings.</b> Stored as plain files in the wallet folder. They are not encrypted, so anyone with access to your device account can read them.</li>
+      <li><b>In your browser.</b> A session key that lets the page talk to your wallet (cleared when you close the tab) and your theme choice.</li>
+    </ul>
+
+    <h2>What leaves your device</h2>
+    <p>To see your balance and to send payments, Devoid talks to a Zcash lightwalletd server. You choose which one in Settings; the default is a public server. That server:</p>
+    <ul>
+      <li>sees your IP address, unless you connect through Tor or your own SOCKS5 proxy;</li>
+      <li>sends you blocks, which Devoid scans on your device to find your payments;</li>
+      <li>receives the transactions you send, so it can broadcast them. Shielded transactions hide the recipients, amounts and memos from it and from everyone else.</li>
+    </ul>
+    <p>Devoid sends nothing else anywhere. There is no analytics, no crash reporting, no telemetry, no advertising and no third-party code.</p>
+
+    <h2>This website</h2>
+    <p>This site is a set of static pages with no cookies and no analytics. Its only script remembers whether you chose the light or dark theme, in your browser's storage; nothing is sent anywhere. It is hosted on Cloudflare, which, like any web host, processes the technical data of each request (such as your IP address and browser) to deliver the page and protect it from abuse. See <a href="https://www.cloudflare.com/privacypolicy/">Cloudflare’s privacy policy</a>.</p>
+
+    <h2>The web app and Chrome extension</h2>
+    <p>Both are in development. They follow the same rules: the wallet runs on your device, your keys never leave it, and nothing is collected. Before either is released, this policy will be updated to describe exactly what it stores and what it sends.</p>
+
+    <h2>Changes and contact</h2>
+    <p>If this policy changes, the date above changes with it, and the history is public in the project’s repository. Questions are welcome as an issue on <a href="https://github.com/davebrian259-tech/Devoid/issues">GitHub</a>.</p>
+  </div>
+</main>
+
+<footer class="foot">
+  <div class="wrap foot-in">
+    <a class="brand" href="index.html"><img src="mark.svg" alt="" width="28" height="28"><span class="wordmark">devoid</span></a>
+    <p>Open source under the MIT licence; the engine is MIT or Apache-2.0.</p>
+  </div>
+</footer>
+</body>
+</html>

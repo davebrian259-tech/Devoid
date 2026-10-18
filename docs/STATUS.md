@@ -21,10 +21,11 @@ The Rust engine now builds and runs. Against `testnet.zec.rocks:443`
 ## Works and is tested (no Rust needed)
 - Address, amount and CSV parsing (Zcash test vectors included).
 - Local server: token auth, Host/Origin checks, CSP, batch planning (25 per transaction),
-  sequential send job, saved lists, settings. 230 JS tests in total.
+  sequential send job, saved lists, settings. 236 JS tests in total.
 - A real engine that fails its self-test is refused; the simulated engine is always flagged in
   the UI and in `/api/status`.
-- UI end to end against the simulated engine (`npm run test:ui`, screenshots in `shots/`).
+- UI end to end against the simulated engine (`npm run test:ui`, screenshots in `shots/`): every
+  screen and feature, light, dark and phone, failing on any console error or leaked `null`.
 
 ## Still not verified
 1. **A real broadcast.** No testnet transaction has been built, signed and broadcast from here:
