@@ -21,6 +21,21 @@ If your network inspects TLS with its own certificate authority, point `DEVOID_C
 bundle; those certificates are added to the built-in roots, never replacing them.
 Do not pass `--locked` (the lockfile mirrors zcash-devtool, which carries one unused crate that cargo prunes).
 
+On Windows, use WSL: [`docs/WSL.md`](docs/WSL.md) walks through everything from a fresh machine.
+
+## Deploy
+
+The product page in `site/` deploys to Cloudflare as static files (`wrangler.jsonc`, plus a GitHub
+workflow that publishes it on merge once two secrets are set). The wallet is non-custodial and
+never runs on a server. Steps, Cloudflare settings and variables: [`docs/DEPLOY.md`](docs/DEPLOY.md).
+
+## Roadmap
+
+- **Testnet broadcast**, then mainnet with small amounts.
+- **Web app**: the engine compiled to WebAssembly so it runs in the browser, served from
+  Cloudflare. Keys stay on the user's device.
+- **Chrome extension** on the same in-browser engine, for the Chrome Web Store.
+
 ## What it does
 
 - **Overview**: balance behind a redaction bar, where the money sits across pools (and how much is

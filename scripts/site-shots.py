@@ -47,7 +47,6 @@ try:
         rows = ['address,amount,memo,label'] + [f'{ua},{0.05 + i * 0.01:.2f},October grant,{n}' for i, n in enumerate(team)]
         pg.fill('#batch', '\n'.join(rows)); pg.click('text=Check recipients'); pg.wait_for_selector('.ledger')
         pg.wait_for_timeout(400)
-        pg.screenshot(path='site/img/compose.jpg', type='jpeg', quality=88)
         pg.click('#review'); pg.wait_for_selector('.sheet'); pg.wait_for_timeout(300)
         pg.locator('.sheet > .card').first.screenshot(path='site/img/review.jpg', type='jpeg', quality=90)
         pg.fill('#pw', 'correct horse battery'); pg.click('#confirm'); pg.wait_for_selector('#sent-total', timeout=120_000)  # only on the finished screen

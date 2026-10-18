@@ -150,3 +150,7 @@ vite.config.ts.timestamp-*
 
 # Rust build output
 engine/target/
+
+# Local tooling
+.venv/
+.wrangler/
