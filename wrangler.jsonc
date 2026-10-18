@@ -1,0 +1,13 @@
+// Cloudflare Workers static assets: serves site/ (the Devoid product page). No Worker code runs.
+// Deploy with `npx wrangler@4 deploy`, or let .github/workflows/deploy-site.yml do it on merge.
+// See docs/DEPLOY.md.
+{
+  "name": "devoid-site",
+  "compatibility_date": "2026-09-01",
+  "assets": {
+    "directory": "./site",
+    "not_found_handling": "404-page"
+  }
+  // To serve on your own domain, uncomment and set it (the domain must be on your Cloudflare account):
+  // , "routes": [{ "pattern": "devoid.example.com", "custom_domain": true }]
+}
