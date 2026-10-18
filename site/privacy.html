@@ -19,7 +19,7 @@
   </div>
 </header>
 
-<main class="section prose">
+<main class="section prose" id="top">
   <div class="wrap narrow">
     <p class="kicker">Privacy policy</p>
     <h1>Devoid collects nothing.</h1>
@@ -65,9 +65,59 @@
 </main>
 
 <footer class="foot">
-  <div class="wrap foot-in">
-    <a class="brand" href="index.html"><img src="mark.svg" alt="" width="28" height="28"><span class="wordmark">devoid</span></a>
-    <p>Open source under the MIT licence; the engine is MIT or Apache-2.0.</p>
+  <div class="wrap">
+    <section class="foot-cta" aria-labelledby="foot-cta-title">
+      <div>
+        <h2 id="foot-cta-title">Pay everyone at once. <em>Privately.</em></h2>
+        <p>Try it now in your browser, on any phone or computer. No account, no download.</p>
+      </div>
+      <div class="foot-actions">
+        <a class="btn invert" href="app/">Open the wallet
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+        <a class="btn ghost invert" href="./#start">Install it yourself</a>
+      </div>
+    </section>
+
+    <div class="foot-grid">
+      <div class="foot-about">
+        <a class="brand" href="./#top" aria-label="Devoid home"><img src="mark.svg" alt="" width="30" height="30"><span class="wordmark">devoid</span></a>
+        <p>A non-custodial Zcash wallet for paying many people in one shielded transaction. Keys stay on your device.</p>
+        <p class="foot-state"><span class="dot" aria-hidden="true"></span>Testnet verified · web demo live · mainnet next</p>
+      </div>
+      <nav class="foot-col" aria-label="Product">
+        <h3>Product</h3>
+        <ul>
+          <li><a href="app/">Open the wallet</a></li>
+          <li><a href="./#how">How it works</a></li>
+          <li><a href="./#features">Features</a></li>
+          <li><a href="./#status">Where it stands</a></li>
+        </ul>
+      </nav>
+      <nav class="foot-col" aria-label="Developers">
+        <h3>Developers</h3>
+        <ul>
+          <li><a href="https://github.com/davebrian259-tech/Devoid">Source code <svg class="ext" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17 17 7M8 7h9v9"/></svg></a></li>
+          <li><a href="https://github.com/davebrian259-tech/Devoid/blob/main/docs/ENGINE_PROTOCOL.md">Engine protocol <svg class="ext" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17 17 7M8 7h9v9"/></svg></a></li>
+          <li><a href="https://github.com/davebrian259-tech/Devoid/blob/main/docs/DEPLOY.md">Deploy guide <svg class="ext" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17 17 7M8 7h9v9"/></svg></a></li>
+          <li><a href="https://github.com/davebrian259-tech/Devoid/issues">Report an issue <svg class="ext" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17 17 7M8 7h9v9"/></svg></a></li>
+        </ul>
+      </nav>
+      <nav class="foot-col" aria-label="Trust">
+        <h3>Trust</h3>
+        <ul>
+          <li><a href="privacy.html">Privacy policy</a></li>
+          <li><a href="./#privacy">What the chain sees</a></li>
+          <li><a href="https://github.com/davebrian259-tech/Devoid/blob/main/docs/STATUS.md">Verification status <svg class="ext" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17 17 7M8 7h9v9"/></svg></a></li>
+          <li><a href="https://github.com/davebrian259-tech/Devoid/blob/main/LICENSE">MIT licence <svg class="ext" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17 17 7M8 7h9v9"/></svg></a></li>
+        </ul>
+      </nav>
+    </div>
+
+    <div class="foot-base">
+      <p>Open source. The app is MIT; the engine is MIT or Apache-2.0, built on librustzcash.<br>
+      Type: Righteous, Outfit and JetBrains Mono (SIL OFL). Icons: Lucide (ISC). No cookies, no analytics.</p>
+      <a class="to-top" href="#top">Back to top <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 19V5M6 11l6-6 6 6"/></svg></a>
+    </div>
   </div>
 </footer>
 </body>

@@ -28,7 +28,11 @@ The Rust engine now builds and runs. Against `testnet.zec.rocks:443`
   screen and feature, light, dark and phone, failing on any console error or leaked `null`.
 - Web demo (`npm run test:web`): the built site served with its real `_headers`, from the front
   page's Open the wallet to a sent batch, a reload, a reset, and a phone screen. Fails on any
-  console error, CSP violation or network request. The web demo is testnet only and refuses a
+  console error, CSP violation or network request.
+- Layout (`scripts/overlap.js`, run on every screenshot of both browser tests): no component may
+  overlap another, spill out of its box, scroll the page sideways or sit under the phone tab bar,
+  checked from 320px to 1440px wide in light and dark. The test proves the check by planting an
+  overlap and expecting it to be caught. The web demo is testnet only and refuses a
   recovery phrase, in the UI and again in its backend.
 
 ## Still not verified

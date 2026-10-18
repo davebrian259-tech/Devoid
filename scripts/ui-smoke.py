@@ -17,6 +17,7 @@ assert url, 'server did not start'
 os.makedirs('shots', exist_ok=True)
 for old in glob.glob('shots/[0-9]*.png'): os.remove(old)  # web-smoke.py owns shots/web-*
 errors = []
+LAYOUT_CHECK = open(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'overlap.js')).read()
 
 def shot(pg, name, full=False):
     pg.wait_for_timeout(250)
@@ -24,6 +25,9 @@ def shot(pg, name, full=False):
     text = pg.evaluate('document.body.innerText')
     for leak in ('null', 'undefined', 'NaN', '[object Object]'):
         assert not re.search(r'(?<![\w-])' + re.escape(leak) + r'(?![\w-])', text), f'{name}: "{leak}" is showing on screen'
+    # Nothing may sit on top of anything else, spill out of its box, or hide under the tab bar.
+    problems = pg.evaluate(LAYOUT_CHECK)
+    assert not problems, f'{name}: layout problems:\n  ' + '\n  '.join(problems)
     pg.screenshot(path=f'shots/{name}.png', full_page=full)
 
 def nav(pg, view):
