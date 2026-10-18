@@ -133,15 +133,7 @@ pub(crate) async fn sync_slice(
             report.budget_expired = true;
             break;
         }
-        let again = running(
-            client,
-            params,
-            db_data,
-            db_cache,
-            budget,
-            &mut report,
-        )
-        .await?;
+        let again = running(client, params, db_data, db_cache, budget, &mut report).await?;
         if !again {
             break;
         }
@@ -195,13 +187,7 @@ async fn running(
                 "Chain tip {} diverges from our history (max scanned {}); reorg detected, rewinding to {}",
                 chain_tip, max_scanned, rewind_height,
             );
-            rewind(
-                db_data,
-                db_cache,
-                chain_tip,
-                rewind_height,
-                chain_tip,
-            )?;
+            rewind(db_data, db_cache, chain_tip, rewind_height, chain_tip)?;
         }
     }
 
@@ -360,10 +346,7 @@ fn emit_scan_progress(db_data: &Db, chain_tip: BlockHeight, next_range: Option<&
     );
 }
 
-async fn update_subtree_roots(
-    client: &mut Client,
-    db_data: &mut Db,
-) -> R<()> {
+async fn update_subtree_roots(client: &mut Client, db_data: &mut Db) -> R<()> {
     let mut request = service::GetSubtreeRootsArg::default();
     request.set_shielded_protocol(service::ShieldedProtocol::Sapling);
     let sapling_roots: Vec<CommitmentTreeRoot<sapling::Node>> = client
@@ -432,10 +415,7 @@ async fn update_subtree_roots(
     Ok(())
 }
 
-async fn update_chain_tip(
-    client: &mut Client,
-    db_data: &mut Db,
-) -> R<(BlockHeight, BlockHash)> {
+async fn update_chain_tip(client: &mut Client, db_data: &mut Db) -> R<(BlockHeight, BlockHash)> {
     let latest = client
         .get_latest_block(service::ChainSpec::default())
         .await
@@ -564,10 +544,7 @@ async fn download_blocks(
     Ok(block_meta)
 }
 
-async fn download_chain_state(
-    client: &mut Client,
-    block_height: BlockHeight,
-) -> R<ChainState> {
+async fn download_chain_state(client: &mut Client, block_height: BlockHeight) -> R<ChainState> {
     let tree_state = client
         .get_tree_state(BlockId {
             height: block_height.into(),
@@ -620,13 +597,7 @@ fn scan_blocks(
                 err,
             );
 
-            rewind(
-                db_data,
-                db_cache,
-                err.at_height(),
-                rewind_height,
-                chain_tip,
-            )?;
+            rewind(db_data, db_cache, err.at_height(), rewind_height, chain_tip)?;
 
             // The database was truncated, invalidating prior suggested ranges.
             Ok(true)
@@ -884,4 +855,3 @@ async fn enhance_transactions(
 
     Ok(fetched)
 }
-

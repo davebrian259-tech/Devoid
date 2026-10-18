@@ -422,3 +422,34 @@ impl Connection {
         })
     }
 }
+
+/// Self-test: the connection settings this build accepts parse, and bad ones are refused.
+pub(crate) fn check_settings() -> Result<String, String> {
+    let describe = |f: Failure| format!("{}: {}", f.code, f.message);
+    let name_of = |value: Option<Value>, network: Network| -> Result<String, String> {
+        Connection::from_json(value.as_ref(), network)
+            .map(|c| c.mode().name())
+            .map_err(describe)
+    };
+
+    let main = Network::MainNetwork;
+    if name_of(None, main)? != "direct" {
+        return Err("the default connection is not direct".to_string());
+    }
+    if name_of(Some(json!({ "mode": "tor" })), main)? != "tor" {
+        return Err("Tor mode was not recognised".to_string());
+    }
+    if name_of(Some(json!({ "mode": "socks5://127.0.0.1:9050" })), main)?
+        != "socks5://127.0.0.1:9050"
+    {
+        return Err("SOCKS5 mode was not recognised".to_string());
+    }
+    if name_of(Some(json!({ "mode": "carrier-pigeon" })), main).is_ok() {
+        return Err("an unknown connection mode was accepted".to_string());
+    }
+    name_of(None, Network::TestNetwork)?;
+    if name_of(Some(json!({ "servers": "ywallet" })), Network::TestNetwork).is_ok() {
+        return Err("a server preset without testnet servers was accepted for testnet".to_string());
+    }
+    Ok("direct, Tor and SOCKS5 settings parse; bad ones are refused".to_string())
+}

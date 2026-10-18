@@ -5,55 +5,13 @@
 #
 #   python3 scripts/web-smoke.py
 #   DEVOID_CHROMIUM=/path/to/chrome python3 scripts/web-smoke.py
-import http.server, os, re, subprocess, threading, glob, mimetypes
+import os, re, glob, sys
 from playwright.sync_api import sync_playwright, expect
 
-ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-DIST = os.path.join(ROOT, 'dist')
-subprocess.run(['node', 'scripts/build-site.mjs'], cwd=ROOT, check=True)
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from site_server import ROOT, build_and_serve
 
-
-def parse_headers(path):
-    """Cloudflare's _headers format: a URL pattern, then indented "Name: value" lines."""
-    rules, cur = [], None
-    for line in open(path):
-        if not line.strip() or line.lstrip().startswith('#'): continue
-        if line[0] in ' \t':
-            k, v = line.strip().split(':', 1); cur[1].append((k.strip(), v.strip()))
-        else:
-            cur = (line.strip(), []); rules.append(cur)
-    return rules
-
-
-RULES = parse_headers(os.path.join(DIST, '_headers'))
-TYPES = {'.js': 'text/javascript', '.mjs': 'text/javascript', '.css': 'text/css', '.html': 'text/html', '.svg': 'image/svg+xml', '.woff2': 'font/woff2', '.png': 'image/png', '.webp': 'image/webp', '.txt': 'text/plain'}
-
-
-class Handler(http.server.BaseHTTPRequestHandler):
-    def log_message(self, *a): pass
-
-    def do_GET(self):
-        url = self.path.split('?')[0]
-        path = os.path.normpath(os.path.join(DIST, url.lstrip('/')))
-        status = 200
-        if not path.startswith(DIST): status, path = 404, os.path.join(DIST, '404.html')
-        elif os.path.isdir(path):
-            if not url.endswith('/'):
-                self.send_response(307); self.send_header('Location', url + '/'); self.end_headers(); return
-            path = os.path.join(path, 'index.html')
-        if not os.path.isfile(path) or os.path.basename(path) == '_headers': status, path = 404, os.path.join(DIST, '404.html')
-        body = open(path, 'rb').read()
-        self.send_response(status)
-        self.send_header('Content-Type', TYPES.get(os.path.splitext(path)[1], mimetypes.guess_type(path)[0] or 'application/octet-stream'))
-        for pattern, headers in RULES:
-            if url == pattern or (pattern.endswith('*') and url.startswith(pattern[:-1])):
-                for k, v in headers: self.send_header(k, v)
-        self.end_headers(); self.wfile.write(body)
-
-
-srv = http.server.ThreadingHTTPServer(('127.0.0.1', 0), Handler)
-threading.Thread(target=srv.serve_forever, daemon=True).start()
-base = f'http://127.0.0.1:{srv.server_address[1]}'
+srv, base = build_and_serve()
 os.makedirs('shots', exist_ok=True)
 for old in glob.glob('shots/web-*.png'): os.remove(old)
 errors, requests = [], []
@@ -78,15 +36,18 @@ def shot(pg, name, full=False):
 def watch(pg):
     pg.on('console', lambda m: errors.append(m.text) if m.type == 'error' else None)
     pg.on('pageerror', lambda e: errors.append(str(e)))
-    # The page loads its own files; anything else, or any fetch at all, would be a leak.
-    pg.on('request', lambda r: requests.append(r.url) if not r.url.startswith(base) or r.resource_type in ('fetch', 'xhr', 'websocket', 'eventsource') else None)
+    # The page loads its own files; anything else, or any fetch at all, would be a leak. The one
+    # fetches allowed are the real engine's own, on this site: its WebAssembly and the Sapling parameters.
+    pg.on('request', lambda r: requests.append(r.url) if not r.url.startswith(base) or (r.resource_type in ('fetch', 'xhr', 'websocket', 'eventsource') and not r.url.startswith(base + '/app/engine/')) else None)
 
 
 def create_wallet(pg, passphrase):
     pg.wait_for_selector('#p1')
     expect(pg.locator('.seg button:has-text("Restore")')).to_have_count(0)  # the web version never takes a phrase
     expect(pg.locator('[aria-label=Network]')).to_have_count(0)  # and is testnet only
-    expect(pg.locator('.note.test')).to_contain_text('testnet')
+    expect(pg.locator('.note.test')).to_contain_text('test network')  # the real wallet is the default
+    pg.click('.seg button:has-text("Demo")')
+    expect(pg.locator('.note.test')).to_contain_text('play money')
     pg.fill('#p1', passphrase); pg.fill('#p2', passphrase); pg.click('text=Create wallet')
     pg.wait_for_selector('.phrase span')
     words = [s.inner_text() for s in pg.query_selector_all('.phrase span')]
@@ -176,6 +137,25 @@ try:
         # The layout check itself must catch a real overlap, or the passes above mean nothing.
         pg.evaluate("document.querySelectorAll('#view .card + .card').forEach((c) => c.style.setProperty('margin-top', '-60px', 'important'))")
         assert any(p.startswith('overlap:') for p in pg.evaluate(LAYOUT_CHECK)), 'the layout check missed a planted overlap'
+        ctx.close()
+
+        # ---- the real engine: loads under the wallet's CSP, passes its self-test, and proves -------------
+        # The same engine the testnet wallet runs, offline: its self-test (keys, database, addresses,
+        # recipient checks), then one throw-away transaction built and proved with Sapling and Orchard
+        # proofs. A wallet that cannot prove must never reach a real send.
+        ctx = b.new_context(); pg = ctx.new_page(); watch(pg)
+        pg.goto(base + '/app/'); pg.wait_for_selector('#p1')
+        engine = '''(message) => new Promise((resolve) => {
+          const w = new Worker('/app/engine/worker.js', { type: 'module' });
+          w.onmessage = ({ data }) => { if (!data.event) { resolve(data.result); w.terminate(); } };
+          w.onerror = (e) => resolve({ ok: false, error: { code: 'worker', message: e.message } });
+          w.postMessage({ id: 1, ...message });
+        })'''
+        st = pg.evaluate(f'({engine})({{ type: "run", request: {{ cmd: "selftest" }} }})')
+        assert st['ok'] and st['result']['failed'] == 0, st
+        proof = pg.evaluate(f'({engine})({{ type: "checkProving" }})')
+        assert proof['ok'] and proof['result']['orchardActions'] >= 1 and proof['result']['saplingOutputs'] >= 1, proof
+        print(f"real engine: self-test {st['result']['passed']} passed; a transaction proved in {proof['result']['proveMs'] / 1000:.0f}s ({proof['result']['bytes']} bytes)")
         ctx.close()
 
         # ---- a direct visit to /app works, and unknown pages get the 404 page -------------------------

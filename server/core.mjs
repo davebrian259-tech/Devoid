@@ -44,6 +44,13 @@ export function chunkRecipients(recipients, size = TX_CHUNK) {
   return out;
 }
 
+// What each engine progress stage means to the person waiting.
+const STAGES = {
+  connect: 'Connecting to the network', subtrees: 'Catching up with the chain', scan: 'Catching up with the chain',
+  enhance: 'Catching up with the chain', params: 'Downloading the proving parameters (first payment only)',
+  build: 'Building and proving the transaction', broadcast: 'Sending to the network',
+};
+
 const ENGINE_COMMANDS = new Set(['create', 'balance', 'addresses', 'newAddress', 'revealPhrase', 'verifyPassphrase', 'changePassphrase', 'upgrade', 'rescan', 'serverInfo', 'propose', 'shield', 'rebroadcast', 'history']);
 
 /**
@@ -104,7 +111,7 @@ export function createCore({ run, engineInfo, settings, lists, wallet, sleep = (
               if (waiting) { job.message = `Waiting for change from transaction ${i} to confirm`; await sleep(8000); continue; }
               throw Object.assign(new Error(pr.error.message), { code: pr.error.code, details: pr.error.details });
             }
-            const res = await engineCall({ cmd: 'send', recipients: chunks[i], fundingPools: body.fundingPools, passphrase: body.passphrase, fingerprint: pr.result.fingerprint, acknowledge: body.acknowledge ?? [] }, (e) => { job.message = e.stage; });
+            const res = await engineCall({ cmd: 'send', recipients: chunks[i], fundingPools: body.fundingPools, passphrase: body.passphrase, fingerprint: pr.result.fingerprint, acknowledge: body.acknowledge ?? [] }, (e) => { const what = STAGES[e.stage]; if (what) job.message = chunks.length > 1 ? `Transaction ${i + 1} of ${chunks.length}: ${what.toLowerCase()}` : what; });
             if (!res.ok) throw Object.assign(new Error(res.error.message), { code: res.error.code, details: res.error.details });
             job.txids.push(...(res.result.txids ?? [res.result.txid])); job.done = i + 1; sent = true;
           }

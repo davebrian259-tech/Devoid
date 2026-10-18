@@ -1,7 +1,7 @@
 # Response headers for the product page on Cloudflare (Workers static assets read this file).
-# Every script is this site's own (theme.js, and the web demo's modules under /app), so scripts are
-# limited to this origin: nothing inline, nothing from elsewhere. The demo makes no network
-# requests, so there is no connect-src. Frames and forms are forbidden.
+# Every script is this site's own, so scripts are limited to this origin: nothing inline, nothing
+# from elsewhere. The product pages make no network requests, so there is no connect-src. Frames
+# and forms are forbidden. The web wallet under /app has its own policy, below.
 
 /*
   Content-Security-Policy: default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data:; font-src 'self'; base-uri 'none'; form-action 'none'; frame-ancestors 'none'; upgrade-insecure-requests
@@ -18,6 +18,16 @@
 /img/*
   Cache-Control: public, max-age=86400
 
-# The web demo's modules import one another, so a visitor must never mix old and new versions.
+# The web wallet: its own policy, replacing the one above. It compiles the wallet engine
+# (WebAssembly, 'wasm-unsafe-eval'), runs it in a worker, and lets that worker reach only this site
+# (for the Sapling parameters) and the gRPC-web servers the wallet can use. The modules import one
+# another, so a visitor must never mix old and new versions: no-cache.
 /app/*
+  ! Content-Security-Policy
+  Content-Security-Policy: default-src 'none'; script-src 'self' 'wasm-unsafe-eval'; worker-src 'self'; style-src 'self'; img-src 'self' data:; font-src 'self'; connect-src 'self' https://zcash-testnet.chainsafe.dev https://zcash-mainnet.chainsafe.dev; base-uri 'none'; form-action 'none'; frame-ancestors 'none'; upgrade-insecure-requests
   Cache-Control: no-cache
+
+# The Sapling parameters never change; their hashes are checked by the engine.
+/app/engine/params/*
+  ! Cache-Control
+  Cache-Control: public, max-age=31536000, immutable

@@ -15,6 +15,12 @@ export const nav = { go: () => {}, refresh: async () => {}, paintSide: () => {},
 export const WEB = document.querySelector('meta[name="devoid-backend"]')?.content === 'web';
 let backend = null;
 
+/** Web version only: deletes this browser's wallet, lists, contacts and settings. */
+export async function webReset() {
+  backend ??= import('./local/backend.js').then((m) => m.createBackend());
+  await (await backend).reset();
+}
+
 export async function api(path, body = {}) {
   if (WEB) {
     try {
@@ -119,6 +125,8 @@ export const when = (sec) => (sec ? new Date(sec * 1000).toLocaleString([], { da
 export const timeOf = (sec) => (sec ? new Date(sec * 1000).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '');
 export const short = (a, n = 10) => (a && a.length > n * 2 + 3 ? `${a.slice(0, n)}…${a.slice(-n + 2)}` : a ?? '');
 export const poolName = { ironwood: 'Ironwood', orchard: 'Orchard', sapling: 'Sapling', transparent: 'Transparent' };
+/** Web version: which engine the wallet runs on ('real' or 'demo'). */
+export const webEngine = () => (WEB ? S.status?.webEngine ?? null : null);
 export const isTest = () => S.status?.wallet?.network === 'test';
 export const unit = () => (isTest() ? 'TAZ' : 'ZEC');
 
