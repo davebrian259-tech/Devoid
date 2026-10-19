@@ -2,7 +2,8 @@
 # serves it with its production headers, and in Chromium creates a testnet wallet (the engine
 # compiled to WebAssembly, talking gRPC-web to lightwalletd), backs up and checks the phrase, syncs
 # to the chain tip, shows a receiving address, gets an exact fee quote refused for lack of funds,
-# reloads to prove the wallet persisted, and deletes it. Needs the network, so it is not in CI.
+# reloads to prove the wallet persisted, and deletes it; then does the same on mainnet (no funds
+# needed: it syncs to the mainnet tip and shows a mainnet address). Needs the network, not in CI.
 #
 #   python3 scripts/web-live.py
 #   DEVOID_CHROMIUM=/path/to/chrome python3 scripts/web-live.py
@@ -34,7 +35,8 @@ def steps(pg):
     # ---- create a real testnet wallet ---------------------------------------------------------------
     pg.goto(base + '/app/' + (f"?log={os.environ['DEVOID_LOG']}" if os.environ.get('DEVOID_LOG') else ''))
     pg.wait_for_selector('#p1')
-    expect(pg.locator('.seg button:has-text("Testnet wallet")')).to_have_attribute('aria-pressed', 'true')
+    expect(pg.locator('.seg button:has-text("Real wallet")')).to_have_attribute('aria-pressed', 'true')
+    expect(pg.locator('[aria-label=Network] button:has-text("Testnet")')).to_have_attribute('aria-pressed', 'true')
     expect(pg.locator('.seg button:has-text("Restore")')).to_have_count(0)
     shot(pg, '01-welcome')
     pg.fill('#p1', PASS); pg.fill('#p2', PASS); pg.click('text=Create wallet')
@@ -79,6 +81,30 @@ def steps(pg):
     pg.click('button:has-text("Delete this wallet")'); pg.click('dialog button:has-text("Delete wallet")')
     pg.wait_for_selector('#p1')
     pg.reload(); pg.wait_for_selector('#p1')  # gone for good
+
+    # ---- mainnet: the same engine against the real chain (no funds needed) -----------------------------
+    pg.click('[aria-label=Network] button:has-text("Mainnet")')
+    pg.fill('#p1', PASS); pg.fill('#p2', PASS); pg.click('text=Create wallet')
+    expect(pg.locator('.note.err')).to_contain_text('real ZEC')  # refused until the box is ticked
+    pg.check('#mainnet-ack'); pg.click('text=Create wallet')
+    pg.wait_for_selector('.phrase span')
+    words = [s.inner_text() for s in pg.query_selector_all('.phrase span')]
+    pg.check('#wrote'); pg.click('text=Continue')
+    for inp in pg.query_selector_all('input[data-word]'): inp.fill(words[int(inp.get_attribute('data-word')) - 1])
+    pg.click('text=Open my wallet')
+    pg.wait_for_selector('.side .nav')
+    expect(pg.locator('#wc-sync')).to_contain_text('Synced', timeout=180_000)
+    height = int(re.sub(r'\D', '', pg.inner_text('#wc-sync')))
+    assert 3_000_000 < height < 4_000_000, height  # mainnet heights, not testnet ones
+    expect(pg.locator('.top .net')).to_contain_text('Mainnet')
+    print(f'mainnet wallet synced to block {height:,}')
+    pg.click('a[data-view=receive]'); pg.wait_for_selector('svg.qr')
+    assert pg.inner_text('#addr').startswith('u1'), pg.inner_text('#addr')
+    shot(pg, '07-mainnet-receive')
+    pg.click('a[data-view=settings]'); pg.wait_for_selector('text=Delete this wallet')
+    expect(pg.locator('#view')).to_contain_text('zcash-mainnet.chainsafe.dev')
+    pg.click('button:has-text("Delete this wallet")'); pg.click('dialog button:has-text("Delete wallet")')
+    pg.wait_for_selector('#p1')
 
 
 try:

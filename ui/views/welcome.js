@@ -37,7 +37,7 @@ function strengthOf(p) {
 }
 
 export function renderWelcome(root, onDone) {
-  // The web demo is testnet only and never takes a recovery phrase: see local/backend.js.
+  // The web version never takes a recovery phrase, and its demo is testnet only: see local/backend.js.
   let mode = 'create'; let network = WEB ? 'test' : 'main';
   let engine = 'real';
   const demo = () => WEB && engine === 'demo';
@@ -59,6 +59,8 @@ export function renderWelcome(root, onDone) {
       meter.className = `strength s${s}`; meter.firstChild.style.width = `${[6, 34, 67, 100][s]}%`;
       meterText.textContent = ['Too short: use at least 8 characters.', 'Weak. Longer is stronger; a few random words work well.', 'Good.', 'Strong.'][s];
     });
+    // Web mainnet: real ZEC held in a browser deserves one deliberate tick before the wallet exists.
+    const mainnetAck = h('input', { type: 'checkbox', id: 'mainnet-ack' });
     const go = btn(mode === 'create' ? 'Create wallet' : 'Restore wallet', 'lg block', async () => {
       // Web version: the engine is chosen with the wallet.
       if (WEB) {
@@ -68,6 +70,7 @@ export function renderWelcome(root, onDone) {
       err.replaceChildren();
       if (pass.value.length < 8) return err.append(errorNote({ message: 'Use a passphrase of at least 8 characters.' }));
       if (pass.value !== pass2.value) return err.append(errorNote({ message: 'The two passphrases are different.' }));
+      if (WEB && !demo() && network === 'main' && !mainnetAck.checked) return err.append(errorNote({ message: 'Tick the box to confirm that this wallet will hold real ZEC in this browser.' }));
       go.disabled = true; go.lastChild.textContent = WEB && !demo() ? 'Starting the wallet engine…' : mode === 'create' ? 'Creating…' : 'Restoring…';
       const r = await api('/api/engine/create', { passphrase: pass.value, network, phrase: mode === 'restore' ? words.value : undefined });
       go.disabled = false; go.lastChild.textContent = mode === 'create' ? 'Create wallet' : 'Restore wallet';
@@ -76,19 +79,22 @@ export function renderWelcome(root, onDone) {
       if (r.result.phrase) showPhrase(r.result.phrase); else onDone();
     }, 'arrowRight');
     fill(side, h('div', { class: 'form-card stack-lg' },
-      h('div', null, h('h2', null, demo() ? 'Create a demo wallet' : WEB ? 'Create a testnet wallet' : mode === 'create' ? 'Create your wallet' : 'Restore a wallet'),
-        h('p', { class: 'sub' }, demo() ? 'Test coins on a simulated chain, so you can try every screen. It lives in this browser only.' : WEB ? 'A real Zcash wallet that runs in this browser, on the test network. You will get 24 words that can restore it.' : mode === 'create' ? 'It takes a minute. You will get 24 words that can restore it anywhere.' : 'Enter your 24-word recovery phrase. Devoid then scans the chain for your funds.')),
-      WEB ? seg([['real', 'Testnet wallet', 'shield'], ['demo', 'Demo', 'info']], engine, (v) => { engine = v; form(); }, 'Wallet kind') : null,
+      h('div', null, h('h2', null, demo() ? 'Create a demo wallet' : WEB ? (network === 'main' ? 'Create a mainnet wallet' : 'Create a testnet wallet') : mode === 'create' ? 'Create your wallet' : 'Restore a wallet'),
+        h('p', { class: 'sub' }, demo() ? 'Test coins on a simulated chain, so you can try every screen. It lives in this browser only.' : WEB ? `A real Zcash wallet that runs in this browser, on ${network === 'main' ? 'mainnet' : 'the test network'}. You will get 24 words that can restore it.` : mode === 'create' ? 'It takes a minute. You will get 24 words that can restore it anywhere.' : 'Enter your 24-word recovery phrase. Devoid then scans the chain for your funds.')),
+      WEB ? seg([['real', 'Real wallet', 'shield'], ['demo', 'Demo', 'info']], engine, (v) => { engine = v; form(); }, 'Wallet kind') : null,
       WEB ? (demo()
         ? note('test', 'Demo: play money', 'Payments are simulated on a made-up chain and have no value. Nothing touches a real network.')
-        : note('test', 'Real wallet, test network', 'Real transactions on the Zcash testnet, with free coins from a faucet. Keys stay in this browser, encrypted with your passphrase. Mainnet follows once web payments are verified on testnet.'))
+        : network === 'main'
+          ? note('warn', 'Mainnet: real ZEC', 'Keys stay in this browser, encrypted with your passphrase. Start with small amounts, and keep your recovery phrase on paper: if this browser’s data is cleared, it is the only way back, in the desktop app.')
+          : note('test', 'Real wallet, test network', 'Real transactions on the Zcash testnet, with free coins from a faucet. Keys stay in this browser, encrypted with your passphrase.'))
         : seg([['create', 'New wallet', 'plus'], ['restore', 'Restore', 'refresh']], mode, (v) => { mode = v; form(); }, 'Wallet setup'),
       mode === 'restore' ? h('div', { class: 'field' }, h('label', { for: 'ph' }, 'Recovery phrase'), words) : null,
-      WEB ? null : h('div', { class: 'field' }, h('span', { class: 'label' }, 'Network'),
+      demo() ? null : h('div', { class: 'field' }, h('span', { class: 'label' }, 'Network'),
         seg([['main', 'Mainnet', 'globe'], ['test', 'Testnet', 'info']], network, (v) => { network = v; form(); }, 'Network'),
         h('span', { class: 'hint' }, network === 'main' ? 'Real ZEC. Use small amounts until you know the flow.' : 'Play money (TAZ) from a faucet. Nothing here has value.')),
       h('div', { class: 'field' }, h('label', { for: 'p1' }, 'Passphrase'), pass, meter, meterText),
       h('div', { class: 'field' }, h('label', { for: 'p2' }, 'Repeat passphrase'), pass2),
+      WEB && !demo() && network === 'main' ? h('label', { class: 'check', for: 'mainnet-ack' }, mainnetAck, 'I understand this wallet holds real ZEC, in this browser.') : null,
       err, go,
       h('p', { class: 'hint' }, demo() ? 'Forgot it later? Reset the demo in Settings and start again.' : WEB ? 'The web version never asks for a recovery phrase. To restore a wallet, or if you forget the passphrase, use your recovery phrase in the desktop app.' : 'If you forget the passphrase, only the recovery phrase can bring your funds back.')));
   }

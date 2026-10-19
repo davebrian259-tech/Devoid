@@ -44,10 +44,13 @@ def watch(pg):
 def create_wallet(pg, passphrase):
     pg.wait_for_selector('#p1')
     expect(pg.locator('.seg button:has-text("Restore")')).to_have_count(0)  # the web version never takes a phrase
-    expect(pg.locator('[aria-label=Network]')).to_have_count(0)  # and is testnet only
-    expect(pg.locator('.note.test')).to_contain_text('test network')  # the real wallet is the default
+    expect(pg.locator('.note.test')).to_contain_text('test network')  # a real testnet wallet is the default
+    pg.click('[aria-label=Network] button:has-text("Mainnet")')  # mainnet asks for a deliberate tick
+    expect(pg.locator('.note.warn')).to_contain_text('real ZEC')
+    expect(pg.locator('#mainnet-ack')).to_have_count(1)
     pg.click('.seg button:has-text("Demo")')
     expect(pg.locator('.note.test')).to_contain_text('play money')
+    expect(pg.locator('[aria-label=Network]')).to_have_count(0)  # the demo is testnet only
     pg.fill('#p1', passphrase); pg.fill('#p2', passphrase); pg.click('text=Create wallet')
     pg.wait_for_selector('.phrase span')
     words = [s.inner_text() for s in pg.query_selector_all('.phrase span')]

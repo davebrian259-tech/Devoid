@@ -6,9 +6,9 @@
 //    wallet in this browser's IndexedDB, keys encrypted with the passphrase.
 //  * demo: the simulated engine, with play money on a made-up chain, in this browser's storage.
 //
-// Rules that hold whatever the page asks: wallets are testnet only for now (mainnet follows once
-// payments from the web wallet have been verified on testnet), and a recovery phrase is never
-// accepted, so the web version never invites anyone to type a real one into a website.
+// Rules that hold whatever the page asks: the demo is testnet only, so nobody can send real ZEC to
+// a demo address that no one can spend from; and a recovery phrase is never accepted, so the web
+// version never invites anyone to type a real one into a website.
 import { createCore } from '../../server/core.mjs';
 import { createSimEngine } from '../../mock-engine/core.mjs';
 
@@ -104,7 +104,8 @@ export function createBackend() {
       }
       if (path === '/api/engine/create') {
         if (req.phrase) return { ok: false, error: { code: 'restore_unavailable', message: 'The web version never asks for a recovery phrase. Restore your wallet in the desktop app.', details: null } };
-        req.network = 'test';
+        // The demo's addresses belong to nobody; only the real engine may hold real ZEC.
+        req.network = kind === 'real' && req.network === 'main' ? 'main' : 'test';
       }
       if (path === '/api/settings' && kind === 'real' && req.mode && req.mode !== 'direct') {
         return { ok: false, error: { code: 'bad_request', message: 'Tor and SOCKS5 are not available in a browser. Use the desktop app to hide your IP address from the server.', details: null } };
