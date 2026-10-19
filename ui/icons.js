@@ -23,3 +23,12 @@ export function mark() {
   mk('rect', { x: 5, y: 14, width: 17, height: 4.2, rx: 2.1, class: 'mark-bar' });
   return s;
 }
+
+/** The ZEC currency sign (a Z with a stroke through it) on a Zcash-gold disc, for "Powered by Zcash". */
+export function zecSign() {
+  const s = document.createElementNS(NS, 'svg'); s.setAttribute('viewBox', '0 0 24 24'); s.setAttribute('aria-hidden', 'true'); s.setAttribute('class', 'zec-sign');
+  const mk = (t, a) => { const e = document.createElementNS(NS, t); for (const k in a) e.setAttribute(k, a[k]); s.appendChild(e); };
+  mk('circle', { cx: 12, cy: 12, r: 12, fill: '#f4b728' });
+  mk('path', { d: 'M12 4.6v2.7M12 16.7v2.7M7.9 8.1h8.2l-8.2 7.8h8.2', fill: 'none', stroke: '#231f20', 'stroke-width': 2.3, 'stroke-linecap': 'round', 'stroke-linejoin': 'round' });
+  return s;
+}

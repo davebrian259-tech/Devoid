@@ -67,6 +67,13 @@ p { margin: 0; }
 .lede { font-size: 19px; color: var(--ink-2); max-width: 54ch; }
 .ctas { display: flex; gap: 12px; flex-wrap: wrap; margin: 30px 0 16px; }
 .fine { font-size: 14px; color: var(--ink-3); }
+.powered { display: inline-flex; align-items: center; gap: 8px; padding: 5px 12px 5px 5px; border-radius: 999px; border: 1px solid var(--line); background: var(--surface); color: var(--ink-2); font-size: 13.5px; text-decoration: none; white-space: nowrap; }
+.powered:hover { border-color: var(--ink-3); color: var(--ink); }
+.powered b { color: var(--ink); font-weight: 600; }
+.powered .zec-sign { width: 22px; height: 22px; flex: none; }
+.built-on { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; margin-top: 18px; font-size: 13.5px; color: var(--ink-3); }
+.foot-base .powered { background: transparent; border-color: var(--deep-line); color: var(--deep-ink-3); }
+.foot-base .powered b { color: var(--deep-ink); }
 
 .stage { position: relative; margin: 0; padding-bottom: 44px; }
 .browser { border-radius: 18px; overflow: hidden; background: var(--surface); border: 1px solid var(--line); box-shadow: 0 2px 4px rgb(15 17 21 / 0.04), 0 40px 80px -30px rgb(15 17 21 / 0.35); transform: perspective(1800px) rotateY(-7deg) rotateX(2deg); transform-origin: left center; }

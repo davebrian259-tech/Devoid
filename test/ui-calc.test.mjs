@@ -13,15 +13,15 @@ test('formats and parses ZEC amounts', () => {
   for (const bad of ['', '.', '-1', '1.123456789', 'abc', '1e3']) assert.equal(parseZecToZat(bad), null, bad);
 });
 
-test('fee estimate matches the engine quotes measured on testnet', () => {
-  // Quotes from devoid-engine `propose` against testnet.zec.rocks.
-  assert.equal(estimateFeeZat(1), 10_000n);
-  assert.equal(estimateFeeZat(3), 15_000n);
-  assert.equal(estimateFeeZat(10), 50_000n);
-  assert.equal(estimateFeeZat(25), 125_000n);
-  assert.equal(estimateFeeZat(30), 150_000n); // 25 + 5 across two transactions
+test('fee estimate counts each payment and the change, as the engine quotes on mainnet', () => {
+  // Mainnet: 2 payments plus change paid 15,000 zat (82731e0e…, block 3,522,904).
+  assert.equal(estimateFeeZat(1), 10_000n); // the two-action floor
+  assert.equal(estimateFeeZat(2), 15_000n);
+  assert.equal(estimateFeeZat(10), 55_000n);
+  assert.equal(estimateFeeZat(25), 130_000n);
+  assert.equal(estimateFeeZat(30), 130_000n + 30_000n); // 25 + 5 across two transactions
   assert.deepEqual(chunkSizes(51), [25, 25, 1]);
-  assert.equal(estimateFeeZat(51), 125_000n * 2n + 10_000n);
+  assert.equal(estimateFeeZat(51), 130_000n * 2n + 10_000n);
   assert.equal(estimateFeeZat(0), 0n);
 });
 

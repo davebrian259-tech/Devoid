@@ -1,5 +1,5 @@
 // Settings: appearance, connection, recovery phrase, passphrase, shielding, and what is running.
-import { S, nav, api, h, btn, note, errorNote, unit, fill, confirmDialog, WEB, webEngine, webReset, isTest } from '../lib.js';
+import { S, nav, api, h, btn, note, errorNote, unit, fill, confirmDialog, WEB, webEngine, webReset, isTest, poweredBy } from '../lib.js';
 import { icon } from '../icons.js';
 import { fmtZec } from '../calc.js';
 import { themeChoice, setTheme, onThemeChange } from '../theme.js';
@@ -83,10 +83,13 @@ export async function viewSettings(el) {
       card('About', null,
         h('dl', { class: 'kv small' },
           h('dt', null, 'Engine'), h('dd', null, WEB ? (webEngine() === 'real' ? 'devoid-engine, compiled to WebAssembly, running in this browser' : 'Simulated demo engine, running in this browser') : status.simulated ? 'Simulated demo engine' : `devoid-engine, self-test ${status.engineVerified ? 'passed' : 'not run'}`),
-          h('dt', null, 'Network'), h('dd', null, status.wallet.network === 'test' ? 'Testnet' : 'Mainnet'),
+          h('dt', null, 'Network'), h('dd', null, status.wallet.network === 'test' ? 'Zcash testnet' : 'Zcash mainnet'),
+          h('dt', null, 'Built on'), h('dd', null, 'librustzcash (zcash_client_backend, zcash_client_sqlite, Orchard and Sapling), from the Electric Coin Company and the Zcash Foundation'),
+          h('dt', null, 'Standards'), h('dd', null, 'ZIP 316 unified addresses, ZIP 317 fees, ZIP 321 payment requests'),
           status.wallet.birthday ? [h('dt', null, 'Wallet birthday'), h('dd', { class: 'num' }, `Block ${status.wallet.birthday.toLocaleString()}`)] : null,
           h('dt', null, 'Type'), h('dd', null, 'Righteous, Outfit, JetBrains Mono (SIL OFL)'),
-          h('dt', null, 'Icons'), h('dd', null, 'Lucide (ISC)')))),
+          h('dt', null, 'Icons'), h('dd', null, 'Lucide (ISC)')),
+        poweredBy())),
     h('div', { class: 'stack-lg' },
       card('Recovery phrase', 'Show the 24 words that restore this wallet. Make sure nobody can see your screen.',
         h('div', { class: 'field' }, h('label', { for: 'rp' }, 'Passphrase'), h('div', { class: 'input-group' }, pw, btn('Show', 'sm ghost', async () => {

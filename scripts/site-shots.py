@@ -1,6 +1,6 @@
 # Captures the product images for the landing page (site/img) from the real UI running on the
-# simulated engine, once in the light theme and once in the dark. The demo banner is hidden for
-# these shots; the page captions them as demo data.
+# simulated engine, once in the light theme and once in the dark, and the README's screens
+# (docs/img, light only). The demo banner is hidden for these shots; both caption them as demo data.
 #
 #   DEVOID_CHROMIUM=/path/to/chrome python3 scripts/site-shots.py
 import subprocess, os, re, tempfile
@@ -18,7 +18,7 @@ def start_server():
     srv.terminate(); raise SystemExit('server did not start')
 
 
-def capture(b, scheme, suffix):
+def capture(b, scheme, suffix, readme=False):
     srv, url = start_server()
     try:
         # bypass_csp only so the capture can hide the demo banner; the app itself never needs it
@@ -43,6 +43,20 @@ def capture(b, scheme, suffix):
             pg.click('#add-contact'); pg.fill('#c-name', name); pg.fill('#c-addr', addr); pg.click('#c-save')
             pg.wait_for_selector(f'.item.contact:has-text("{name}")')
 
+        if readme:  # the Send screen, one card per recipient, with the live summary beside it
+            pg.click('a[data-view=send]'); pg.wait_for_selector('[data-rcp="1"]')
+            people = [('Ada Lovelace', addrs[1], '0.25', 'October grant'), ('Grace Hopper', addrs[2], '0.40', 'Design review'), ('Hal Finney', addrs[3], '0.15', '')]
+            for i, (name, addr, amount, memo) in enumerate(people):
+                if i: pg.click('#add-recipient')
+                c = f'[data-rcp="{i + 1}"]'
+                pg.fill(f'{c} [data-field=address]', addr); pg.fill(f'{c} input[data-field=amount]', amount)
+                pg.fill(f'{c} [data-field=label]', name); pg.fill(f'{c} [data-field=memo]', memo)
+            pg.wait_for_selector('[data-rcp="3"] .rcp-kind .pill'); pg.wait_for_timeout(800)
+            pg.set_viewport_size({'width': 1440, 'height': 1180}); pg.evaluate('document.activeElement.blur(); scrollTo(0, 0)')
+            pg.mouse.move(1430, 1170); pg.wait_for_timeout(300)
+            pg.screenshot(path='docs/img/send.jpg', type='jpeg', quality=82)
+            pg.set_viewport_size({'width': 1440, 'height': 900})
+
         # one sent batch so the overview has history
         pg.click('a[data-view=send]')
         pg.click('[aria-label="How to add recipients"] button:has-text("Paste a list")')
@@ -52,6 +66,11 @@ def capture(b, scheme, suffix):
         pg.locator('.sheet > .card').first.screenshot(path=f'site/img/review{suffix}.jpg', type='jpeg', quality=90)
         pg.fill('#pw', 'correct horse battery'); pg.click('#confirm'); pg.wait_for_selector('#sent-total', timeout=120_000)  # only on the finished screen
 
+        if readme:
+            pg.click('a[data-view=activity]'); pg.wait_for_selector('#view :text("Sent to")'); pg.mouse.move(1430, 890)
+            pg.keyboard.press('.'); pg.wait_for_timeout(600)  # show the amounts
+            pg.screenshot(path='docs/img/activity.jpg', type='jpeg', quality=82)
+            pg.keyboard.press('.'); pg.wait_for_timeout(300)
         pg.click('a[data-view=home]'); pg.wait_for_selector('.poolbar'); pg.wait_for_selector('.item:has-text("Sent to")')
         pg.click('#syncbtn'); pg.wait_for_function("!document.querySelector('#syncbtn .spin')"); pg.click('.redact'); pg.wait_for_timeout(600)
         pg.mouse.move(1000, 600)
@@ -68,11 +87,11 @@ def capture(b, scheme, suffix):
         srv.terminate()
 
 
-os.makedirs('site/img', exist_ok=True)
+os.makedirs('site/img', exist_ok=True); os.makedirs('docs/img', exist_ok=True)
 with sync_playwright() as p:
     exe = os.environ.get('DEVOID_CHROMIUM')
     b = p.chromium.launch(executable_path=exe) if exe else p.chromium.launch()
-    capture(b, 'light', '')
+    capture(b, 'light', '', readme=True)
     capture(b, 'dark', '-dark')
     b.close()
-print('site shots written to site/img')
+print('shots written to site/img and docs/img')
