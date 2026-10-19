@@ -24,7 +24,7 @@
     <p class="kicker">Privacy policy</p>
     <h1>Devoid collects nothing.</h1>
     <p class="lede">Devoid is a non-custodial Zcash wallet. It runs on your device, it has no accounts, and the people who make it never receive your keys, your balances or your payments. This page explains exactly what stays on your device and what leaves it.</p>
-    <p class="fine">Last updated 18 October 2026.</p>
+    <p class="fine">Last updated 19 October 2026.</p>
 
     <h2>What stays on your device</h2>
     <ul>
@@ -49,20 +49,20 @@
 
     <h2>The web wallet</h2>
     <p>The wallet at <a href="app/">/app</a> runs entirely in your browser. There is no Devoid server: the page downloads its code from this site, and the wallet engine (the same Rust code as the desktop app, compiled to WebAssembly) runs on your device. You choose one of two kinds of wallet.</p>
-    <p><b>A testnet wallet</b> is a real Zcash wallet on the test network, whose coins have no value.</p>
+    <p><b>A real wallet</b> is a Zcash wallet on mainnet, holding real ZEC, or on the test network, whose coins have no value.</p>
     <ul>
       <li><b>What it stores, in this browser only.</b> Your recovery phrase, encrypted with your passphrase (the same age encryption as the desktop app), and the wallet database: balances, addresses, transactions and memos. They are kept in this site's IndexedDB storage. Your passphrase is never stored.</li>
-      <li><b>What leaves your browser.</b> To sync and to send, the wallet talks to a lightwalletd server through a gRPC-web proxy run by ChainSafe (<code>zcash-testnet.chainsafe.dev</code>). That server sees your IP address and the transactions you broadcast; shielded transactions hide recipients, amounts and memos from it. A browser cannot use Tor; the desktop app can. The first payment also downloads the Sapling proving parameters from this site.</li>
+      <li><b>What leaves your browser.</b> To sync and to send, the wallet talks to a lightwalletd server through a gRPC-web proxy run by ChainSafe (<code>zcash-mainnet.chainsafe.dev</code>, or <code>zcash-testnet.chainsafe.dev</code> for a testnet wallet). That server sees your IP address and the transactions you broadcast; shielded transactions hide recipients, amounts and memos from it. A browser cannot use Tor; the desktop app can. The first payment also downloads the Sapling proving parameters from this site.</li>
     </ul>
     <p><b>A demo</b> runs on a simulated chain with play money and connects to no Zcash server. It stores a made-up wallet (with words that cannot restore a real one and a salted hash of the passphrase you chose) in this browser's local storage.</p>
     <ul>
       <li><b>What the web version never asks for.</b> A recovery phrase. It has no restore option; restore a wallet in the desktop app.</li>
-      <li><b>Deleting it.</b> Settings, then Delete this wallet (or Reset the demo); or clear this site's data in your browser. A deleted testnet wallet can only be restored from its recovery phrase.</li>
+      <li><b>Deleting it.</b> Settings, then Delete this wallet (or Reset the demo); or clear this site's data in your browser. A deleted wallet can only be restored from its recovery phrase, in the desktop app.</li>
       <li><b>Your lists, contacts and settings</b> are kept in this browser's local storage, separately for each kind of wallet.</li>
     </ul>
 
-    <h2>Mainnet on the web and the Chrome extension</h2>
-    <p>Both follow once payments from the web wallet are verified on testnet, with the same rules: the wallet runs on your device, your keys never leave it, and nothing is collected. This policy will be updated before either is released.</p>
+    <h2>The Chrome extension</h2>
+    <p>It will follow the same rules: the wallet runs on your device, your keys never leave it, and nothing is collected. This policy will be updated before it is released.</p>
 
     <h2>Changes and contact</h2>
     <p>If this policy changes, the date above changes with it, and the history is public in the project’s repository. Questions are welcome as an issue on <a href="https://github.com/davebrian259-tech/Devoid/issues">GitHub</a>.</p>

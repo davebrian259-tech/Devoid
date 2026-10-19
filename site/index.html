@@ -44,7 +44,7 @@
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
           <a class="btn ghost" href="#start">Install it yourself</a>
         </div>
-        <p class="fine">Opens right here, on any phone or computer. The web wallet runs entirely in your browser, on the Zcash testnet for now; for mainnet ZEC, run the desktop app. Non-custodial either way: keys never leave your device.</p>
+        <p class="fine">Opens right here, on any phone or computer. The web wallet runs entirely in your browser, on mainnet or the Zcash testnet. Non-custodial either way: keys never leave your device.</p>
       </div>
       <figure class="stage">
         <div class="browser">
@@ -161,9 +161,9 @@
         <li class="done"><b>Verified against the Zcash testnet</b><span>Wallet creation, sync to the chain tip, balances, history and fee quotes against a live lightwalletd server.</span></li>
         <li class="done"><b>Tested end to end</b><span>241 automated tests, plus browser tests that drive every screen, on the desktop and on the web.</span></li>
         <li class="done"><b>A real wallet in any browser</b><span>The same Rust engine, compiled to WebAssembly, runs in the page: testnet wallets are created, synced to the chain tip and quote exact fees, and a full transaction with Sapling and Orchard proofs is built and proved in the browser. Keys stay in the browser, encrypted.</span></li>
-        <li class="next"><b>First testnet broadcast</b><span>Next, from the desktop and the web wallet. Real sends count as unverified until a batch is confirmed on chain.</span></li>
-        <li class="next"><b>Mainnet</b><span>After testnet, starting with small amounts.</span></li>
-        <li class="next"><b>Mainnet on the web, and a Chrome extension</b><span>After the first verified testnet payments. The extension runs the same WebAssembly engine, so keys stay on your device there too.</span></li>
+        <li class="done"><b>Confirmed on mainnet</b><span>A shielded 2-recipient batch with memos, sent by the Rust engine, and a payment sent by the web wallet's engine in the browser, both mined on the Zcash mainnet with the exact ZIP 317 fee quoted.</span></li>
+        <li class="next"><b>Testnet's NU7 upgrade</b><span>Testnet runs a newer network upgrade than mainnet; sending there needs the next Zcash libraries, and so will mainnet once NU7 reaches it.</span></li>
+        <li class="next"><b>A Chrome extension</b><span>The same WebAssembly engine, so keys stay on your device there too.</span></li>
       </ul>
     </div>
   </section>
@@ -172,7 +172,7 @@
     <div class="wrap narrow">
       <p class="kicker">Get started</p>
       <h2>Try it in a minute.</h2>
-      <p class="lede">No computer needed: <a href="app/">open the web wallet</a> on your phone, as a testnet wallet or a demo. To run it yourself, the demo needs nothing but Node 20; build the Rust engine when you want real Zcash.</p>
+      <p class="lede">No computer needed: <a href="app/">open the web wallet</a> on your phone, as a mainnet or testnet wallet, or a demo. To run it yourself, the demo needs nothing but Node 20; build the Rust engine when you want real Zcash.</p>
       <pre class="code"><code><span class="c"># get the code</span>
 git clone https://github.com/davebrian259-tech/Devoid.git
 cd Devoid
@@ -206,7 +206,7 @@ node server/index.mjs</code></pre>
       <div class="foot-about">
         <a class="brand" href="./#top" aria-label="Devoid home"><img src="mark.svg" alt="" width="30" height="30"><span class="wordmark">devoid</span></a>
         <p>A non-custodial Zcash wallet for paying many people in one shielded transaction. Keys stay on your device.</p>
-        <p class="foot-state"><span class="dot" aria-hidden="true"></span>Testnet verified · web wallet live · mainnet next</p>
+        <p class="foot-state"><span class="dot" aria-hidden="true"></span>Confirmed on mainnet · web wallet live</p>
       </div>
       <nav class="foot-col" aria-label="Product">
         <h3>Product</h3>

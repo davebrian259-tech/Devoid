@@ -163,7 +163,7 @@ try:
         st = pg.evaluate(f'({engine})({{ type: "run", request: {{ cmd: "selftest" }} }})')
         assert st['ok'] and st['result']['failed'] == 0, st
         proof = pg.evaluate(f'({engine})({{ type: "checkProving" }})')
-        assert proof['ok'] and proof['result']['orchardActions'] >= 1 and proof['result']['saplingOutputs'] >= 1, proof
+        assert proof['ok'] and proof['result']['orchardActions'] >= 1 and proof['result']['saplingOutputs'] >= 1 and proof['result']['builtAt'] > 1_700_000_000, proof
         print(f"real engine: self-test {st['result']['passed']} passed; a transaction proved in {proof['result']['proveMs'] / 1000:.0f}s ({proof['result']['bytes']} bytes)")
         ctx.close()
 

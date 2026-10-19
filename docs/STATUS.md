@@ -1,6 +1,6 @@
 # Status: what works, what is blocked
 
-Last verified 2026-10-17 on Linux, Rust 1.97.0, Node 22.
+Last verified 2026-10-19 on Linux, Rust 1.97.0, Node 22.
 
 ## Verified against the real Zcash testnet
 The Rust engine now builds and runs. Against `testnet.zec.rocks:443`
@@ -47,22 +47,41 @@ The Rust engine now builds and runs. Against `testnet.zec.rocks:443`
 - **Mainnet, read-only, both engines** (2026-10-19): a new mainnet wallet created, synced to the
   tip (block 3,522,707 natively through zec.rocks; 3,522,711 in the browser through ChainSafe's
   mainnet gRPC-web proxy, through the UI) and an exact ZIP 317 fee quote refused for lack of
-  funds. The web wallet offers mainnet behind an explicit "real ZEC" confirmation. No mainnet
-  payment has been made.
+  funds. The web wallet offers mainnet behind an explicit "real ZEC" confirmation.
+- **Mainnet payments, both engines** (2026-10-19), with 0.0032 ZEC received by a new wallet
+  (`2f6c81a1…`, block 3,522,773):
+  - **Native engine, a 2-recipient batch with memos**: 0.001 ZEC to an outside unified address
+    and 0.001 ZEC to a fresh address of the same wallet, fully shielded (Ironwood to Ironwood,
+    privacy level "private", no acknowledgement needed). Fee 0.00015 ZEC, the exact ZIP 317 fee
+    for three actions (two payments and change) quoted before signing. Broadcast through
+    zec.rocks as `82731e0e0e7d007c1ebdd9d0eef4ea2566e1fce2053f32216169340462c88339` and mined in
+    block 3,522,904; the wallet's history and balance matched the proposal.
+  - **Web engine, in Chromium under the site's real CSP**: the same wallet's files loaded into
+    the WebAssembly engine, synced through ChainSafe's mainnet gRPC-web proxy, and everything
+    left (0.00195 ZEC from two notes, fee 0.0001 ZEC, no change) sent back to the outside address,
+    proved in the browser in 60 s, broadcast as
+    `f95a784645e6258406d01c218ab28720f3b7583c8e9232d8aae776f70e81044d` and mined in block
+    3,522,951.
+  - The first web attempt found a bug no offline test had reached: after proving, the library
+    stamps the new transaction with `time::OffsetDateTime::now_utc()`, which aborts in a browser
+    unless the `time` crate reads the clock through JavaScript. Nothing was broadcast. Fixed by
+    enabling `time`'s `wasm-bindgen` feature; the in-browser proving check now reads that clock
+    too, so `npm run test:web` catches it.
+  - With that, mainnet is open in the web wallet (`WEB_MAINNET` in `ui/lib.js`).
 - Web wallet UI (`npm run test:web`): the built site served with its real `_headers`, from the front
   page's Open the wallet to a sent batch, a reload, a reset, and a phone screen. Fails on any
   console error, CSP violation or network request.
 - Layout (`scripts/overlap.js`, run on every screenshot of both browser tests): no component may
   overlap another, spill out of its box, scroll the page sideways or sit under the phone tab bar,
   checked from 320px to 1440px wide in light and dark. The test proves the check by planting an
-  overlap and expecting it to be caught. The web version is testnet only and refuses a
-  recovery phrase, in the UI and again in its backend.
+  overlap and expecting it to be caught. The web version refuses a recovery phrase, and keeps the
+  demo on testnet, in the UI and again in its backend.
 
 ## Still not verified
-1. **A real broadcast.** No testnet transaction has been built, signed and broadcast from here:
-   that needs funded testnet ZEC, and the faucets are web forms. Everything up to the proposal is
-   exercised against the live chain; the signing and broadcast path is not.
-2. **Mainnet.** Only after 1, and then with a small amount first.
+1. **Sending on testnet**, which needs the NU7-aware (pre-release) Zcash libraries; mainnet will
+   need them too once NU7 activates there.
+2. **Sapling and transparent spends on mainnet.** The mainnet payments above spent Ironwood
+   notes; Sapling spends are proved in the browser's self-check but have not been broadcast.
 
 Also unimplemented: ZIP 318 migration, TEX addresses.
 
