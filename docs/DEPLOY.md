@@ -87,7 +87,8 @@ Cloudflare builds and deploys on every push; no API token or GitHub secret is ne
    - **Deploy command:** `npx wrangler deploy`.
    - **Non-production branch deploy command:** `npx wrangler versions upload` (gives each branch a
      preview link without touching production).
-   - **Root directory:** `/`. **Build variables:** none.
+   - **Root directory:** `/`. **Build variables:** `NODE_VERSION` = `22` (the build uses Node's
+     built-in `fetch` and top-level `await`; pinning the version keeps the build image from choosing).
 4. Save and deploy. The address appears in the Worker's overview.
 
 Use either this or Option B, not both: two deployers would race each other. With this option, leave
@@ -148,8 +149,9 @@ If nothing prints, add the same headers under Rules → Transform Rules → Modi
 |---|---|---|---|
 | `CLOUDFLARE_API_TOKEN` | GitHub repository secret, or your shell for Option B | Yes | Lets Wrangler deploy |
 | `CLOUDFLARE_ACCOUNT_ID` | GitHub repository secret, or your shell | No, but keep it private | Which account to deploy to |
+| `NODE_VERSION` | Cloudflare dashboard → the Worker → Settings → Build → Variables and secrets (Option A only) | No | `22`: the Node version the build runs on |
 
-The site has no runtime variables and must never contain a secret: everything in `site/` and `ui/` is public.
+Only Option B needs the two Cloudflare values, and only Option A needs `NODE_VERSION`. The site has no runtime variables and must never contain a secret: everything in `site/` and `ui/` is public.
 
 The wallet itself reads these, all optional:
 
