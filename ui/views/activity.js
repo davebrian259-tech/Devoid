@@ -33,10 +33,13 @@ function amount(t) {
   return sens(`${d > 0n ? '+' : ''}${fmtZec(d)} ${unit()}`, `amt ${d > 0n ? 'in' : ''}`);
 }
 
+// A transaction with no block yet is either on its way or, once expired, never going to be mined.
+const unmined = (t) => (t.status === 'expired' ? 'Never mined, nothing spent' : 'Waiting to be mined');
+
 /** A compact row for the overview. */
 export function txItem(t) {
   return h('div', { class: 'item' }, tile(t),
-    h('div', null, h('div', { class: 'title' }, title(t)), h('div', { class: 'meta' }, t.blockTime ? when(t.blockTime) : 'Waiting to be mined', statusPill(t))),
+    h('div', null, h('div', { class: 'title' }, title(t)), h('div', { class: 'meta' }, t.blockTime ? when(t.blockTime) : unmined(t), statusPill(t))),
     amount(t));
 }
 
@@ -44,7 +47,7 @@ function txRow(t) {
   const detail = h('div', { class: 'detail', hidden: true });
   const toggle = h('button', { type: 'button', 'aria-expanded': 'false', onclick: () => { const open = detail.hidden; detail.hidden = !open; toggle.setAttribute('aria-expanded', String(open)); if (open && !detail.childNodes.length) fillDetail(); } },
     tile(t),
-    h('span', { class: 'tline' }, h('span', { class: 'title' }, title(t)), h('span', { class: 'meta' }, t.blockTime ? timeOf(t.blockTime) : 'Waiting to be mined', statusPill(t))),
+    h('span', { class: 'tline' }, h('span', { class: 'title' }, title(t)), h('span', { class: 'meta' }, t.blockTime ? timeOf(t.blockTime) : unmined(t), statusPill(t))),
     amount(t), h('span', { class: 'chev' }, icon('chevronRight')));
   function fillDetail() {
     const outs = (t.outputs ?? []).filter((o) => !o.isChange);
