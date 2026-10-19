@@ -33,6 +33,11 @@ The Rust engine now builds and runs. Against `testnet.zec.rocks:443`
   wallet persisting across reloads. Its self-test passes 10 of 10, and a full transaction with
   Sapling and Orchard proofs is built and proved in the browser (about a minute) in
   `npm run test:web`. Still unproven there too: a real broadcast, which needs funded testnet ZEC.
+- **Mainnet, read-only, both engines** (2026-10-19): a new mainnet wallet created, synced to the
+  tip (block 3,522,707 natively through zec.rocks; 3,522,711 in the browser through ChainSafe's
+  mainnet gRPC-web proxy, through the UI) and an exact ZIP 317 fee quote refused for lack of
+  funds. The web wallet offers mainnet behind an explicit "real ZEC" confirmation. No mainnet
+  payment has been made.
 - Web wallet UI (`npm run test:web`): the built site served with its real `_headers`, from the front
   page's Open the wallet to a sent batch, a reload, a reset, and a phone screen. Fails on any
   console error, CSP violation or network request.

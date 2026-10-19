@@ -130,7 +130,7 @@ function renderShell() {
 }
 
 function band() {
-  if (WEB && webEngine() === 'real') return h('div', { class: 'band testnet', role: 'note' }, h('span', null, h('b', null, 'Testnet wallet in your browser. '), 'Real transactions with test coins of no value. Your keys never leave this browser.'));
+  if (WEB && webEngine() === 'real') return isTest() ? h('div', { class: 'band testnet', role: 'note' }, h('span', null, h('b', null, 'Testnet wallet in your browser. '), 'Real transactions with test coins of no value. Your keys never leave this browser.')) : null;
   if (WEB) return h('div', { class: 'band sim', role: 'note' }, icon('info'), h('span', null, h('b', null, 'Web demo. '), 'Testnet play money on a simulated chain, kept only in this browser. To hold real ZEC, use the desktop app.'));
   if (S.status.simulated) return h('div', { class: 'band sim', role: 'note' }, icon('info'), h('span', null, h('b', null, 'Simulated chain. '), 'This is the demo engine: no network, no real ZEC. Build the Rust engine to use real funds.'));
   if (isTest()) return h('div', { class: 'band testnet', role: 'note' }, 'Testnet · play money, no real value');
