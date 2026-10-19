@@ -1,5 +1,5 @@
 // First run: what Devoid is, then create or restore a wallet, then prove the phrase was written down.
-import { h, btn, api, errorNote, note, fill, WEB, WEB_MAINNET } from '../lib.js';
+import { h, btn, api, errorNote, note, fill, WEB, WEB_MAINNET, poweredBy } from '../lib.js';
 import { icon, mark } from '../icons.js';
 import { themeButton } from '../theme.js';
 
@@ -26,7 +26,8 @@ function hero() {
     h('div', { class: 'points' },
       h('div', null, h('span', { class: 'tile-ico' }, icon('lock')), h('span', null, h('b', null, 'Your keys stay here'), WEB ? 'The wallet runs in your browser, keys encrypted with your passphrase. There is no Devoid server.' : 'Encrypted on this computer. Devoid never asks for your phrase after setup.')),
       h('div', null, h('span', { class: 'tile-ico' }, icon('eye')), h('span', null, h('b', null, 'See what is visible first'), 'Before you sign, Devoid shows exactly what the chain will reveal.')),
-      h('div', null, h('span', { class: 'tile-ico' }, icon('layers')), h('span', null, h('b', null, 'Up to 2,000 recipients'), 'Large lists go out as a few transactions of 25, in order.'))));
+      h('div', null, h('span', { class: 'tile-ico' }, icon('layers')), h('span', null, h('b', null, 'Up to 2,000 recipients'), 'Large lists go out as a few transactions of 25, in order.'))),
+    h('div', { class: 'built-on' }, poweredBy(), h('span', { class: 'stack-names' }, 'librustzcash · lightwalletd · Rust', WEB ? ' → WebAssembly' : '')));
 }
 
 function strengthOf(p) {

@@ -20,6 +20,9 @@ const toJs = (src) => src.replace(/(from\s+'\.{1,2}\/[^']+)\.mjs'/g, "$1.js'");
 
 rmSync(OUT, { recursive: true, force: true });
 cpSync(join(ROOT, 'site'), OUT, { recursive: true });
+// The product page shares the app's fonts and mark rather than keeping copies of its own.
+cpSync(join(ROOT, 'ui', 'fonts'), join(OUT, 'fonts'), { recursive: true });
+cpSync(join(ROOT, 'ui', 'mark.svg'), join(OUT, 'mark.svg'));
 cpSync(join(ROOT, 'ui'), APP, { recursive: true, filter: (src) => !src.includes(join('ui', 'engine', 'params')) });
 
 // The real web wallet: its engine (built by scripts/build-web-engine.mjs and committed in
