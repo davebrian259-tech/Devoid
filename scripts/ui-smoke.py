@@ -112,8 +112,11 @@ try:
         pg.click('#add-recipient')
         expect(pg.locator('[data-rcp="3"] [data-field=address]')).to_be_focused()
         pg.keyboard.type('not-an-address'); pg.fill('[data-rcp="3"] input[data-field=amount]', '0.5')
-        expect(pg.locator('[data-rcp="3"] .why')).to_be_visible()  # checked as you type, shown on its card
-        expect(pg.locator('#review')).to_be_disabled()
+        expect(pg.locator('#review')).to_be_disabled()  # checked as you type
+        pg.wait_for_timeout(800)
+        expect(pg.locator('[data-rcp="3"] .why')).to_have_count(0)  # but not flagged while you are still in the card
+        pg.locator('[data-rcp="3"] input[data-field=amount]').blur()
+        expect(pg.locator('[data-rcp="3"] .why')).to_be_visible()  # shown on its card once you leave it
         pg.fill('[data-rcp="3"] [data-field=address]', shielded); pg.fill('[data-rcp="3"] [data-field=memo]', 'Thanks for March')
         expect(pg.locator('[data-rcp="3"] .rcp-kind .pill')).to_contain_text('Shielded')
         expect(pg.locator('#review')).to_be_enabled()
