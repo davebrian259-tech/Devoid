@@ -33,6 +33,22 @@ The Rust engine now builds and runs. Against `testnet.zec.rocks:443`
   wallet persisting across reloads. Its self-test passes 10 of 10, and a full transaction with
   Sapling and Orchard proofs is built and proved in the browser (about a minute) in
   `npm run test:web`. Still unproven there too: a real broadcast, which needs funded testnet ZEC.
+- **First broadcast, testnet** (2026-10-19): with 1.125 TAZ from a faucet, a 2-recipient batch
+  with memos (one unified, one Sapling recipient) was proposed (fee 0.0002 TAZ, a pool-crossing
+  acknowledgement correctly required), built, proved and signed in 7 s, and broadcast as
+  `fe3f530ffc399636cca88e6063ef28faae661ccc5f40db3253c2be334a8f78d5`. The node rejected it:
+  *transaction uses an incorrect consensus branch id*. Testnet activated **NU7** at block
+  4,465,026 (branch `0x77190AD9`), which only the 0.11 pre-release of the Zcash libraries knows;
+  Devoid pins the stable ones, which match **mainnet** (NU6.3). So on testnet today Devoid can sync
+  and quote but not send; on mainnet its libraries are the current ones. Before NU7 activates on
+  mainnet, Devoid must move to NU7-aware libraries, or sends there will be rejected the same way.
+- Transactions the engine cannot parse (like testnet's NU7 ones) no longer stop a sync: they are
+  logged and skipped, and balances still come from the compact blocks.
+- **Mainnet, read-only, both engines** (2026-10-19): a new mainnet wallet created, synced to the
+  tip (block 3,522,707 natively through zec.rocks; 3,522,711 in the browser through ChainSafe's
+  mainnet gRPC-web proxy, through the UI) and an exact ZIP 317 fee quote refused for lack of
+  funds. The web wallet offers mainnet behind an explicit "real ZEC" confirmation. No mainnet
+  payment has been made.
 - Web wallet UI (`npm run test:web`): the built site served with its real `_headers`, from the front
   page's Open the wallet to a sent batch, a reload, a reset, and a phone screen. Fails on any
   console error, CSP violation or network request.
