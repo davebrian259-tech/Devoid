@@ -44,7 +44,8 @@ def steps(pg):
     words = [s.inner_text() for s in pg.query_selector_all('.phrase span')]
     assert len(words) == 24, words
     expect(pg.locator('.note.warn')).to_contain_text('Write these words on paper')
-    shot(pg, '02-phrase')
+    # Checked for layout like every screen, but never saved: a picture of a phrase is a bad habit.
+    assert not pg.evaluate(LAYOUT_CHECK), pg.evaluate(LAYOUT_CHECK)
     pg.check('#wrote'); pg.click('text=Continue')
     for inp in pg.query_selector_all('input[data-word]'): inp.fill(words[int(inp.get_attribute('data-word')) - 1])
     pg.click('text=Open my wallet')
