@@ -30,7 +30,7 @@ from `ui/` at `/app/`, marked as the web version. In the web version the request
 - **the real engine** (`ui/engine/`): the Rust wallet code of `engine/`, compiled to WebAssembly by
   `web-engine/` and run in a Web Worker. It reaches lightwalletd through ChainSafe's gRPC-web proxy
   and keeps the wallet in the browser's IndexedDB, the recovery phrase encrypted with the
-  passphrase. Testnet only for now.
+  passphrase. Mainnet or testnet; mainnet asks the person to confirm it holds real ZEC.
 - **the simulated engine** (`mock-engine/core.mjs`) for the offline demo.
 
 The web version never asks for a recovery phrase and has no Devoid server. Anyone can open it from
