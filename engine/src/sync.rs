@@ -14,20 +14,14 @@
 //!   4. refresh transparent UTXOs and "enhance" transactions (fetch full transactions so memos,
 //!      transparent spends and mined status are known).
 
-use std::{
-    collections::BTreeSet,
-    path::Path,
-    time::{Duration, Instant},
-};
+use std::{collections::BTreeSet, time::Duration};
 
 use anyhow::anyhow;
 use futures_util::{StreamExt, TryStreamExt};
 use orchard::tree::MerkleHashOrchard;
-use prost::Message;
 use serde_json::json;
-use tokio::{fs::File, io::AsyncWriteExt};
-use tonic::{Code, transport::Channel};
-use tracing::{debug, error, info, warn};
+use tonic::Code;
+use tracing::{debug, info, warn};
 use transparent::{
     address::Script,
     bundle::{OutPoint, TxOut},
@@ -39,13 +33,10 @@ use zcash_client_backend::{
         scanning::{ScanPriority, ScanRange},
         wallet::{ConfirmationsPolicy, decrypt_and_store_transaction},
     },
-    proto::service::{
-        self, BlockId, BlockRange, RawTransaction,
-        compact_tx_streamer_client::CompactTxStreamerClient,
-    },
+    proto::service::{self, BlockId, BlockRange, RawTransaction},
     wallet::WalletTransparentOutput,
 };
-use zcash_client_sqlite::{AccountUuid, FsBlockDb, chain::BlockMeta, error::SqliteClientError};
+use zcash_client_sqlite::{AccountUuid, chain::BlockMeta, error::SqliteClientError};
 use zcash_keys::encoding::AddressCodec;
 use zcash_primitives::{
     block::BlockHash,
@@ -59,9 +50,10 @@ use zcash_protocol::{
 use zcash_script::script;
 
 use crate::{
-    data::{Db, WalletPaths},
+    data::Db,
     failure::{Failure, R},
     out,
+    platform::{BlockCache, Client, Instant, timeout},
 };
 
 /// Blocks downloaded and scanned per batch. Small enough that a batch finishes within seconds on an
@@ -122,11 +114,10 @@ pub(crate) struct SyncOptions {
 
 /// Runs one sync slice.
 pub(crate) async fn sync_slice(
-    client: &mut CompactTxStreamerClient<Channel>,
+    client: &mut Client,
     params: Network,
-    paths: &WalletPaths,
     db_data: &mut Db,
-    db_cache: &mut FsBlockDb,
+    db_cache: &mut BlockCache,
     budget: &Budget,
     options: &SyncOptions,
 ) -> R<SyncReport> {
@@ -142,16 +133,7 @@ pub(crate) async fn sync_slice(
             report.budget_expired = true;
             break;
         }
-        let again = running(
-            client,
-            params,
-            paths,
-            db_data,
-            db_cache,
-            budget,
-            &mut report,
-        )
-        .await?;
+        let again = running(client, params, db_data, db_cache, budget, &mut report).await?;
         if !again {
             break;
         }
@@ -176,11 +158,10 @@ pub(crate) async fn sync_slice(
 /// One pass of the sync loop. Returns `true` if the caller should run another pass because the
 /// set of suggested scan ranges changed underneath it.
 async fn running(
-    client: &mut CompactTxStreamerClient<Channel>,
+    client: &mut Client,
     params: Network,
-    paths: &WalletPaths,
     db_data: &mut Db,
-    db_cache: &mut FsBlockDb,
+    db_cache: &mut BlockCache,
     budget: &Budget,
     report: &mut SyncReport,
 ) -> R<bool> {
@@ -206,14 +187,7 @@ async fn running(
                 "Chain tip {} diverges from our history (max scanned {}); reorg detected, rewinding to {}",
                 chain_tip, max_scanned, rewind_height,
             );
-            rewind(
-                db_data,
-                db_cache,
-                paths,
-                chain_tip,
-                rewind_height,
-                chain_tip,
-            )?;
+            rewind(db_data, db_cache, chain_tip, rewind_height, chain_tip)?;
         }
     }
 
@@ -242,8 +216,7 @@ async fn running(
             Some(scan_range) if scan_range.priority() == ScanPriority::Verify => {
                 // Download the blocks in `scan_range` into the block source, overwriting any
                 // existing blocks in this range.
-                let block_meta =
-                    download_blocks(client, paths, db_cache, scan_range, budget).await?;
+                let block_meta = download_blocks(client, db_cache, scan_range, budget).await?;
                 let chain_state =
                     download_chain_state(client, scan_range.block_range().start - 1).await?;
 
@@ -251,7 +224,6 @@ async fn running(
                 // wallet's chain tip is out of sync with blockchain history.
                 let scan_ranges_updated = scan_blocks(
                     params,
-                    paths,
                     db_cache,
                     db_data,
                     &chain_state,
@@ -260,9 +232,8 @@ async fn running(
                     report,
                 )?;
 
-                // Delete the now-scanned blocks, because keeping the entire chain in
-                // CompactBlock files on disk is horrendous for the filesystem.
-                delete_cached_blocks(paths, block_meta).await;
+                // Delete the now-scanned blocks.
+                db_cache.discard(block_meta).await;
 
                 if scan_ranges_updated {
                     // The suggested scan ranges have been updated, so we re-request.
@@ -315,13 +286,12 @@ async fn running(
         }
 
         // Download the blocks in `scan_range` into the block source.
-        let block_meta = download_blocks(client, paths, db_cache, &scan_range, budget).await?;
+        let block_meta = download_blocks(client, db_cache, &scan_range, budget).await?;
         let chain_state = download_chain_state(client, scan_range.block_range().start - 1).await?;
 
         // Scan the downloaded blocks.
         let scan_ranges_updated = scan_blocks(
             params,
-            paths,
             db_cache,
             db_data,
             &chain_state,
@@ -331,7 +301,7 @@ async fn running(
         )?;
 
         // Delete the now-scanned blocks.
-        delete_cached_blocks(paths, block_meta).await;
+        db_cache.discard(block_meta).await;
 
         if scan_ranges_updated {
             // The suggested scan ranges have been updated (either due to a continuity error or
@@ -376,10 +346,7 @@ fn emit_scan_progress(db_data: &Db, chain_tip: BlockHeight, next_range: Option<&
     );
 }
 
-async fn update_subtree_roots(
-    client: &mut CompactTxStreamerClient<Channel>,
-    db_data: &mut Db,
-) -> R<()> {
+async fn update_subtree_roots(client: &mut Client, db_data: &mut Db) -> R<()> {
     let mut request = service::GetSubtreeRootsArg::default();
     request.set_shielded_protocol(service::ShieldedProtocol::Sapling);
     let sapling_roots: Vec<CommitmentTreeRoot<sapling::Node>> = client
@@ -448,10 +415,7 @@ async fn update_subtree_roots(
     Ok(())
 }
 
-async fn update_chain_tip(
-    client: &mut CompactTxStreamerClient<Channel>,
-    db_data: &mut Db,
-) -> R<(BlockHeight, BlockHash)> {
+async fn update_chain_tip(client: &mut Client, db_data: &mut Db) -> R<(BlockHeight, BlockHash)> {
     let latest = client
         .get_latest_block(service::ChainSpec::default())
         .await
@@ -485,8 +449,7 @@ async fn update_chain_tip(
 /// silently wedging.
 fn rewind(
     db_data: &mut Db,
-    db_cache: &mut FsBlockDb,
-    paths: &WalletPaths,
+    db_cache: &mut BlockCache,
     at_height: BlockHeight,
     requested: BlockHeight,
     chain_tip: BlockHeight,
@@ -516,12 +479,8 @@ fn rewind(
         Err(e) => return Err(e.into()),
     };
 
-    // Delete cached compact-block files above the rewind height, then truncate the block
-    // metadata to match.
-    delete_block_files_above(paths, rewind_height);
-    db_cache
-        .truncate_to_height(rewind_height)
-        .map_err(|e| anyhow!("{:?}", e))?;
+    // Forget cached compact blocks above the rewind height.
+    db_cache.truncate_to_height(rewind_height)?;
 
     // Re-apply the chain tip. `truncate_to_height` trims the scan queue down to the rewound
     // height, so without this the wallet would believe it has nothing left to scan and would stop
@@ -531,34 +490,10 @@ fn rewind(
     Ok(())
 }
 
-/// Deletes cached compact-block files whose height is above `height`, tolerating files that are
-/// already gone. Files are named `<height>-<hash>-compactblock`, so the height is the leading
-/// component.
-fn delete_block_files_above(paths: &WalletPaths, height: BlockHeight) {
-    let Ok(entries) = std::fs::read_dir(paths.blocks_dir()) else {
-        return;
-    };
-    for entry in entries.flatten() {
-        let file_height = entry
-            .file_name()
-            .to_str()
-            .and_then(|n| n.split('-').next())
-            .and_then(|h| h.parse::<u32>().ok());
-        if file_height.is_some_and(|h| h > u32::from(height)) {
-            if let Err(e) = std::fs::remove_file(entry.path())
-                && e.kind() != std::io::ErrorKind::NotFound
-            {
-                error!("Failed to delete cached block {:?}: {}", entry.path(), e);
-            }
-        }
-    }
-}
-
 /// Downloads the blocks of `scan_range` into the block cache and returns their metadata.
 async fn download_blocks(
-    client: &mut CompactTxStreamerClient<Channel>,
-    paths: &WalletPaths,
-    db_cache: &FsBlockDb,
+    client: &mut Client,
+    db_cache: &mut BlockCache,
     scan_range: &ScanRange,
     budget: &Budget,
 ) -> R<Vec<BlockMeta>> {
@@ -577,47 +512,22 @@ async fn download_blocks(
     // that crawls cannot hold the process forever.
     let limit = budget.remaining().max(Duration::from_secs(20)) + Duration::from_secs(60);
 
-    let paths_for_stream = paths.clone();
+    let cache = &*db_cache;
     let download = async {
         let block_meta_stream = client
             .get_block_range(range)
             .await
             .map_err(anyhow::Error::from)?
             .into_inner()
-            .and_then(|block| {
-                let paths = paths_for_stream.clone();
-                async move {
-                    let (sapling_outputs_count, orchard_actions_count) = block
-                        .vtx
-                        .iter()
-                        .map(|tx| (tx.outputs.len() as u32, tx.actions.len() as u32))
-                        .fold((0, 0), |(acc_sapling, acc_orchard), (sapling, orchard)| {
-                            (acc_sapling + sapling, acc_orchard + orchard)
-                        });
-
-                    let meta = BlockMeta {
-                        height: block.height(),
-                        block_hash: block.hash(),
-                        block_time: block.time,
-                        sapling_outputs_count,
-                        orchard_actions_count,
-                    };
-
-                    let encoded = block.encode_to_vec();
-                    let mut block_file = File::create(paths.block_path(&meta)).await?;
-                    block_file.write_all(&encoded).await?;
-
-                    Ok(meta)
-                }
-            });
-        tokio::pin!(block_meta_stream);
+            .map_err(anyhow::Error::from)
+            .and_then(|block| cache.store(block));
+        let mut block_meta_stream = std::pin::pin!(block_meta_stream);
 
         let mut block_meta = vec![];
         loop {
-            let next = tokio::time::timeout(STREAM_STALL_TIMEOUT, block_meta_stream.try_next())
+            let next = timeout(STREAM_STALL_TIMEOUT, block_meta_stream.try_next())
                 .await
-                .map_err(|_| anyhow!("the server stopped sending blocks"))?
-                .map_err(anyhow::Error::from)?;
+                .map_err(|_| anyhow!("the server stopped sending blocks"))??;
             match next {
                 Some(block) => block_meta.push(block),
                 None => break,
@@ -626,20 +536,15 @@ async fn download_blocks(
         Ok::<_, anyhow::Error>(block_meta)
     };
 
-    let block_meta = tokio::time::timeout(limit, download)
+    let block_meta = timeout(limit, download)
         .await
         .map_err(|_| anyhow!("downloading blocks took too long"))??;
 
-    db_cache
-        .write_block_metadata(&block_meta)
-        .map_err(crate::error::Error::from)?;
+    db_cache.index(&block_meta)?;
     Ok(block_meta)
 }
 
-async fn download_chain_state(
-    client: &mut CompactTxStreamerClient<Channel>,
-    block_height: BlockHeight,
-) -> R<ChainState> {
+async fn download_chain_state(client: &mut Client, block_height: BlockHeight) -> R<ChainState> {
     let tree_state = client
         .get_tree_state(BlockId {
             height: block_height.into(),
@@ -654,18 +559,6 @@ async fn download_chain_state(
         .map_err(anyhow::Error::from)?)
 }
 
-async fn delete_cached_blocks(paths: &WalletPaths, block_meta: Vec<BlockMeta>) {
-    for meta in block_meta {
-        if let Err(e) = tokio::fs::remove_file(paths.block_path(&meta)).await {
-            // A file already removed (e.g. by a reorg rewind that deleted the orphaned suffix) is
-            // not an error worth reporting.
-            if e.kind() != std::io::ErrorKind::NotFound {
-                error!("Failed to remove {:?}: {}", meta, e);
-            }
-        }
-    }
-}
-
 /// Scans the given block range and checks for scanning errors that indicate the wallet's chain tip
 /// is out of sync with blockchain history.
 ///
@@ -673,8 +566,7 @@ async fn delete_cached_blocks(paths: &WalletPaths, block_meta: Vec<BlockMeta>) {
 #[allow(clippy::too_many_arguments)]
 fn scan_blocks(
     params: Network,
-    paths: &WalletPaths,
-    db_cache: &mut FsBlockDb,
+    db_cache: &mut BlockCache,
     db_data: &mut Db,
     initial_chain_state: &ChainState,
     scan_range: &ScanRange,
@@ -684,7 +576,7 @@ fn scan_blocks(
     info!("Scanning {}", scan_range);
     let scan_result = scan_cached_blocks(
         &params,
-        db_cache,
+        db_cache.source(),
         db_data,
         scan_range.block_range().start,
         initial_chain_state,
@@ -705,14 +597,7 @@ fn scan_blocks(
                 err,
             );
 
-            rewind(
-                db_data,
-                db_cache,
-                paths,
-                err.at_height(),
-                rewind_height,
-                chain_tip,
-            )?;
+            rewind(db_data, db_cache, err.at_height(), rewind_height, chain_tip)?;
 
             // The database was truncated, invalidating prior suggested ranges.
             Ok(true)
@@ -758,7 +643,7 @@ fn scan_blocks(
 /// - At least one shielded note from each shielding transaction is always enhanced.
 async fn refresh_utxos(
     params: &Network,
-    client: &mut CompactTxStreamerClient<Channel>,
+    client: &mut Client,
     db_data: &mut Db,
     account_id: AccountUuid,
     start_height: BlockHeight,
@@ -834,7 +719,7 @@ fn parse_raw_transaction(
 }
 
 async fn fetch_transaction(
-    client: &mut CompactTxStreamerClient<Channel>,
+    client: &mut Client,
     params: &Network,
     chain_tip: BlockHeight,
     txid: TxId,
@@ -865,7 +750,7 @@ async fn fetch_transaction(
 /// satisfied. Stops, without error, when the budget runs out; the requests that remain are
 /// served by the next slice.
 async fn enhance_transactions(
-    client: &mut CompactTxStreamerClient<Channel>,
+    client: &mut Client,
     params: Network,
     db_data: &mut Db,
     budget: &Budget,
@@ -969,14 +854,4 @@ async fn enhance_transactions(
     }
 
     Ok(fetched)
-}
-
-/// Removes every cached block file; used when a wallet is reset.
-pub(crate) fn clear_block_cache(paths: &WalletPaths) {
-    let dir: &Path = &paths.blocks_dir();
-    if let Ok(entries) = std::fs::read_dir(dir) {
-        for entry in entries.flatten() {
-            let _ = std::fs::remove_file(entry.path());
-        }
-    }
 }

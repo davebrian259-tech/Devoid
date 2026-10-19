@@ -5,6 +5,7 @@
 // network and receiver layout using the same rules as librustzcash's `zcash_address` crate. It
 // does NOT check that a Sapling/Orchard receiver is a valid curve point; the engine does that with
 // the official parser before anything is built, and its answer always wins.
+import { toHex } from './sha256.mjs';
 import { bech32Decode, bech32Encode, convertBits } from './bech32.mjs';
 import { base58CheckDecode } from './base58.mjs';
 import { f4jumble, f4jumbleInv } from './f4jumble.mjs';
@@ -85,7 +86,7 @@ export function parseAddress(input) {
 }
 
 function parseBase58Payload(s, payload) {
-  const prefix = Buffer.from(payload.subarray(0, 2)).toString('hex');
+  const prefix = toHex(payload.subarray(0, 2));
   if (payload.length === 22 && T_PREFIX[prefix]) {
     const { network, type } = T_PREFIX[prefix];
     return { ok: true, kind: 'transparent', network, receivers: [type], unknownReceivers: [], canReceiveMemo: false, address: s };

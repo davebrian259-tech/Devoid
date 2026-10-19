@@ -1,5 +1,5 @@
 // Settings: appearance, connection, recovery phrase, passphrase, shielding, and what is running.
-import { S, nav, api, h, btn, note, errorNote, unit, fill } from '../lib.js';
+import { S, nav, api, h, btn, note, errorNote, unit, fill, confirmDialog, WEB, webEngine, webReset } from '../lib.js';
 import { icon } from '../icons.js';
 import { fmtZec } from '../calc.js';
 import { themeChoice, setTheme, onThemeChange } from '../theme.js';
@@ -59,7 +59,22 @@ export async function viewSettings(el) {
   el.append(h('div', { class: 'grid g-2' },
     h('div', { class: 'stack-lg' },
       card('Appearance', 'Follow your system, or pick one.', themeBox),
-      card('Network connection', 'Devoid asks a lightwalletd server for blocks. Tor hides your IP address from that server.', connSeg,
+      WEB && webEngine() === 'real' ? card('Server', 'The web wallet reaches the Zcash network through a gRPC-web server, the kind a browser can use.',
+        h('dl', { class: 'kv small' }, h('dt', null, 'Server'), h('dd', { class: 'mono' }, 'zcash-testnet.chainsafe.dev'), h('dt', null, 'Run by'), h('dd', null, 'ChainSafe, in front of lightwalletd')),
+        note('info', 'What the server sees', 'Your IP address, and the transactions you broadcast. Shielded transactions hide recipients, amounts and memos from it. Tor is not available in a browser; use the desktop app to hide your IP address.')) : null,
+      WEB ? card(webEngine() === 'real' ? 'This browser’s wallet' : 'Web demo', webEngine() === 'real'
+        ? 'Your wallet is stored in this browser, its keys encrypted with your passphrase. Clearing site data removes it.'
+        : 'This wallet, its lists and contacts are kept in this browser only. Clearing site data removes them.',
+        h('div', null, btn(webEngine() === 'real' ? 'Delete this wallet' : 'Reset the demo', 'danger sm', async () => {
+          const real = webEngine() === 'real';
+          const ok = real
+            ? await confirmDialog('Delete this wallet from this browser?', 'Only your recovery phrase can bring it back, in the desktop app. Make sure you have it written down before you continue.', 'Delete wallet', true)
+            : await confirmDialog('Reset the demo?', 'This deletes the demo wallet, its lists and contacts from this browser. You can create a new one afterwards.', 'Reset', true);
+          if (!ok) return;
+          await webReset();
+          location.replace(location.pathname);
+        }, 'trash'))) : null,
+      WEB ? null : card('Network connection', 'Devoid asks a lightwalletd server for blocks. Tor hides your IP address from that server.', connSeg,
         h('div', { class: 'field' }, h('label', { for: 'srv' }, 'Servers'), servers, h('span', { class: 'hint' }, 'A preset (zecrocks, ywallet) or host:port, comma separated.')), socksRow, connMsg,
         h('div', null, btn('Save connection', 'sm', async () => {
           const r = await api('/api/settings', { mode, servers: servers.value.trim() || 'zecrocks', socksProxy: socks.value.trim() });
@@ -67,7 +82,7 @@ export async function viewSettings(el) {
         }))),
       card('About', null,
         h('dl', { class: 'kv small' },
-          h('dt', null, 'Engine'), h('dd', null, status.simulated ? 'Simulated demo engine' : `devoid-engine, self-test ${status.engineVerified ? 'passed' : 'not run'}`),
+          h('dt', null, 'Engine'), h('dd', null, WEB ? (webEngine() === 'real' ? 'devoid-engine, compiled to WebAssembly, running in this browser' : 'Simulated demo engine, running in this browser') : status.simulated ? 'Simulated demo engine' : `devoid-engine, self-test ${status.engineVerified ? 'passed' : 'not run'}`),
           h('dt', null, 'Network'), h('dd', null, status.wallet.network === 'test' ? 'Testnet' : 'Mainnet'),
           status.wallet.birthday ? [h('dt', null, 'Wallet birthday'), h('dd', { class: 'num' }, `Block ${status.wallet.birthday.toLocaleString()}`)] : null,
           h('dt', null, 'Type'), h('dd', null, 'Righteous, Outfit, JetBrains Mono (SIL OFL)'),
@@ -79,7 +94,7 @@ export async function viewSettings(el) {
           if (!r.ok) return fill(phraseOut, errorNote(r.error));
           fill(phraseOut, h('div', { class: 'stack' }, h('div', { class: 'phrase' }, r.result.phrase.split(' ').map((w) => h('span', null, w))), h('div', null, btn('Hide', 'ghost sm', () => phraseOut.replaceChildren(), 'eyeOff'))));
         }, 'key'))), phraseOut),
-      card('Passphrase', 'Change the passphrase that encrypts your keys on this computer.',
+      card('Passphrase', WEB && webEngine() !== 'real' ? 'Change the passphrase this demo asks for before each send.' : WEB ? 'Change the passphrase that encrypts your keys in this browser.' : 'Change the passphrase that encrypts your keys on this computer.',
         h('div', { class: 'field' }, h('label', { for: 'o1' }, 'Current passphrase'), o1),
         h('div', { class: 'field' }, h('label', { for: 'n1' }, 'New passphrase'), n1), cm,
         h('div', null, btn('Change passphrase', 'ghost sm', async () => {

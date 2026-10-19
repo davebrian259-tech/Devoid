@@ -54,7 +54,7 @@ after `#`. Nothing touches a real network; the banner says so. `Ctrl+C` stops it
 ## 4. Check it works
 
 ```bash
-npm test                              # 236 tests, no npm install needed
+npm test                              # 241 tests, no npm install needed
 
 # the browser test, once:
 python3 -m venv .venv && . .venv/bin/activate

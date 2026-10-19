@@ -6,12 +6,7 @@
 //! seed, so the file can be opened with any age implementation if the user ever needs to. The
 //! passphrase is only ever received on the engine's stdin and is never written anywhere.
 
-use std::{
-    fs,
-    io::Write,
-    path::PathBuf,
-    time::{SystemTime, UNIX_EPOCH},
-};
+use std::path::PathBuf;
 
 use age::secrecy::SecretString as AgeSecretString;
 use bip0039::{English, Mnemonic};
@@ -22,6 +17,7 @@ use zcash_protocol::consensus::Network;
 use crate::{
     data::{WalletPaths, network_name, parse_network},
     failure::{Failure, R},
+    platform::{SystemTime, UNIX_EPOCH, files},
 };
 
 const KEYS_FILE: &str = "keys.json";
@@ -112,31 +108,6 @@ fn decrypt_phrase(passphrase: &str, ciphertext: &str) -> R<SecretVec<u8>> {
     }
 }
 
-#[cfg(unix)]
-fn open_private(path: &std::path::Path, create_new: bool) -> std::io::Result<fs::File> {
-    use std::os::unix::fs::OpenOptionsExt;
-    let mut options = fs::OpenOptions::new();
-    options.write(true).mode(0o600);
-    if create_new {
-        options.create_new(true);
-    } else {
-        options.create(true).truncate(true);
-    }
-    options.open(path)
-}
-
-#[cfg(not(unix))]
-fn open_private(path: &std::path::Path, create_new: bool) -> std::io::Result<fs::File> {
-    let mut options = fs::OpenOptions::new();
-    options.write(true);
-    if create_new {
-        options.create_new(true);
-    } else {
-        options.create(true).truncate(true);
-    }
-    options.open(path)
-}
-
 impl Keys {
     fn to_json_string(&self) -> String {
         let value = json!({
@@ -152,12 +123,12 @@ impl Keys {
     }
 
     pub(crate) fn exists(paths: &WalletPaths) -> bool {
-        keys_path(paths).is_file()
+        files::is_file(&keys_path(paths))
     }
 
     pub(crate) fn read(paths: &WalletPaths) -> R<Self> {
         let path = keys_path(paths);
-        let text = match fs::read_to_string(&path) {
+        let text = match files::read_to_string(&path) {
             Ok(t) => t,
             Err(e) if e.kind() == std::io::ErrorKind::NotFound => {
                 return Err(Failure::new(
@@ -215,7 +186,7 @@ impl Keys {
         passphrase: &str,
     ) -> R<Self> {
         check_passphrase(passphrase)?;
-        fs::create_dir_all(paths.root())?;
+        files::create_dir_all(paths.root())?;
         let keys = Self {
             network,
             birthday,
@@ -223,19 +194,14 @@ impl Keys {
             phrase_ciphertext: encrypt_phrase(passphrase, phrase)?,
         };
 
-        let mut file = match open_private(&keys_path(paths), true) {
-            Ok(f) => f,
-            Err(e) if e.kind() == std::io::ErrorKind::AlreadyExists => {
-                return Err(Failure::new(
-                    "wallet_exists",
-                    "A wallet already exists in this folder.",
-                ));
-            }
-            Err(e) => return Err(e.into()),
-        };
-        file.write_all(keys.to_json_string().as_bytes())?;
-        file.sync_all()?;
-        Ok(keys)
+        match files::write_new_private(&keys_path(paths), keys.to_json_string().as_bytes()) {
+            Ok(()) => Ok(keys),
+            Err(e) if e.kind() == std::io::ErrorKind::AlreadyExists => Err(Failure::new(
+                "wallet_exists",
+                "A wallet already exists in this folder.",
+            )),
+            Err(e) => Err(e.into()),
+        }
     }
 
     /// Decrypts the recovery phrase.
@@ -277,17 +243,9 @@ impl Keys {
         }
 
         let previous = std::mem::replace(&mut self.phrase_ciphertext, new_ciphertext);
-        let target = keys_path(paths);
-        let tmp = target.with_extension("json.tmp");
-        let result = (|| -> std::io::Result<()> {
-            let mut file = open_private(&tmp, false)?;
-            file.write_all(self.to_json_string().as_bytes())?;
-            file.sync_all()?;
-            fs::rename(&tmp, &target)
-        })();
-        if let Err(e) = result {
+        if let Err(e) = files::replace_private(&keys_path(paths), self.to_json_string().as_bytes())
+        {
             self.phrase_ciphertext = previous;
-            let _ = fs::remove_file(&tmp);
             return Err(e.into());
         }
         Ok(())

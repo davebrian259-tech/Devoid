@@ -1,9 +1,7 @@
 // Base58Check, as used by Zcash transparent (t-) addresses.
-import { createHash } from 'node:crypto';
+import { sha256 } from './sha256.mjs';
 
 const ALPHABET = '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz';
-
-const sha256 = (b) => createHash('sha256').update(b).digest();
 
 /**
  * @param {string} str

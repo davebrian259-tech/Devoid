@@ -27,8 +27,9 @@
       <a href="#status">Status</a>
     </nav>
     <button class="theme-toggle" type="button" data-theme-toggle aria-label="Switch theme"><svg class="i-moon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20.985 12.486a9 9 0 1 1-9.473-9.472c.405-.022.617.46.402.803a6 6 0 0 0 8.268 8.268c.344-.215.825-.004.803.401"/></svg><svg class="i-sun" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg></button>
-    <a class="btn small ghost" href="https://github.com/davebrian259-tech/Devoid">GitHub
+    <a class="btn small ghost gh" href="https://github.com/davebrian259-tech/Devoid">GitHub
       <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17 17 7M8 7h9v9"/></svg></a>
+    <a class="btn small" href="app/">Open wallet</a>
   </div>
 </header>
 
@@ -39,11 +40,11 @@
         <h1>Pay everyone at once. <em>Privately.</em></h1>
         <p class="lede">Devoid is a Zcash wallet for paying a list of people in one go. Paste the addresses and amounts, see exactly what the chain will reveal, then sign once. Recipients, amounts and memos stay shielded.</p>
         <div class="ctas">
-          <a class="btn" href="#start">Get started
+          <a class="btn" href="app/" id="open-wallet">Open the wallet
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
-          <a class="btn ghost" href="https://github.com/davebrian259-tech/Devoid">View the source</a>
+          <a class="btn ghost" href="#start">Install it yourself</a>
         </div>
-        <p class="fine">Non-custodial: your keys stay on your device.</p>
+        <p class="fine">Opens right here, on any phone or computer. The web wallet runs entirely in your browser, on the Zcash testnet for now; for mainnet ZEC, run the desktop app. Non-custodial either way: keys never leave your device.</p>
       </div>
       <figure class="stage">
         <div class="browser">
@@ -158,10 +159,11 @@
       <ul class="checks">
         <li class="done"><b>Rust engine builds and passes its self-test</b><span>10 of 10 checks, including the bundled Sapling proving parameters.</span></li>
         <li class="done"><b>Verified against the Zcash testnet</b><span>Wallet creation, sync to the chain tip, balances, history and fee quotes against a live lightwalletd server.</span></li>
-        <li class="done"><b>Tested end to end</b><span>236 automated tests, plus a browser test that drives every screen.</span></li>
-        <li class="next"><b>First testnet broadcast</b><span>Next. Real sends count as unverified until a batch is confirmed on chain.</span></li>
+        <li class="done"><b>Tested end to end</b><span>241 automated tests, plus browser tests that drive every screen, on the desktop and on the web.</span></li>
+        <li class="done"><b>A real wallet in any browser</b><span>The same Rust engine, compiled to WebAssembly, runs in the page: testnet wallets are created, synced to the chain tip and quote exact fees, and a full transaction with Sapling and Orchard proofs is built and proved in the browser. Keys stay in the browser, encrypted.</span></li>
+        <li class="next"><b>First testnet broadcast</b><span>Next, from the desktop and the web wallet. Real sends count as unverified until a batch is confirmed on chain.</span></li>
         <li class="next"><b>Mainnet</b><span>After testnet, starting with small amounts.</span></li>
-        <li class="next"><b>Web app and Chrome extension</b><span>In development. The wallet engine moves into the browser, so keys stay on your device there too.</span></li>
+        <li class="next"><b>Mainnet on the web, and a Chrome extension</b><span>After the first verified testnet payments. The extension runs the same WebAssembly engine, so keys stay on your device there too.</span></li>
       </ul>
     </div>
   </section>
@@ -170,7 +172,7 @@
     <div class="wrap narrow">
       <p class="kicker">Get started</p>
       <h2>Try it in a minute.</h2>
-      <p class="lede">The demo runs on a simulated chain: nothing to install but Node 20. Build the Rust engine when you want real Zcash.</p>
+      <p class="lede">No computer needed: <a href="app/">open the web wallet</a> on your phone, as a testnet wallet or a demo. To run it yourself, the demo needs nothing but Node 20; build the Rust engine when you want real Zcash.</p>
       <pre class="code"><code><span class="c"># get the code</span>
 git clone https://github.com/davebrian259-tech/Devoid.git
 cd Devoid
@@ -187,11 +189,59 @@ node server/index.mjs</code></pre>
 </main>
 
 <footer class="foot">
-  <div class="wrap foot-in">
-    <a class="brand" href="#top"><img src="mark.svg" alt="" width="28" height="28"><span class="wordmark">devoid</span></a>
-    <p>Open source under the MIT licence; the engine is MIT or Apache-2.0. Built on librustzcash.<br>
-    Type: Righteous, Outfit and JetBrains Mono (SIL Open Font License). Icons: Lucide (ISC).<br>
-    <a href="privacy.html">Privacy policy</a></p>
+  <div class="wrap">
+    <section class="foot-cta" aria-labelledby="foot-cta-title">
+      <div>
+        <h2 id="foot-cta-title">Pay everyone at once. <em>Privately.</em></h2>
+        <p>Try it now in your browser, on any phone or computer. No account, no download.</p>
+      </div>
+      <div class="foot-actions">
+        <a class="btn invert" href="app/">Open the wallet
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+        <a class="btn ghost invert" href="./#start">Install it yourself</a>
+      </div>
+    </section>
+
+    <div class="foot-grid">
+      <div class="foot-about">
+        <a class="brand" href="./#top" aria-label="Devoid home"><img src="mark.svg" alt="" width="30" height="30"><span class="wordmark">devoid</span></a>
+        <p>A non-custodial Zcash wallet for paying many people in one shielded transaction. Keys stay on your device.</p>
+        <p class="foot-state"><span class="dot" aria-hidden="true"></span>Testnet verified · web wallet live · mainnet next</p>
+      </div>
+      <nav class="foot-col" aria-label="Product">
+        <h3>Product</h3>
+        <ul>
+          <li><a href="app/">Open the wallet</a></li>
+          <li><a href="./#how">How it works</a></li>
+          <li><a href="./#features">Features</a></li>
+          <li><a href="./#status">Where it stands</a></li>
+        </ul>
+      </nav>
+      <nav class="foot-col" aria-label="Developers">
+        <h3>Developers</h3>
+        <ul>
+          <li><a href="https://github.com/davebrian259-tech/Devoid">Source code <svg class="ext" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17 17 7M8 7h9v9"/></svg></a></li>
+          <li><a href="https://github.com/davebrian259-tech/Devoid/blob/main/docs/ENGINE_PROTOCOL.md">Engine protocol <svg class="ext" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17 17 7M8 7h9v9"/></svg></a></li>
+          <li><a href="https://github.com/davebrian259-tech/Devoid/blob/main/docs/DEPLOY.md">Deploy guide <svg class="ext" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17 17 7M8 7h9v9"/></svg></a></li>
+          <li><a href="https://github.com/davebrian259-tech/Devoid/issues">Report an issue <svg class="ext" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17 17 7M8 7h9v9"/></svg></a></li>
+        </ul>
+      </nav>
+      <nav class="foot-col" aria-label="Trust">
+        <h3>Trust</h3>
+        <ul>
+          <li><a href="privacy.html">Privacy policy</a></li>
+          <li><a href="./#privacy">What the chain sees</a></li>
+          <li><a href="https://github.com/davebrian259-tech/Devoid/blob/main/docs/STATUS.md">Verification status <svg class="ext" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17 17 7M8 7h9v9"/></svg></a></li>
+          <li><a href="https://github.com/davebrian259-tech/Devoid/blob/main/LICENSE">MIT licence <svg class="ext" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17 17 7M8 7h9v9"/></svg></a></li>
+        </ul>
+      </nav>
+    </div>
+
+    <div class="foot-base">
+      <p>Open source. The app is MIT; the engine is MIT or Apache-2.0, built on librustzcash.<br>
+      Type: Righteous, Outfit and JetBrains Mono (SIL OFL). Icons: Lucide (ISC). No cookies, no analytics.</p>
+      <a class="to-top" href="#top">Back to top <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 19V5M6 11l6-6 6 6"/></svg></a>
+    </div>
   </div>
 </footer>
 

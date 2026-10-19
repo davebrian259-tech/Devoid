@@ -49,7 +49,6 @@ use zcash_client_backend::{
 use zcash_client_sqlite::{AccountUuid, ReceivedNoteId};
 use zcash_keys::{address::Address, encoding::AddressCodec, keys::UnifiedSpendingKey};
 use zcash_primitives::transaction::TxId;
-use zcash_proofs::prover::LocalTxProver;
 use zcash_protocol::{
     PoolType, ShieldedPool,
     consensus::{Network, NetworkType},
@@ -63,6 +62,7 @@ use crate::{
     error::{ShieldErrorT, WalletErrorT},
     failure::{Failure, R},
     out,
+    platform::{self, Prover},
     remote::{Connection, Link},
     sync::{Budget, SyncOptions, sync_slice},
     wallet::{Wallet, ironwood_active_at},
@@ -985,10 +985,22 @@ pub(crate) fn propose(wallet: &mut Wallet, req: &Value) -> R<Value> {
 // Building and broadcasting
 // ---------------------------------------------------------------------------------------------
 
+/// True when building `proposal` spends Sapling notes, which needs the Sapling spend parameters.
+fn spends_sapling<N>(proposal: &Proposal<StandardFeeRule, N>) -> bool {
+    proposal.steps().iter().any(|step| {
+        step.shielded_inputs().is_some_and(|inputs| {
+            inputs
+                .notes()
+                .iter()
+                .any(|n| matches!(n.note(), zcash_client_backend::wallet::Note::Sapling(_)))
+        })
+    })
+}
+
 fn create_transfer_transactions(
     db: &mut Db,
     params: &Network,
-    prover: &LocalTxProver,
+    prover: &Prover,
     usk: UnifiedSpendingKey,
     proposal: &Proposal<StandardFeeRule, ReceivedNoteId>,
 ) -> Result<Vec<TxId>, WalletErrorT> {
@@ -1009,7 +1021,7 @@ fn create_transfer_transactions(
 fn create_shielding_transactions(
     db: &mut Db,
     params: &Network,
-    prover: &LocalTxProver,
+    prover: &Prover,
     usk: UnifiedSpendingKey,
     proposal: &Proposal<StandardFeeRule, Infallible>,
 ) -> Result<Vec<TxId>, ShieldErrorT> {
@@ -1136,7 +1148,6 @@ async fn connect_and_catch_up(wallet: &mut Wallet, connection: &Connection) -> R
     let report = sync_slice(
         &mut link.client,
         wallet.params,
-        &wallet.paths,
         &mut wallet.db,
         &mut cache,
         &budget,
@@ -1207,7 +1218,7 @@ pub(crate) async fn send(
     check_reviewed(&chosen.analysis, &expected, &acknowledged)?;
 
     out::progress("build", json!({ "recipients": parsed.recipients.len() }));
-    let prover = LocalTxProver::bundled();
+    let prover = platform::prover(spends_sapling(&chosen.proposal)).await?;
     let txids = create_transfer_transactions(
         &mut wallet.db,
         &wallet.params,
@@ -1417,7 +1428,7 @@ pub(crate) async fn shield(
     check_reviewed(&chosen.analysis, &expected, &acknowledged)?;
 
     out::progress("build", json!({}));
-    let prover = LocalTxProver::bundled();
+    let prover = platform::prover(spends_sapling(&chosen.proposal)).await?;
     let txids = create_shielding_transactions(
         &mut wallet.db,
         &wallet.params,

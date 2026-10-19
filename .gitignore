@@ -154,3 +154,8 @@ engine/target/
 # Local tooling
 .venv/
 .wrangler/
+
+# Sapling parameters, fetched by scripts/build-site.mjs (never committed)
+ui/engine/params/
+web-engine/target/
+__pycache__/

@@ -4,16 +4,12 @@
 //! run is the result: `{"ok":true,"result":...}` or `{"ok":false,"error":{...}}`. Logs go to
 //! stderr and never contain secrets.
 
-use std::io::Write;
-
 use serde_json::{Value, json};
 
+use crate::platform;
+
 pub(crate) fn line(value: &Value) {
-    let mut out = std::io::stdout().lock();
-    // A closed stdout means the parent went away; there is nobody left to tell.
-    let _ = serde_json::to_writer(&mut out, value);
-    let _ = out.write_all(b"\n");
-    let _ = out.flush();
+    platform::write_line(&value.to_string());
 }
 
 /// Reports progress of a long-running command. `fields` must be a JSON object.
