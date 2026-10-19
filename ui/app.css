@@ -292,6 +292,11 @@ select { appearance: none; background-image: linear-gradient(45deg, transparent 
 .seg button[aria-pressed="true"] { background: var(--seg-on); color: var(--ink); box-shadow: var(--shadow-2); }
 .seg.block { display: flex; }
 .seg.block button { flex: 1; justify-content: center; }
+.seg { max-width: 100%; }
+@media (max-width: 400px) {
+  .seg button { padding: 0 11px; font-size: 13.5px; }
+  .seg:not(.block) button .ic { display: none; }
+}
 .chips { display: flex; gap: 8px; flex-wrap: wrap; }
 .chip { appearance: none; height: 34px; padding: 0 15px; border-radius: 999px; border: 1px solid var(--line-2); background: var(--surface); color: var(--ink-2); font-weight: 600; font-size: 13.5px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; }
 .chip:hover { color: var(--ink); border-color: var(--ink-3); }

@@ -15,17 +15,12 @@
 use std::path::{Path, PathBuf};
 
 use rand::rngs::OsRng;
-use zcash_client_sqlite::{
-    FsBlockDb, WalletDb,
-    chain::{BlockMeta, init::init_blockmeta_db},
-    util::SystemClock,
-    wallet::init::init_wallet_db,
-};
+use zcash_client_sqlite::{WalletDb, chain::BlockMeta, wallet::init::init_wallet_db};
 use zcash_protocol::consensus::Network;
 
 use crate::{
-    error,
     failure::{Failure, R},
+    platform::{BlockCache, WalletClock, files},
 };
 
 const BLOCKS_FOLDER: &str = "blocks";
@@ -33,7 +28,7 @@ const DATA_DB: &str = "data.sqlite";
 const TOR_DIR: &str = "tor";
 
 /// The wallet database type used throughout the engine.
-pub(crate) type Db = WalletDb<rusqlite::Connection, Network, SystemClock, OsRng>;
+pub(crate) type Db = WalletDb<rusqlite::Connection, Network, WalletClock, OsRng>;
 
 pub(crate) fn parse_network(name: &str) -> R<Network> {
     match name {
@@ -87,17 +82,16 @@ impl WalletPaths {
     }
 
     pub(crate) fn exists(&self) -> bool {
-        self.data_db().is_file()
+        files::is_file(&self.data_db())
     }
 }
 
 /// Opens (creating and migrating if necessary) the wallet database and the block cache metadata
 /// database, and returns the wallet database.
 pub(crate) fn init_dbs(params: Network, paths: &WalletPaths) -> R<Db> {
-    std::fs::create_dir_all(paths.root())?;
-    let mut db_cache = FsBlockDb::for_path(paths.root()).map_err(error::Error::from)?;
-    let mut db_data = WalletDb::for_path(paths.data_db(), params, SystemClock, OsRng)?;
-    init_blockmeta_db(&mut db_cache)?;
+    files::create_dir_all(paths.root())?;
+    BlockCache::init(paths)?;
+    let mut db_data = WalletDb::for_path(paths.data_db(), params, WalletClock, OsRng)?;
     init_wallet_db(&mut db_data, None)?;
     Ok(db_data)
 }
@@ -113,12 +107,12 @@ pub(crate) fn open_db(params: Network, paths: &WalletPaths) -> R<Db> {
     Ok(WalletDb::for_path(
         paths.data_db(),
         params,
-        SystemClock,
+        WalletClock,
         OsRng,
     )?)
 }
 
 /// Opens the block cache (creating `blocks/` if it is missing).
-pub(crate) fn open_block_cache(paths: &WalletPaths) -> R<FsBlockDb> {
-    Ok(FsBlockDb::for_path(paths.root()).map_err(error::Error::from)?)
+pub(crate) fn open_block_cache(paths: &WalletPaths) -> R<BlockCache> {
+    BlockCache::open(paths)
 }

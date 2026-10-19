@@ -1,11 +1,14 @@
-// Cloudflare Workers static assets: serves site/ (the Devoid product page). No Worker code runs.
-// Deploy with `npx wrangler@4 deploy`, or let .github/workflows/deploy-site.yml do it on merge.
+// Cloudflare Workers static assets: serves dist/, built by scripts/build-site.mjs from site/ (the
+// product page, at /) and ui/ (the web demo of the wallet, at /app/). No Worker code runs.
+// Deploy with `npx wrangler@4 deploy` (it runs the build first), or let
+// .github/workflows/deploy-site.yml do it on merge.
 // See docs/DEPLOY.md.
 {
   "name": "devoid-site",
   "compatibility_date": "2026-09-01",
+  "build": { "command": "node scripts/build-site.mjs" },
   "assets": {
-    "directory": "./site",
+    "directory": "./dist",
     "not_found_handling": "404-page"
   }
   // To serve on your own domain, uncomment and set it (the domain must be on your Cloudflare account):

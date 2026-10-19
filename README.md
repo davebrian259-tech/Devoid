@@ -2,6 +2,22 @@
 
 A Zcash wallet built around one job: **pay many people at once, privately.** One shielded transaction carries up to 30 recipients; bigger lists are split into sequential transactions of 25.
 
+## Try it in a browser (no install)
+
+Open the product page and press **Open the wallet**: the full app runs at `/app/` on any phone or
+computer, with the wallet itself running in the browser. Choose:
+
+- **Testnet wallet**: the real Devoid engine (the Rust code in `engine/`, compiled to WebAssembly
+  in `web-engine/`) in a Web Worker. It creates a wallet, syncs with the Zcash testnet through a
+  gRPC-web lightwalletd proxy, quotes exact fees and builds and proves payments, all in the page.
+  Keys are encrypted with your passphrase in the browser's storage. Mainnet follows once web
+  payments are verified on testnet.
+- **Demo**: the simulated engine with play money, offline.
+
+Either way there is no Devoid server, and the web version never asks for a recovery phrase.
+Build the site with `npm run build:site` (writes `dist/`); rebuild the engine with
+`npm run build:engine` (needs Rust and wasm-bindgen; see `scripts/build-web-engine.mjs`).
+
 ## Run it (works now, simulated chain)
 
 ```
@@ -25,15 +41,16 @@ On Windows, use WSL: [`docs/WSL.md`](docs/WSL.md) walks through everything from 
 
 ## Deploy
 
-The product page in `site/` deploys to Cloudflare as static files (`wrangler.jsonc`, plus a GitHub
-workflow that publishes it on merge once two secrets are set). The wallet is non-custodial and
-never runs on a server. Steps, Cloudflare settings and variables: [`docs/DEPLOY.md`](docs/DEPLOY.md).
+The product page (`site/`) and the web wallet (`ui/`, at `/app/`) deploy to Cloudflare as static
+files: `wrangler.jsonc` runs `scripts/build-site.mjs` and a GitHub workflow publishes on merge once
+two secrets are set. The wallet is non-custodial and never runs on a server. Steps, Cloudflare settings and variables: [`docs/DEPLOY.md`](docs/DEPLOY.md).
 
 ## Roadmap
 
 - **Testnet broadcast**, then mainnet with small amounts.
-- **Web app**: the engine compiled to WebAssembly so it runs in the browser, served from
-  Cloudflare. Keys stay on the user's device.
+- **Mainnet on the web**, once testnet payments from the web wallet are verified. Faster proving
+  with threads (WebAssembly threads need cross-origin isolation).
+- **Restore on the web**, if it can be done without teaching people to type a phrase into sites.
 - **Chrome extension** on the same in-browser engine, for the Chrome Web Store.
 
 ## What it does
@@ -71,7 +88,7 @@ JetBrains Mono for addresses, all SIL OFL and vendored in `ui/fonts`. Icons are 
 Lucide's SVG sources (ISC). There are still no runtime dependencies: the UI is plain ES modules
 served under a strict CSP.
 
-A product page lives in `site/` (static, ready for GitHub Pages). Its images come from the real UI on
+A product page lives in `site/` (static, deployed with the web wallet, see Deploy). Its images come from the real UI on
 the simulated engine: `python3 scripts/site-shots.py`.
 
 ## Security model
@@ -87,10 +104,13 @@ See `docs/STATUS.md` for detail. In short, as of 2026-10-18:
 - Verified against the **real Zcash testnet** (`testnet.zec.rocks`, ECC LightWalletD v0.5.4):
   wallet creation, chain sync to the tip, balance, history, real ZIP 317 fee quotes, and the
   recipient and funding checks that refuse a bad batch.
-- Verified here without Rust: 236 JS tests (address/amount/CSV parsing, fee and ZIP 321 helpers,
-  server API incl. auth and a 2-transaction batch), a browser test that drives every screen and
+- Verified here without Rust: 241 JS tests (address/amount/CSV parsing, SHA-256 against FIPS
+  vectors, fee and ZIP 321 helpers, server API incl. auth and a 2-transaction batch, the web
+  backend's testnet-only and no-phrase rules), a browser test that drives every screen and
   feature and fails on any console error or leaked `null` (`npm run test:ui`, screenshots in
-  `shots/`), and a QR encoder decoded by an independent decoder for versions 2-24.
+  `shots/`), a browser test of the built site and web wallet under its real CSP on desktop and
+  phone, including the WebAssembly engine's self-test and a transaction proved in the browser
+  (`npm run test:web`), a live test of the web wallet against the testnet (`npm run test:live`), and a QR encoder decoded by an independent decoder for versions 2-24.
 - **No transaction has been broadcast yet.** Building, signing and broadcasting needs funded
   testnet ZEC, so that last step is still unproven. Treat real sends as unverified until you have
   done a testnet run yourself.
@@ -98,4 +118,5 @@ See `docs/STATUS.md` for detail. In short, as of 2026-10-18:
   system fonts.
 
 Layout: `engine/` Rust, `server/` Node API + batch parsing, `mock-engine/` simulator, `ui/`
-frontend, `docs/` protocol, `test/` tests.
+frontend (`ui/local/` is the web wallet's in-page backend, `ui/engine/` the compiled engine and
+its worker), `web-engine/` the engine's browser build, `site/` product page, `docs/` protocol, `test/` tests.
