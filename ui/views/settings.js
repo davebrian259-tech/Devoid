@@ -1,5 +1,5 @@
 // Settings: appearance, connection, recovery phrase, passphrase, shielding, and what is running.
-import { S, nav, api, h, btn, note, errorNote, unit, fill, confirmDialog, WEB, webEngine, webReset } from '../lib.js';
+import { S, nav, api, h, btn, note, errorNote, unit, fill, confirmDialog, WEB, webEngine, webReset, isTest } from '../lib.js';
 import { icon } from '../icons.js';
 import { fmtZec } from '../calc.js';
 import { themeChoice, setTheme, onThemeChange } from '../theme.js';
@@ -60,7 +60,7 @@ export async function viewSettings(el) {
     h('div', { class: 'stack-lg' },
       card('Appearance', 'Follow your system, or pick one.', themeBox),
       WEB && webEngine() === 'real' ? card('Server', 'The web wallet reaches the Zcash network through a gRPC-web server, the kind a browser can use.',
-        h('dl', { class: 'kv small' }, h('dt', null, 'Server'), h('dd', { class: 'mono' }, 'zcash-testnet.chainsafe.dev'), h('dt', null, 'Run by'), h('dd', null, 'ChainSafe, in front of lightwalletd')),
+        h('dl', { class: 'kv small' }, h('dt', null, 'Server'), h('dd', { class: 'mono' }, isTest() ? 'zcash-testnet.chainsafe.dev' : 'zcash-mainnet.chainsafe.dev'), h('dt', null, 'Run by'), h('dd', null, 'ChainSafe, in front of lightwalletd')),
         note('info', 'What the server sees', 'Your IP address, and the transactions you broadcast. Shielded transactions hide recipients, amounts and memos from it. Tor is not available in a browser; use the desktop app to hide your IP address.')) : null,
       WEB ? card(webEngine() === 'real' ? 'This browser’s wallet' : 'Web demo', webEngine() === 'real'
         ? 'Your wallet is stored in this browser, its keys encrypted with your passphrase. Clearing site data removes it.'
