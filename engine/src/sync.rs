@@ -706,8 +706,7 @@ fn parse_raw_transaction(
     chain_tip: BlockHeight,
     tx: RawTransaction,
 ) -> anyhow::Result<(Transaction, Option<BlockHeight>)> {
-    let mined_height = (tx.height > 0 && tx.height <= u64::from(u32::MAX))
-        .then(|| BlockHeight::from_u32(u32::try_from(tx.height).unwrap()));
+    let mined_height = mined_height_of(&tx);
 
     let tx = Transaction::read(
         &tx.data[..],
@@ -718,12 +717,17 @@ fn parse_raw_transaction(
     Ok((tx, mined_height))
 }
 
-async fn fetch_transaction(
+/// The height a raw transaction from lightwalletd was mined at, if it was.
+fn mined_height_of(tx: &RawTransaction) -> Option<BlockHeight> {
+    (tx.height > 0 && tx.height <= u64::from(u32::MAX))
+        .then(|| BlockHeight::from_u32(u32::try_from(tx.height).unwrap()))
+}
+
+/// Fetches a full transaction, unparsed.
+async fn fetch_raw_transaction(
     client: &mut Client,
-    params: &Network,
-    chain_tip: BlockHeight,
     txid: TxId,
-) -> anyhow::Result<Option<(Transaction, Option<BlockHeight>)>> {
+) -> anyhow::Result<Option<RawTransaction>> {
     let request = service::TxFilter {
         hash: txid.as_ref().to_vec(),
         ..Default::default()
@@ -739,10 +743,18 @@ async fn fetch_transaction(
             }
         }
     }?;
+    Ok(raw_tx)
+}
 
-    raw_tx
-        .map(|raw_tx| parse_raw_transaction(params, chain_tip, raw_tx))
-        .transpose()
+/// A transaction this build cannot parse (one made under a network upgrade newer than its Zcash
+/// libraries, as on a testnet that runs ahead of mainnet) must not stop the sync: the wallet's
+/// balances come from the compact blocks, and only this transaction's details (memo, sender's
+/// change) stay unknown until the engine is updated.
+fn skip_unparsable(txid: impl std::fmt::Debug, e: &anyhow::Error) {
+    warn!(
+        "Skipping transaction {:?}, which this engine cannot read yet: {:#}",
+        txid, e
+    );
 }
 
 /// Satisfies the wallet's outstanding transaction data requests (statuses, full transactions to
@@ -778,17 +790,22 @@ async fn enhance_transactions(
             info!("Fetching data for request {:?}", data_request);
             match &data_request {
                 TransactionDataRequest::GetStatus(txid) => {
-                    let status = fetch_transaction(client, &params, chain_tip, *txid)
-                        .await?
-                        .map_or(TransactionStatus::TxidNotRecognized, |(_, mined_height)| {
-                            mined_height
+                    // The status needs only the mined height, not the transaction itself.
+                    let status = fetch_raw_transaction(client, *txid).await?.map_or(
+                        TransactionStatus::TxidNotRecognized,
+                        |raw| {
+                            mined_height_of(&raw)
                                 .map_or(TransactionStatus::NotInMainChain, TransactionStatus::Mined)
-                        });
+                        },
+                    );
                     info!("Got status {:?}", status);
                     db_data.set_transaction_status(*txid, status)?;
                 }
                 TransactionDataRequest::Enhancement(txid) => {
-                    match fetch_transaction(client, &params, chain_tip, *txid).await? {
+                    let parsed = fetch_raw_transaction(client, *txid)
+                        .await?
+                        .map(|raw| parse_raw_transaction(&params, chain_tip, raw));
+                    match parsed {
                         None => {
                             info!("Txid not recognized {:?}", txid);
                             db_data.set_transaction_status(
@@ -796,13 +813,14 @@ async fn enhance_transactions(
                                 TransactionStatus::TxidNotRecognized,
                             )?;
                         }
-                        Some((tx, mined_height)) => {
+                        Some(Ok((tx, mined_height))) => {
                             info!(
                                 "Enhancing tx {:?} with mined height {:?}",
                                 txid, mined_height
                             );
                             decrypt_and_store_transaction(&params, db_data, &tx, mined_height)?;
                         }
+                        Some(Err(e)) => skip_unparsable(txid, &e),
                     }
                 }
                 TransactionDataRequest::TransactionsInvolvingAddress(tia) => {
@@ -828,11 +846,15 @@ async fn enhance_transactions(
                         .map_err(anyhow::Error::from)?
                         .into_inner();
                     while let Some(raw_tx) = stream.next().await {
-                        let (tx, mined_height) = parse_raw_transaction(
-                            &params,
-                            chain_tip,
-                            raw_tx.map_err(anyhow::Error::from)?,
-                        )?;
+                        let raw_tx = raw_tx.map_err(anyhow::Error::from)?;
+                        let (tx, mined_height) =
+                            match parse_raw_transaction(&params, chain_tip, raw_tx) {
+                                Ok(parsed) => parsed,
+                                Err(e) => {
+                                    skip_unparsable(&address, &e);
+                                    continue;
+                                }
+                            };
                         info!(
                             "Found tx {:?} for address {} with mined height {:?}",
                             tx.txid(),
