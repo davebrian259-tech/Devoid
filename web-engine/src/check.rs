@@ -107,6 +107,10 @@ pub(crate) async fn prove_one_transaction() -> R<Value> {
         .map_err(|e| internal(format!("{e:?}")))?;
     let prove_ms = build_started.elapsed().as_millis() as u64;
 
+    // A real send then stores the transaction stamped with this clock (zcash_client_backend's
+    // create_proposed_transactions); it must work here, or the send fails after proving.
+    let built_at = time::OffsetDateTime::now_utc().unix_timestamp();
+
     let tx = built.transaction();
     let mut bytes = Vec::new();
     tx.write(&mut bytes).map_err(|e| internal(e.to_string()))?;
@@ -123,6 +127,7 @@ pub(crate) async fn prove_one_transaction() -> R<Value> {
         "saplingOutputs": sapling_outputs,
         "paramsMs": params_ms,
         "proveMs": prove_ms,
+        "builtAt": built_at,
         // Each further recipient adds about one Orchard action.
         "msPerAction": if actions > 0 { prove_ms / (actions as u64 + sapling_outputs as u64) } else { 0 },
     }))

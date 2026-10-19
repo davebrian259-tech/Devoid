@@ -7,11 +7,11 @@ A Zcash wallet built around one job: **pay many people at once, privately.** One
 Open the product page and press **Open the wallet**: the full app runs at `/app/` on any phone or
 computer, with the wallet itself running in the browser. Choose:
 
-- **Testnet wallet**: the real Devoid engine (the Rust code in `engine/`, compiled to WebAssembly
-  in `web-engine/`) in a Web Worker. It creates a wallet, syncs with the Zcash testnet through a
-  gRPC-web lightwalletd proxy, quotes exact fees and builds and proves payments, all in the page.
-  Keys are encrypted with your passphrase in the browser's storage. Mainnet follows once web
-  payments are verified on testnet.
+- **Real wallet**, on mainnet or testnet: the real Devoid engine (the Rust code in `engine/`,
+  compiled to WebAssembly in `web-engine/`) in a Web Worker. It creates a wallet, syncs through a
+  gRPC-web lightwalletd proxy, quotes exact fees, and builds, proves and sends payments, all in the
+  page. Keys are encrypted with your passphrase in the browser's storage. Mainnet asks you to
+  confirm the wallet holds real ZEC; sending on testnet waits for its NU7 upgrade (see below).
 - **Demo**: the simulated engine with play money, offline.
 
 Either way there is no Devoid server, and the web version never asks for a recovery phrase.
@@ -47,9 +47,9 @@ two secrets are set. The wallet is non-custodial and never runs on a server. Ste
 
 ## Roadmap
 
-- **Testnet broadcast**, then mainnet with small amounts.
-- **Mainnet on the web**, once testnet payments from the web wallet are verified. Faster proving
-  with threads (WebAssembly threads need cross-origin isolation).
+- **NU7**: move to the NU7-aware Zcash libraries (already needed to send on testnet) before NU7
+  activates on mainnet.
+- **Faster proving on the web** with threads (WebAssembly threads need cross-origin isolation).
 - **Restore on the web**, if it can be done without teaching people to type a phrase into sites.
 - **Chrome extension** on the same in-browser engine, for the Chrome Web Store.
 
@@ -97,7 +97,7 @@ Server binds 127.0.0.1, requires a bearer token (delivered in the URL fragment, 
 
 ## Verification status (honest)
 
-See `docs/STATUS.md` for detail. In short, as of 2026-10-18:
+See `docs/STATUS.md` for detail. In short, as of 2026-10-19:
 
 - The Rust engine **builds and runs**: `cargo test` passes (11 tests) and `devoid-engine selftest`
   passes all 10 checks, including the bundled Sapling proving parameters.
@@ -106,14 +106,15 @@ See `docs/STATUS.md` for detail. In short, as of 2026-10-18:
   recipient and funding checks that refuse a bad batch.
 - Verified here without Rust: 241 JS tests (address/amount/CSV parsing, SHA-256 against FIPS
   vectors, fee and ZIP 321 helpers, server API incl. auth and a 2-transaction batch, the web
-  backend's testnet-only and no-phrase rules), a browser test that drives every screen and
+  backend's network and no-phrase rules), a browser test that drives every screen and
   feature and fails on any console error or leaked `null` (`npm run test:ui`, screenshots in
   `shots/`), a browser test of the built site and web wallet under its real CSP on desktop and
   phone, including the WebAssembly engine's self-test and a transaction proved in the browser
   (`npm run test:web`), a live test of the web wallet against the testnet (`npm run test:live`), and a QR encoder decoded by an independent decoder for versions 2-24.
-- **No transaction has been broadcast yet.** Building, signing and broadcasting needs funded
-  testnet ZEC, so that last step is still unproven. Treat real sends as unverified until you have
-  done a testnet run yourself.
+- **Confirmed on mainnet** (2026-10-19): a shielded 2-recipient batch with memos from the native
+  engine (`82731e0e…`, block 3,522,904) and a payment from the web wallet's engine in the browser
+  (`f95a7846…`, block 3,522,951), each with the exact ZIP 317 fee quoted before signing.
+  Sending on testnet waits for the NU7-aware Zcash libraries.
 - ZIP 318 migration is not implemented (notice only). TEX addresses are rejected. Fonts are
   system fonts.
 
