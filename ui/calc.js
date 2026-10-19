@@ -30,11 +30,12 @@ export function chunkSizes(n, size = TX_CHUNK) {
 
 /**
  * ZIP 317 fee estimate for paying `n` shielded recipients: 5,000 zat per logical action with a
- * floor of two, per transaction. Matches the engine's quotes for a wallet with few notes; a wallet
- * spending many small notes pays more, which is why the review step shows the engine's own figure.
+ * floor of two, per transaction, counting each transaction's change output as one more action.
+ * Matches the engine's quotes for a wallet with few notes; a wallet spending many small notes pays
+ * more, and an exact payment with no change pays less, which is why review shows the engine's figure.
  */
 export function estimateFeeZat(n, size = TX_CHUNK) {
-  return chunkSizes(n, size).reduce((sum, k) => sum + 5000n * BigInt(Math.max(2, k)), 0n);
+  return chunkSizes(n, size).reduce((sum, k) => sum + 5000n * BigInt(Math.max(2, k + 1)), 0n);
 }
 
 /** Splits `totalZat` across `n` recipients; the first ones absorb the remainder, one zat each. */

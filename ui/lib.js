@@ -1,5 +1,5 @@
 // Shared state, the API client and small DOM helpers used by every view.
-import { icon } from './icons.js';
+import { icon, zecSign } from './icons.js';
 import { fmtZec } from './calc.js';
 
 export const S = {
@@ -160,4 +160,10 @@ export function storage(key, value) {
     if (value === null) localStorage.removeItem(key); else localStorage.setItem(key, value);
   } catch { /* private window or blocked storage: the default is fine */ }
   return null;
+}
+
+/** "Powered by Zcash": the network every Devoid payment runs on, linked to its home page. */
+export function poweredBy(cls = '') {
+  return h('a', { class: `powered ${cls}`.trim(), href: 'https://z.cash/', target: '_blank', rel: 'noopener noreferrer', 'data-tip': 'Powered by Zcash' },
+    zecSign(), h('span', { class: 'lbl' }, 'Powered by ', h('b', null, 'Zcash')));
 }

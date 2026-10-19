@@ -137,7 +137,7 @@ export function viewSend(el) {
       const id = (f) => `r${i}-${f}`;
       const status = h('div', { class: 'rcp-status' });
       statusOf.set(i, status);
-      return h('section', { class: 'rcp', 'aria-label': `Recipient ${i + 1}`, 'data-rcp': String(i + 1) },
+      return h('section', { class: 'rcp', 'aria-label': `Recipient ${i + 1}`, 'data-rcp': String(i + 1), onfocusout: () => setTimeout(drawStatus) },
         h('div', { class: 'rcp-h' }, h('span', { class: 'rcp-n', 'aria-hidden': 'true' }, i + 1), h('b', null, `Recipient ${i + 1}`), h('span', { class: 'rcp-kind' }),
           rows.length > 1 || filled(r) ? iconBtn('trash', `Remove recipient ${i + 1}`, () => { rows.splice(i, 1); if (!rows.length) rows.push(blankRow()); drawCards(); edited(); }) : null),
         h('div', { class: 'rcp-grid' },
@@ -161,13 +161,15 @@ export function viewSend(el) {
         } }, icon('plus'), `Add recipient ${rows.length + 1}`) : note('info', `${FORM_LIMIT} recipients in this view`, 'For a longer batch, switch to “Paste a list”, or import a CSV file.'));
       drawStatus();
     }
-    // Puts each check result on its card: the pool it pays into, and anything wrong with it.
+    // Puts each check result on its card: the pool it pays into, and anything wrong with it. What is
+    // wrong waits until you leave the card, so a half-typed recipient is not flagged mid-sentence.
     function drawStatus() {
       if (mode !== 'form') return;
       const byLine = new Map((checked?.rows ?? []).map((x) => [x.line, x]));
       for (const [i, status] of statusOf) {
-        const res = checked ? byLine.get(lineOf.get(i)) : null;
         const el = status.closest('.rcp');
+        let res = checked ? byLine.get(lineOf.get(i)) : null;
+        if (res?.errors.length && el.contains(document.activeElement)) res = null;
         el.classList.toggle('bad', Boolean(res?.errors.length));
         fill(el.querySelector('.rcp-kind'), res && !res.errors.length ? kindPill(res.kind) : null);
         fill(status, ...(res?.errors ?? []).map((e) => h('div', { class: 'why' }, icon('alert'), e)), res?.warning ? h('div', { class: 'small muted' }, res.warning) : null);

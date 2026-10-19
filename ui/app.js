@@ -1,5 +1,5 @@
 // Devoid UI: boot, shell, router, sidebar, shortcuts, balance refresh. Each screen lives in views/.
-import { S, nav, api, h, iconBtn, errorNote, isTest, storage, loadLists, fill, sens, unit, modal, WEB, webEngine } from './lib.js';
+import { S, nav, api, h, iconBtn, errorNote, isTest, storage, loadLists, fill, sens, unit, modal, WEB, webEngine, poweredBy } from './lib.js';
 import { icon, mark } from './icons.js';
 import { fmtZec } from './calc.js';
 import { applyTheme, themeChoice, themeSwitch, themeButton, toggleTheme } from './theme.js';
@@ -101,7 +101,8 @@ function sidebar() {
         h('span', { class: 'wc-bal', id: 'wc-bal' }), h('span', { class: 'wc-sync', id: 'wc-sync' })),
       h('div', { class: 'nav' }, navLink('settings')),
       h('div', { class: 'side-row' }, themeSwitch(), themeButton('side-icon'),
-        h('button', { class: 'side-icon kbd-btn', type: 'button', 'aria-label': 'Keyboard shortcuts', title: 'Keyboard shortcuts (?)', onclick: showShortcuts }, icon('keyboard')))));
+        h('button', { class: 'side-icon kbd-btn', type: 'button', 'aria-label': 'Keyboard shortcuts', title: 'Keyboard shortcuts (?)', onclick: showShortcuts }, icon('keyboard'))),
+      poweredBy('side-powered')));
 }
 
 /** Badges, balance and sync line: everything in the sidebar that changes while you watch. */
@@ -214,7 +215,8 @@ function viewMore(el) {
   el.append(h('div', { class: 'stack-lg' },
     h('div', { class: 'card' }, h('div', { class: 'menu-list' }, ['lists', 'contacts', 'settings'].map(item))),
     h('div', { class: 'card row between' }, h('span', null, h('b', null, 'Theme'), h('div', { class: 'small muted' }, 'Light or dark')), themeSwitch()),
-    h('p', { class: 'hint' }, WEB ? (webEngine() === 'real' ? 'Engine: devoid-engine (WebAssembly) in this browser.' : 'Web demo: simulated engine in this browser.') : S.status.simulated ? 'Engine: simulated demo.' : `Engine: devoid-engine, self-test ${S.status.engineVerified ? 'passed' : 'not run'}.`)));
+    h('p', { class: 'hint' }, WEB ? (webEngine() === 'real' ? 'Engine: devoid-engine (WebAssembly) in this browser.' : 'Web demo: simulated engine in this browser.') : S.status.simulated ? 'Engine: simulated demo.' : `Engine: devoid-engine, self-test ${S.status.engineVerified ? 'passed' : 'not run'}.`),
+    poweredBy()));
 }
 
 nav.go = go;
