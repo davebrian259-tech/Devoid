@@ -423,6 +423,37 @@ body:not(.reveal) .sens * { visibility: hidden; }
 .steps li.done { color: var(--ok-ink); }
 .steps li.done::before { content: "✓"; background: var(--ok-bg); color: var(--ok-ink); }
 .toolbar { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+/* Recipients, one card per person */
+.rcps { display: grid; gap: 12px; }
+.rcp { display: grid; gap: 12px; padding: 14px 16px 16px; border-radius: var(--r-md); background: var(--surface-2); border: 1px solid var(--line); min-width: 0; }
+.rcp.bad { border-color: color-mix(in srgb, var(--err) 50%, var(--line)); background: color-mix(in srgb, var(--err-bg) 55%, var(--surface-2)); }
+.rcp-h { display: flex; align-items: center; gap: 10px; min-width: 0; min-height: 36px; }
+.rcp-h b { font-size: 14.5px; white-space: nowrap; }
+.rcp-n { width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; flex: none; background: var(--ink); color: var(--on-ink, var(--surface)); font-size: 12.5px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.rcp-kind { min-width: 0; display: flex; }
+.rcp-h .icon-btn { margin-left: auto; flex: none; }
+.rcp-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 12px 14px; }
+.rcp-grid .wide { grid-column: 1 / -1; }
+.rcp-grid input { width: 100%; min-width: 0; }
+.rcp-grid textarea { min-height: 0; height: auto; resize: none; overflow: hidden; line-height: 1.5; padding-top: 12px; padding-bottom: 12px; }
+.rcp-grid .addr-in { font-family: var(--mono); font-size: 13px; word-break: break-all; background: var(--surface); }
+.rcp-grid .memo-in { font-family: var(--sans); font-size: 15px; background: var(--surface); }
+.rcp .opt { font-weight: 500; color: var(--ink-3); }
+.rcp-status:empty { display: none; }
+.rcp-status { display: grid; gap: 4px; }
+.rcp .why { color: var(--err-ink); font-size: 13px; font-weight: 500; display: flex; gap: 6px; align-items: flex-start; }
+.rcp .why .ic { width: 14px; height: 14px; flex: none; margin-top: 2px; }
+.amount-in { position: relative; }
+.amount-in input { padding-right: 56px; font-variant-numeric: tabular-nums; }
+.amount-in span { position: absolute; right: 14px; top: 50%; transform: translateY(-50%); color: var(--ink-3); font-size: 13px; font-weight: 600; pointer-events: none; }
+.add-rcp { appearance: none; display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; min-height: 50px; border-radius: var(--r-md); border: 1.5px dashed var(--line-2); background: transparent; color: var(--ink); font: inherit; font-weight: 600; font-size: 14.5px; cursor: pointer; }
+.add-rcp:hover { background: var(--surface-2); border-color: var(--ink-3); }
+.add-rcp .ic { width: 17px; height: 17px; }
+@media (max-width: 560px) {
+  .rcp { padding: 12px 12px 14px; }
+  .rcp-grid { grid-template-columns: minmax(0, 1fr); }
+}
+
 .tools-tray { display: flex; gap: 8px; flex-wrap: wrap; padding: 12px; border-radius: var(--r-md); background: var(--surface-2); align-items: center; }
 
 .summary dl { display: grid; grid-template-columns: 1fr auto; gap: 11px 16px; margin: 0; font-size: 14.5px; }
@@ -572,7 +603,7 @@ dialog.modal[open] { animation: pop 0.2s cubic-bezier(.2,.8,.2,1); }
 @media (max-width: 760px) {
   .app { grid-template-columns: minmax(0, 1fr); }
   .side { display: none; }
-  .main { padding: 18px 16px 110px; }
+  .main { padding: 18px 16px calc(116px + env(safe-area-inset-bottom)); }
   .top { margin-bottom: 18px; align-items: center; }
   .top .wordmark { display: inline-block; font-size: 24px; }
   .top .net, .top .top-theme { display: inline-flex; }
@@ -588,7 +619,10 @@ dialog.modal[open] { animation: pop 0.2s cubic-bezier(.2,.8,.2,1); }
   .amount-xl { font-size: 44px; }
   .g-2, .g-3 { grid-template-columns: minmax(0, 1fr); }
   .quick { gap: 4px; }
-  .tabbar { display: grid; grid-template-columns: repeat(5, 1fr); position: fixed; left: 12px; right: 12px; bottom: 12px; z-index: 40; padding: 7px; border-radius: 26px; background: color-mix(in srgb, var(--surface) 88%, transparent); backdrop-filter: blur(16px) saturate(1.6); border: 1px solid var(--line); box-shadow: var(--shadow-3); }
+  /* The page behind and around the floating tab bar fades into the background, so content that
+     scrolls under it never shows through or peeks out below it. */
+  .app::after { content: ""; position: fixed; left: 0; right: 0; bottom: 0; height: calc(96px + env(safe-area-inset-bottom)); z-index: 39; pointer-events: none; background: linear-gradient(to bottom, transparent, var(--bg) 42%); }
+  .tabbar { display: grid; grid-template-columns: repeat(5, 1fr); position: fixed; left: 12px; right: 12px; bottom: calc(12px + env(safe-area-inset-bottom)); z-index: 40; padding: 7px; border-radius: 26px; background: color-mix(in srgb, var(--surface) 96%, transparent); backdrop-filter: blur(16px) saturate(1.6); border: 1px solid var(--line); box-shadow: var(--shadow-3); }
   .tabbar a { display: flex; flex-direction: column; align-items: center; gap: 3px; padding: 7px 2px 6px; border-radius: 19px; color: var(--ink-3); text-decoration: none; font-size: 11px; font-weight: 600; }
   .tabbar a .ic { width: 21px; height: 21px; }
   .tabbar a[aria-current="page"] { color: var(--on-primary); background: var(--primary); }

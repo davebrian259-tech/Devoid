@@ -16,7 +16,7 @@ const root = document.getElementById('app');
 
 const VIEWS = {
   home: { label: 'Home', icon: 'home', title: 'Overview', key: 'h', render: viewHome },
-  send: { label: 'Send', icon: 'send', title: 'Send to many', key: 's', sub: 'Paste or import a list. Devoid checks every address and shows what will be visible before anything is sent.', render: viewSend },
+  send: { label: 'Send', icon: 'send', title: 'Send to many', key: 's', sub: 'Add people one by one, or paste or import a list. Devoid checks every address and shows what will be visible before anything is sent.', render: viewSend },
   receive: { label: 'Receive', icon: 'receive', title: 'Receive', key: 'r', sub: 'Share your shielded address, or a payment request with the amount filled in.', render: viewReceive },
   activity: { label: 'Activity', icon: 'activity', title: 'Activity', key: 'a', sub: 'Every payment in and out, with its status on chain.', render: viewActivity },
   lists: { label: 'Lists', icon: 'lists', title: 'Lists', key: 'l', sub: 'Reusable recipient lists for payroll, grants and DAO payouts. They stay on this computer.', render: viewLists },

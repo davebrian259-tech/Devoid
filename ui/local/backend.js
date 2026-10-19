@@ -76,7 +76,7 @@ const ENGINE = {
   demo: { make: simEngine, simulated: true, settings: {} },
 };
 
-export function createBackend() {
+export function createBackend({ mainnet = false } = {}) {
   let kind = engineChoice();
   let engine = null; let core = null;
   const build = () => {
@@ -105,7 +105,7 @@ export function createBackend() {
       if (path === '/api/engine/create') {
         if (req.phrase) return { ok: false, error: { code: 'restore_unavailable', message: 'The web version never asks for a recovery phrase. Restore your wallet in the desktop app.', details: null } };
         // The demo's addresses belong to nobody; only the real engine may hold real ZEC.
-        req.network = kind === 'real' && req.network === 'main' ? 'main' : 'test';
+        req.network = mainnet && kind === 'real' && req.network === 'main' ? 'main' : 'test';
       }
       if (path === '/api/settings' && kind === 'real' && req.mode && req.mode !== 'direct') {
         return { ok: false, error: { code: 'bad_request', message: 'Tor and SOCKS5 are not available in a browser. Use the desktop app to hide your IP address from the server.', details: null } };
