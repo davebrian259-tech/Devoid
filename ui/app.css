@@ -336,7 +336,7 @@ select { appearance: none; background-image: linear-gradient(45deg, transparent 
 .balance-card { position: relative; overflow: hidden; }
 .balance-top { display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-bottom: 14px; }
 .eyebrow { font-size: 13.5px; font-weight: 500; color: var(--ink-2); display: inline-flex; align-items: center; gap: 8px; }
-.redact { appearance: none; position: relative; display: inline-flex; align-items: baseline; gap: 10px; cursor: pointer; background: none; border: 0; padding: 0; color: var(--ink); text-align: left; border-radius: 10px; }
+.redact { appearance: none; position: relative; display: inline-flex; align-items: baseline; gap: 10px; cursor: pointer; background: none; border: 0; padding: 0; color: var(--ink); text-align: left; border-radius: 10px; min-width: 230px; } /* the bar keeps room for "Tap to reveal" while the balance is still "—" */
 .redact .figure { font-size: 58px; line-height: 1; font-weight: 700; letter-spacing: -0.04em; font-variant-numeric: tabular-nums; }
 .redact .unit { font-size: 19px; color: var(--ink-3); font-weight: 600; letter-spacing: -0.01em; }
 .redact .bar { position: absolute; left: -6px; right: 42px; top: 2px; bottom: -2px; background: var(--redact); border-radius: 10px; transition: transform 0.28s cubic-bezier(.2,.8,.2,1); transform-origin: left center; }
