@@ -45,6 +45,7 @@ def capture(b, scheme, suffix):
 
         # one sent batch so the overview has history
         pg.click('a[data-view=send]')
+        pg.click('[aria-label="How to add recipients"] button:has-text("Paste a list")')
         rows = ['address,amount,memo,label'] + [f'{ua},{0.05 + i * 0.01:.2f},October grant,{n}' for i, n in enumerate(TEAM)]
         pg.fill('#batch', '\n'.join(rows)); pg.click('text=Check recipients'); pg.wait_for_selector('.ledger')
         pg.click('#review'); pg.wait_for_selector('.sheet'); pg.wait_for_timeout(300)

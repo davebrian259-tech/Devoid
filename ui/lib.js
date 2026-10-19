@@ -13,18 +13,21 @@ export const nav = { go: () => {}, refresh: async () => {}, paintSide: () => {},
 // The web version runs the whole wallet in this page (see local/backend.js); its index.html says so
 // with <meta name="devoid-backend" content="web">. Otherwise the page talks to the local server.
 export const WEB = document.querySelector('meta[name="devoid-backend"]')?.content === 'web';
+// Web version: whether a real wallet may be created on mainnet. Off until a payment from Devoid has
+// been verified on mainnet with a small amount (docs/STATUS.md); the backend enforces it too.
+export const WEB_MAINNET = false;
 let backend = null;
 
 /** Web version only: deletes this browser's wallet, lists, contacts and settings. */
 export async function webReset() {
-  backend ??= import('./local/backend.js').then((m) => m.createBackend());
+  backend ??= import('./local/backend.js').then((m) => m.createBackend({ mainnet: WEB_MAINNET }));
   await (await backend).reset();
 }
 
 export async function api(path, body = {}) {
   if (WEB) {
     try {
-      backend ??= import('./local/backend.js').then((m) => m.createBackend());
+      backend ??= import('./local/backend.js').then((m) => m.createBackend({ mainnet: WEB_MAINNET }));
       return await (await backend).call(path, body);
     } catch {
       backend = null;

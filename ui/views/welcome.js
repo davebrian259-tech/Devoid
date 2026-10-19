@@ -1,5 +1,5 @@
 // First run: what Devoid is, then create or restore a wallet, then prove the phrase was written down.
-import { h, btn, api, errorNote, note, fill, WEB } from '../lib.js';
+import { h, btn, api, errorNote, note, fill, WEB, WEB_MAINNET } from '../lib.js';
 import { icon, mark } from '../icons.js';
 import { themeButton } from '../theme.js';
 
@@ -86,10 +86,10 @@ export function renderWelcome(root, onDone) {
         ? note('test', 'Demo: play money', 'Payments are simulated on a made-up chain and have no value. Nothing touches a real network.')
         : network === 'main'
           ? note('warn', 'Mainnet: real ZEC', 'Keys stay in this browser, encrypted with your passphrase. Start with small amounts, and keep your recovery phrase on paper: if this browser’s data is cleared, it is the only way back, in the desktop app.')
-          : note('test', 'Real wallet, test network', 'Real transactions on the Zcash testnet, with free coins from a faucet. Keys stay in this browser, encrypted with your passphrase.'))
+          : note('test', 'Real wallet, test network', `Real transactions on the Zcash testnet, with free coins from a faucet. Keys stay in this browser, encrypted with your passphrase.${WEB_MAINNET ? '' : ' Mainnet opens here once a first payment has been verified.'}`))
         : seg([['create', 'New wallet', 'plus'], ['restore', 'Restore', 'refresh']], mode, (v) => { mode = v; form(); }, 'Wallet setup'),
       mode === 'restore' ? h('div', { class: 'field' }, h('label', { for: 'ph' }, 'Recovery phrase'), words) : null,
-      demo() ? null : h('div', { class: 'field' }, h('span', { class: 'label' }, 'Network'),
+      demo() || (WEB && !WEB_MAINNET) ? null : h('div', { class: 'field' }, h('span', { class: 'label' }, 'Network'),
         seg([['main', 'Mainnet', 'globe'], ['test', 'Testnet', 'info']], network, (v) => { network = v; form(); }, 'Network'),
         h('span', { class: 'hint' }, network === 'main' ? 'Real ZEC. Use small amounts until you know the flow.' : 'Play money (TAZ) from a faucet. Nothing here has value.')),
       h('div', { class: 'field' }, h('label', { for: 'p1' }, 'Passphrase'), pass, meter, meterText),

@@ -21,6 +21,7 @@ os.makedirs('shots', exist_ok=True)
 for old in glob.glob('shots/live-*.png'): os.remove(old)
 errors = []
 LAYOUT_CHECK = open(os.path.join(ROOT, 'scripts', 'overlap.js')).read()
+WEB_MAINNET = 'export const WEB_MAINNET = true;' in open(os.path.join(ROOT, 'ui', 'lib.js')).read()
 PASS = 'live testnet passphrase'
 
 
@@ -36,7 +37,7 @@ def steps(pg):
     pg.goto(base + '/app/' + (f"?log={os.environ['DEVOID_LOG']}" if os.environ.get('DEVOID_LOG') else ''))
     pg.wait_for_selector('#p1')
     expect(pg.locator('.seg button:has-text("Real wallet")')).to_have_attribute('aria-pressed', 'true')
-    expect(pg.locator('[aria-label=Network] button:has-text("Testnet")')).to_have_attribute('aria-pressed', 'true')
+    if WEB_MAINNET: expect(pg.locator('[aria-label=Network] button:has-text("Testnet")')).to_have_attribute('aria-pressed', 'true')
     expect(pg.locator('.seg button:has-text("Restore")')).to_have_count(0)
     shot(pg, '01-welcome')
     pg.fill('#p1', PASS); pg.fill('#p2', PASS); pg.click('text=Create wallet')
@@ -66,9 +67,10 @@ def steps(pg):
     shot(pg, '04-receive')
 
     # ---- an exact quote, refused because the wallet is empty ------------------------------------
-    pg.click('a[data-view=send]'); pg.wait_for_selector('#batch')
-    pg.fill('#batch', f'address,amount,memo\n{addr},0.001,live check')
-    pg.click('text=Check recipients'); pg.wait_for_selector('.ledger')
+    pg.click('a[data-view=send]'); pg.wait_for_selector('[data-rcp="1"]')
+    pg.fill('[data-rcp="1"] [data-field=address]', addr); pg.fill('[data-rcp="1"] input[data-field=amount]', '0.001')
+    pg.fill('[data-rcp="1"] [data-field=memo]', 'live check')
+    expect(pg.locator('[data-rcp="1"] .rcp-kind .pill')).to_be_visible()
     if pg.is_enabled('#review'):
         pg.click('#review')
     expect(pg.locator('.note.err, .note.warn').first).to_contain_text('funds', timeout=60_000)
@@ -84,6 +86,9 @@ def steps(pg):
     pg.reload(); pg.wait_for_selector('#p1')  # gone for good
 
     # ---- mainnet: the same engine against the real chain (no funds needed) -----------------------------
+    if not WEB_MAINNET:
+        print('mainnet is not open in the web wallet yet (ui/lib.js); skipping the mainnet pass')
+        return
     pg.click('[aria-label=Network] button:has-text("Mainnet")')
     pg.fill('#p1', PASS); pg.fill('#p2', PASS); pg.click('text=Create wallet')
     expect(pg.locator('.note.err')).to_contain_text('real ZEC')  # refused until the box is ticked

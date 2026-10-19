@@ -102,11 +102,27 @@ try:
         pg.click('.toolbar button:has-text("Contacts")')
         for cb in pg.query_selector_all('dialog .pick input[type=checkbox]'): cb.check()
         pg.click('dialog button:has-text("Add 2 to batch")')
-        pg.wait_for_selector('.ledger')
+        # One card per recipient (the default): the contacts arrive as recipients 1 and 2, and a
+        # missing amount shows on the card itself.
+        expect(pg.locator('.rcp')).to_have_count(2)
+        expect(pg.locator('[data-rcp="1"] .why')).to_contain_text('mount')
         pg.click('button:has-text("One amount for all")'); pg.fill('dialog input', '0.01'); pg.click('dialog button:has-text("Apply")')
-        expect(pg.locator('.ledger td.amt').first).to_have_text('0.01')
+        expect(pg.locator('[data-rcp="2"] input[data-field=amount]')).to_have_value('0.01')
         expect(pg.locator('#review')).to_be_enabled()
+        pg.click('#add-recipient')
+        expect(pg.locator('[data-rcp="3"] [data-field=address]')).to_be_focused()
+        pg.keyboard.type('not-an-address'); pg.fill('[data-rcp="3"] input[data-field=amount]', '0.5')
+        expect(pg.locator('[data-rcp="3"] .why')).to_be_visible()  # checked as you type, shown on its card
+        expect(pg.locator('#review')).to_be_disabled()
+        pg.fill('[data-rcp="3"] [data-field=address]', shielded); pg.fill('[data-rcp="3"] [data-field=memo]', 'Thanks for March')
+        expect(pg.locator('[data-rcp="3"] .rcp-kind .pill')).to_contain_text('Shielded')
+        expect(pg.locator('#review')).to_be_enabled()
+        shot(pg, '08a-send-cards', full=True)
+        pg.click('[aria-label="Remove recipient 3"]'); expect(pg.locator('.rcp')).to_have_count(2)
 
+        # The same draft as a pasted list, for long batches.
+        pg.click('[aria-label="How to add recipients"] button:has-text("Paste a list")')
+        expect(pg.locator('#batch')).to_have_value(re.compile('0\\.01'))
         rows = ['address,amount,memo'] + [f'{shielded},0.01,payment {i}' for i in range(30)] + ['bad-address,1,']
         pg.fill('#batch', '\n'.join(rows))
         pg.click('text=Check recipients'); pg.wait_for_selector('.ledger tr.bad')
@@ -196,6 +212,9 @@ try:
         shot(pg, '16-phone-home', full=True)
         pg.click('a[data-tab=send]'); pg.wait_for_selector('#batch'); pg.click('text=Check recipients'); pg.wait_for_selector('.ledger')
         shot(pg, '17-phone-send', full=True)
+        pg.click('[aria-label="How to add recipients"] button:has-text("One by one")')
+        pg.wait_for_selector('.rcp'); shot(pg, '17b-phone-cards', full=True)
+        pg.click('[aria-label="How to add recipients"] button:has-text("Paste a list")'); pg.wait_for_selector('#batch')
         pg.click('a[data-tab=more]'); expect(pg.locator('.menu-list a')).to_have_count(3)
         pg.click('.menu-list a:has-text("Contacts")'); expect(pg.locator('a[data-tab=more]')).to_have_attribute('aria-current', 'page')
         pg.click('a[data-tab=receive]'); pg.wait_for_selector('svg.qr')

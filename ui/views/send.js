@@ -1,6 +1,6 @@
 // Send: compose a batch (paste, import, contacts, lists), check it live, review what the chain will
 // see, sign, then follow the transactions out. The flow survives navigating away and back.
-import { S, nav, api, h, btn, copy, download, note, errorNote, modal, unit, isTest, poolName, saveLists, loadLists, toast, emptyState, short, fill } from '../lib.js';
+import { S, nav, api, h, btn, iconBtn, copy, download, note, errorNote, modal, unit, isTest, poolName, saveLists, loadLists, toast, emptyState, short, fill } from '../lib.js';
 import { icon } from '../icons.js';
 import { fmtZec, estimateFeeZat, chunkSizes, parseZecToZat, splitEvenly, rowsToBatchText, zip321Amount, toCsv, monogram, hueOf, TX_CHUNK } from '../calc.js';
 
@@ -13,6 +13,13 @@ export async function appendRecipients(newRows) {
   if (r.ok && r.result.ok) S.draft.text = rowsToBatchText([...r.result.rows.map((x) => rowOut(x)), ...newRows]);
   else S.draft.text = `${S.draft.text.trimEnd()}\n${rowsToBatchText(newRows).split('\n').slice(1).join('\n')}`;
 }
+
+// Recipients are entered one card per person (the default, and the easiest on a phone) or as a
+// pasted or imported list. Both edit the same draft text, which is what is checked and sent. Very
+// long batches are easier to handle as a list, so the cards stop at this many.
+const FORM_LIMIT = 50;
+const blankRow = () => ({ address: '', amount: '', memo: '', label: '' });
+const filled = (r) => Boolean(r.address.trim() || r.amount.trim() || r.memo.trim() || r.label.trim());
 
 const kindPill = (kind) => (kind === 'transparent'
   ? h('span', { class: 'pill public' }, icon('eye'), 'Public')
@@ -47,13 +54,16 @@ export function viewSend(el) {
 
   // ---- compose -------------------------------------------------------------------------------
   function compose() {
+    let mode = S.draft.mode ?? 'form';
+    let rows = S.draft.rows ?? null; // the cards, when entering one by one
+    let lineOf = new Map(); // card index -> line of the draft text, to put each check result on its card
     const ta = h('textarea', { id: 'batch', spellcheck: 'false', autocomplete: 'off', 'aria-label': 'Recipients', placeholder: 'address,amount,memo\nu1…,0.25,March invoice\nzs1…,1.5,\n\nOne recipient per line. Amounts in ZEC. Columns can be named address, amount, memo and label.' });
     ta.value = S.draft.text;
     const msg = h('div'); const ledger = h('div'); const tray = h('div', { class: 'tools-tray', hidden: true }); const summary = h('div', { class: 'stack' });
     const file = h('input', { type: 'file', accept: '.csv,.tsv,.txt,text/csv,text/plain', class: 'sr', id: 'file', onchange: async (e) => {
       const f = e.target.files[0]; if (!f) return;
       if (f.size > 2_000_000) return toast('That file is over 2 MB.', 'alert');
-      ta.value = S.draft.text = await f.text(); check(); } });
+      S.draft.text = await f.text(); S.draft.rows = null; S.draft.mode = 'paste'; draw(); } });
     const pools = h('select', { id: 'pools', 'aria-label': 'Spend from', onchange: (e) => { S.draft.fundingPools = e.target.value; drawSummary(); } },
       h('option', { value: '' }, 'Automatic (least visible)'), h('option', { value: 'ironwood' }, 'Ironwood only'), h('option', { value: 'sapling' }, 'Sapling only'));
     pools.value = S.draft.fundingPools;
@@ -61,20 +71,108 @@ export function viewSend(el) {
 
     let timer = null;
     ta.addEventListener('input', () => {
-      S.draft.text = ta.value; checked = null; next.disabled = true;
+      S.draft.text = ta.value; S.draft.rows = null; checked = null; next.disabled = true;
       clearTimeout(timer); timer = setTimeout(check, 650);
     });
 
     async function check() {
       clearTimeout(timer);
       msg.replaceChildren();
-      if (!ta.value.trim()) { checked = null; ledger.replaceChildren(); tray.hidden = true; drawSummary(); return; }
-      const r = await api('/api/batch/validate', { text: ta.value });
+      const text = S.draft.text;
+      if (!text.trim()) { checked = null; ledger.replaceChildren(); tray.hidden = true; drawStatus(); drawSummary(); return; }
+      const r = await api('/api/batch/validate', { text });
+      if (text !== S.draft.text) return; // edited while checking; a newer check is on its way
       if (!r.ok) return msg.append(errorNote(r.error));
-      if (!r.result.ok) { checked = null; ledger.replaceChildren(); tray.hidden = true; drawSummary(); return msg.append(note('err', r.result.message)); }
-      checked = r.result; drawLedger(); drawTray(); drawSummary();
+      if (!r.result.ok) { checked = null; ledger.replaceChildren(); tray.hidden = true; drawStatus(); drawSummary(); return msg.append(note('err', r.result.message)); }
+      checked = r.result;
+      if (mode === 'paste') drawLedger(); else drawStatus();
+      drawTray(); drawSummary();
     }
-    const apply = (rows) => { ta.value = S.draft.text = rowsToBatchText(rows); check(); };
+    const apply = (newRows) => {
+      S.draft.text = rowsToBatchText(newRows);
+      if (mode === 'form') { rows = newRows.map((r) => ({ ...blankRow(), ...r })); syncText(); drawCards(); } else ta.value = S.draft.text;
+      check();
+    };
+    // After contacts or a saved list changed the draft text: refresh whichever editor is showing.
+    async function textChanged() {
+      if (mode === 'paste') { ta.value = S.draft.text; return check(); }
+      await rowsFromText();
+      drawCards(); check();
+    }
+
+    // ---- one by one ----------------------------------------------------------------------------
+    const cards = h('div', { class: 'rcps' });
+    const syncText = () => {
+      const used = rows.map((r, i) => [r, i]).filter(([r]) => filled(r));
+      lineOf = new Map(used.map(([, i], n) => [i, n + 2])); // line 1 is the header
+      S.draft.text = used.length ? rowsToBatchText(used.map(([r]) => ({ address: r.address.trim(), amount: r.amount.trim(), memo: r.memo, label: r.label.trim() }))) : '';
+      S.draft.rows = rows;
+    };
+    const edited = () => {
+      syncText(); checked = null; next.disabled = true;
+      clearTimeout(timer); timer = setTimeout(check, 500);
+    };
+    async function rowsFromText() {
+      if (!S.draft.text.trim()) { rows = S.draft.rows = [blankRow()]; syncText(); return true; }
+      const r = await api('/api/batch/validate', { text: S.draft.text });
+      if (!r.ok || !r.result.ok) return false;
+      rows = S.draft.rows = r.result.rows.map((x) => ({ ...blankRow(), ...rowOut(x) }));
+      syncText();
+      return true;
+    }
+    const statusOf = new Map(); // card index -> its status element
+    function card(r, i) {
+      // Addresses and memos wrap and grow, so the whole of an address is always in view before it
+      // is paid; amounts and names are short.
+      const input = (field, props, multiline = false) => {
+        const e = multiline
+          ? h('textarea', { rows: 1, autocomplete: 'off', spellcheck: 'false', autocapitalize: 'off', 'data-field': field, ...props })
+          : h('input', { type: 'text', autocomplete: 'off', spellcheck: 'false', autocapitalize: 'off', 'data-field': field, ...props });
+        e.value = r[field];
+        const fit = () => { if (multiline) { e.style.height = 'auto'; e.style.height = `${e.scrollHeight}px`; } };
+        e.addEventListener('input', () => { if (field === 'address') e.value = e.value.replace(/\s+/g, ''); r[field] = e.value; fit(); edited(); });
+        if (multiline) requestAnimationFrame(fit);
+        return e;
+      };
+      const id = (f) => `r${i}-${f}`;
+      const status = h('div', { class: 'rcp-status' });
+      statusOf.set(i, status);
+      return h('section', { class: 'rcp', 'aria-label': `Recipient ${i + 1}`, 'data-rcp': String(i + 1) },
+        h('div', { class: 'rcp-h' }, h('span', { class: 'rcp-n', 'aria-hidden': 'true' }, i + 1), h('b', null, `Recipient ${i + 1}`), h('span', { class: 'rcp-kind' }),
+          rows.length > 1 || filled(r) ? iconBtn('trash', `Remove recipient ${i + 1}`, () => { rows.splice(i, 1); if (!rows.length) rows.push(blankRow()); drawCards(); edited(); }) : null),
+        h('div', { class: 'rcp-grid' },
+          h('div', { class: 'field wide' }, h('label', { for: id('address') }, 'Address'),
+            input('address', { id: id('address'), class: 'addr-in', placeholder: isTest() ? 'utest1…, ztestsapling1… or tm…' : 'u1…, zs1… or t1…' }, true)),
+          h('div', { class: 'field' }, h('label', { for: id('amount') }, `Amount`),
+            h('div', { class: 'amount-in' }, input('amount', { id: id('amount'), inputmode: 'decimal', placeholder: '0.00' }), h('span', { 'aria-hidden': 'true' }, unit()))),
+          h('div', { class: 'field' }, h('label', { for: id('label') }, 'Name ', h('span', { class: 'opt' }, 'optional')),
+            input('label', { id: id('label'), placeholder: 'For your records', spellcheck: 'true', autocapitalize: 'words' })),
+          h('div', { class: 'field wide' }, h('label', { for: id('memo') }, 'Memo ', h('span', { class: 'opt' }, 'optional, only they can read it')),
+            input('memo', { id: id('memo'), class: 'memo-in', placeholder: 'For example: March invoice', spellcheck: 'true', autocapitalize: 'sentences' }, true))),
+        status);
+    }
+    function drawCards() {
+      statusOf.clear();
+      const shown = rows.slice(0, FORM_LIMIT);
+      fill(cards, shown.map(card),
+        rows.length < FORM_LIMIT ? h('button', { type: 'button', class: 'add-rcp', id: 'add-recipient', onclick: () => {
+          rows.push(blankRow()); drawCards(); edited();
+          cards.querySelector(`[data-rcp="${rows.length}"] [data-field=address]`)?.focus();
+        } }, icon('plus'), `Add recipient ${rows.length + 1}`) : note('info', `${FORM_LIMIT} recipients in this view`, 'For a longer batch, switch to “Paste a list”, or import a CSV file.'));
+      drawStatus();
+    }
+    // Puts each check result on its card: the pool it pays into, and anything wrong with it.
+    function drawStatus() {
+      if (mode !== 'form') return;
+      const byLine = new Map((checked?.rows ?? []).map((x) => [x.line, x]));
+      for (const [i, status] of statusOf) {
+        const res = checked ? byLine.get(lineOf.get(i)) : null;
+        const el = status.closest('.rcp');
+        el.classList.toggle('bad', Boolean(res?.errors.length));
+        fill(el.querySelector('.rcp-kind'), res && !res.errors.length ? kindPill(res.kind) : null);
+        fill(status, ...(res?.errors ?? []).map((e) => h('div', { class: 'why' }, icon('alert'), e)), res?.warning ? h('div', { class: 'small muted' }, res.warning) : null);
+      }
+    }
 
     function drawLedger() {
       const c = checked; const bad = c.rows.filter((r) => r.errors.length);
@@ -99,7 +197,7 @@ export function viewSend(el) {
         btn('One amount for all', 'xs ghost', () => amountDialog('One amount for everyone', 'Every recipient gets this amount.', (z) => apply(checked.rows.map((r) => rowOut(r, zip321Amount(z))))), 'equal'),
         btn('Split a total', 'xs ghost', () => amountDialog('Split a total evenly', `Divided across ${checked.rows.length} recipients, to the zatoshi.`, (z) => { const parts = splitEvenly(z, checked.rows.length); apply(checked.rows.map((r, i) => rowOut(r, zip321Amount(parts[i])))); }), 'split'),
         bad.length ? btn(`Remove ${bad.length} with problems`, 'xs ghost', () => apply(checked.rows.filter((r) => !r.errors.length).map((r) => rowOut(r))), 'trash') : null,
-        btn('Clear', 'xs ghost', () => { ta.value = S.draft.text = ''; check(); }, 'x'));
+        btn('Clear', 'xs ghost', () => { S.draft.text = ''; if (mode === 'form') { rows = [blankRow()]; S.draft.rows = rows; syncText(); drawCards(); } else ta.value = ''; check(); }, 'x'));
     }
 
     function drawSummary() {
@@ -139,10 +237,20 @@ export function viewSend(el) {
       const r = await api('/api/batch/plan', { recipients, fundingPools });
       next.disabled = false;
       if (!r.ok) { msg.append(errorNote(r.error)); msg.scrollIntoView({ block: 'center', behavior: 'smooth' }); return; }
-      Object.assign(F, { step: 'review', plan: { ...r.result, recipients, fundingPools }, labels: ok.map((x) => x.label ?? ''), text: ta.value });
+      Object.assign(F, { step: 'review', plan: { ...r.result, recipients, fundingPools }, labels: ok.map((x) => x.label ?? ''), text: S.draft.text });
       draw();
     };
 
+    const switchTo = async (m) => {
+      if (m === mode) return;
+      if (m === 'form') {
+        if (!(await rowsFromText())) return msg.replaceChildren(note('err', 'Fix the list first', 'Devoid could not read it as recipients, so it cannot show them one by one yet.'));
+        if (rows.length > FORM_LIMIT) return toast(`That is ${rows.length} recipients: a list is easier to handle than ${rows.length} cards.`, 'info');
+      }
+      S.draft.mode = m; draw();
+    };
+    const modeSeg = h('div', { class: 'seg block', role: 'group', 'aria-label': 'How to add recipients' },
+      [['form', 'One by one', 'userPlus'], ['paste', 'Paste a list', 'csv']].map(([v, l, ic]) => h('button', { type: 'button', 'aria-pressed': String(mode === v), onclick: () => switchTo(v) }, icon(ic), l)));
     const editor = h('section', { class: 'card a-rec' },
         h('div', { class: 'card-h' }, h('h2', null, 'Recipients'),
           h('div', { class: 'toolbar' },
@@ -150,9 +258,18 @@ export function viewSend(el) {
             btn('Contacts', 'xs ghost', () => pickContacts(), 'contacts'),
             btn('Lists', 'xs ghost', () => pickList(), 'lists'),
             btn('Save as list', 'xs ghost', () => saveAsList(), 'plus'))),
-        h('div', { class: 'stack' }, ta, tray, h('div', { class: 'row' }, btn('Check recipients', 'sm soft', check, 'check'), h('span', { class: 'hint' }, 'Devoid checks as you type.')), msg));
+        h('div', { class: 'stack' }, modeSeg,
+          mode === 'form' ? cards : ta,
+          tray,
+          mode === 'paste' ? h('div', { class: 'row' }, btn('Check recipients', 'sm soft', check, 'check'), h('span', { class: 'hint' }, 'Devoid checks as you type.')) : null,
+          msg));
     ledger.className = 'a-led';
-    queueMicrotask(() => {
+    queueMicrotask(async () => {
+      if (mode === 'form') {
+        if (!rows && !(await rowsFromText())) { S.draft.mode = 'paste'; return draw(); } // an unreadable draft stays a list
+        if (rows.length > FORM_LIMIT) { S.draft.mode = 'paste'; return draw(); }
+        syncText(); drawCards();
+      }
       drawSummary();
       if (S.draft.text.trim()) check();
       if (S.openImport) { S.openImport = false; file.click(); }
@@ -165,7 +282,7 @@ export function viewSend(el) {
       modal('Add from contacts', (close) => {
         if (!contacts.length) return emptyState('contacts', 'No contacts yet', 'Save the people you pay often in Contacts.', btn('Open contacts', 'sm', () => { close(); nav.go('contacts'); }));
         const search = h('input', { type: 'search', placeholder: 'Search by name or address', 'aria-label': 'Search contacts' });
-        const add = btn('Add to batch', 'block', async () => { await appendRecipients(contacts.filter((c) => sel.has(c.id)).map((c) => ({ address: c.address, amount: '', label: c.name }))); close(); ta.value = S.draft.text; check(); toast(`${sel.size} added. Set their amounts, or use “One amount for all”.`); });
+        const add = btn('Add to batch', 'block', async () => { await appendRecipients(contacts.filter((c) => sel.has(c.id)).map((c) => ({ address: c.address, amount: '', label: c.name }))); close(); textChanged(); toast(`${sel.size} added. Set their amounts, or use “One amount for all”.`); });
         add.disabled = true;
         const list = h('div', { class: 'pick' });
         const drawList = () => {
@@ -188,19 +305,19 @@ export function viewSend(el) {
         return h('div', { class: 'items' }, lists.map((l) => h('div', { class: 'item' }, h('span', { class: 'tile-ico' }, icon('lists')),
           h('div', null, h('div', { class: 'title' }, l.name), h('div', { class: 'meta' }, `Saved ${new Date(l.updated).toLocaleDateString()}`)),
           h('div', { class: 'row nowrap' },
-            S.draft.text.trim() ? btn('Add', 'xs ghost', async () => { const v = await api('/api/batch/validate', { text: l.text }); if (v.ok && v.result.ok) await appendRecipients(v.result.rows.map((x) => rowOut(x))); close(); ta.value = S.draft.text; check(); }) : null,
-            btn(S.draft.text.trim() ? 'Replace' : 'Use', 'xs', () => { ta.value = S.draft.text = l.text; close(); check(); })))));
+            S.draft.text.trim() ? btn('Add', 'xs ghost', async () => { const v = await api('/api/batch/validate', { text: l.text }); if (v.ok && v.result.ok) await appendRecipients(v.result.rows.map((x) => rowOut(x))); close(); textChanged(); }) : null,
+            btn(S.draft.text.trim() ? 'Replace' : 'Use', 'xs', () => { S.draft.text = l.text; close(); textChanged(); })))));
       });
     }
 
     async function saveAsList() {
-      if (!ta.value.trim()) return toast('Add some recipients first.', 'info');
+      if (!S.draft.text.trim()) return toast('Add some recipients first.', 'info');
       if (!S.lists) await loadLists();
       modal('Save as list', (close) => {
         const name = h('input', { type: 'text', 'aria-label': 'List name', placeholder: 'For example: October payroll', maxlength: '80' });
         const save = btn('Save list', 'block', async () => {
           if (!name.value.trim()) return name.focus();
-          const r = await saveLists({ lists: [...(S.lists?.lists ?? []), { id: crypto.randomUUID(), name: name.value.trim().slice(0, 80), text: ta.value, updated: Date.now() }] });
+          const r = await saveLists({ lists: [...(S.lists?.lists ?? []), { id: crypto.randomUUID(), name: name.value.trim().slice(0, 80), text: S.draft.text, updated: Date.now() }] });
           close(); toast(r.ok ? 'List saved' : 'Could not save the list', r.ok ? 'check' : 'alert');
         });
         name.addEventListener('keydown', (e) => { if (e.key === 'Enter') save.click(); });

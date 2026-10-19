@@ -16,6 +16,8 @@ os.makedirs('shots', exist_ok=True)
 for old in glob.glob('shots/web-*.png'): os.remove(old)
 errors, requests = [], []
 LAYOUT_CHECK = open(os.path.join(ROOT, 'scripts', 'overlap.js')).read()
+# Whether the web wallet offers mainnet yet (ui/lib.js); the tests follow the switch.
+WEB_MAINNET = 'export const WEB_MAINNET = true;' in open(os.path.join(ROOT, 'ui', 'lib.js')).read()
 
 
 def check(pg, name):
@@ -45,9 +47,12 @@ def create_wallet(pg, passphrase):
     pg.wait_for_selector('#p1')
     expect(pg.locator('.seg button:has-text("Restore")')).to_have_count(0)  # the web version never takes a phrase
     expect(pg.locator('.note.test')).to_contain_text('test network')  # a real testnet wallet is the default
-    pg.click('[aria-label=Network] button:has-text("Mainnet")')  # mainnet asks for a deliberate tick
-    expect(pg.locator('.note.warn')).to_contain_text('real ZEC')
-    expect(pg.locator('#mainnet-ack')).to_have_count(1)
+    if WEB_MAINNET:
+        pg.click('[aria-label=Network] button:has-text("Mainnet")')  # mainnet asks for a deliberate tick
+        expect(pg.locator('.note.warn')).to_contain_text('real ZEC')
+        expect(pg.locator('#mainnet-ack')).to_have_count(1)
+    else:
+        expect(pg.locator('[aria-label=Network]')).to_have_count(0)  # not open on the web yet
     pg.click('.seg button:has-text("Demo")')
     expect(pg.locator('.note.test')).to_contain_text('play money')
     expect(pg.locator('[aria-label=Network]')).to_have_count(0)  # the demo is testnet only
@@ -82,7 +87,8 @@ try:
 
         pg.click('a[data-view=receive]'); pg.wait_for_selector('svg.qr')
         mine = pg.inner_text('#addr'); assert mine.startswith('utest1'), mine
-        pg.click('a[data-view=send]'); pg.wait_for_selector('#batch')
+        pg.click('a[data-view=send]'); pg.wait_for_selector('.rcp')
+        pg.click('[aria-label="How to add recipients"] button:has-text("Paste a list")'); pg.wait_for_selector('#batch')
         rows = ['address,amount,memo'] + [f'{mine},0.02,web {i}' for i in range(3)]
         pg.fill('#batch', '\n'.join(rows)); pg.click('text=Check recipients'); pg.wait_for_selector('.ledger')
         expect(pg.locator('#review')).to_be_enabled()
@@ -129,7 +135,7 @@ try:
         expect(pg.locator('.tabbar')).to_be_visible()
         assert pg.evaluate('document.documentElement.scrollWidth') <= 390, 'the app scrolls sideways on a phone'
         shot(pg, '07-phone-home', full=True)
-        pg.click('a[data-tab=send]'); pg.wait_for_selector('#batch')
+        pg.click('a[data-tab=send]'); pg.wait_for_selector('[data-rcp="1"]')
         shot(pg, '08-phone-send', full=True)
         # The smallest phones still in use: every screen at 320px wide.
         pg.set_viewport_size({'width': 320, 'height': 640})
