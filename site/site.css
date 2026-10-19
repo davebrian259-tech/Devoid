@@ -208,6 +208,7 @@ p { margin: 0; }
 .prose ul { padding-left: 20px; margin: 12px 0 0; display: grid; gap: 10px; }
 .prose b { color: var(--ink); font-weight: 600; }
 .prose a { color: inherit; text-underline-offset: 3px; }
+.prose code { white-space: nowrap; } /* host names are not broken at their hyphens */
 
 /* 404 */
 .missing { min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 22px; text-align: center; padding: 40px 20px; }
