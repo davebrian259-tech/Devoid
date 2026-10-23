@@ -1,6 +1,6 @@
 // Send: compose a batch (paste, import, contacts, lists), check it live, review what the chain will
 // see, sign, then follow the transactions out. The flow survives navigating away and back.
-import { S, nav, api, h, btn, iconBtn, copy, download, note, errorNote, modal, unit, isTest, poolName, saveLists, loadLists, toast, emptyState, short, fill } from '../lib.js';
+import { S, nav, api, h, btn, iconBtn, copy, download, note, errorNote, modal, unit, isTest, poolName, saveLists, loadLists, toast, emptyState, short, fill, unlock, UNLOCK_MINUTES } from '../lib.js';
 import { icon } from '../icons.js';
 import { fmtZec, estimateFeeZat, chunkSizes, parseZecToZat, splitEvenly, rowsToBatchText, zip321Amount, toCsv, monogram, hueOf, TX_CHUNK } from '../calc.js';
 
@@ -354,13 +354,30 @@ export function viewSend(el) {
     const sum = plan.recipients.reduce((a, r) => a + BigInt(r.amountZat), 0n);
     const n = plan.recipients.length;
     const pass = h('input', { type: 'password', id: 'pw', autocomplete: 'current-password', placeholder: 'Your wallet passphrase' });
+    const stay = h('input', { type: 'checkbox', id: 'stay', checked: true });
+    // Unlocked (it signed recently in this page): no passphrase to type. Otherwise ask once.
+    const passBox = h('div');
+    const drawPass = () => fill(passBox, unlock.get()
+      ? h('div', { class: 'unlocked' }, h('span', { class: 'tile-ico received' }, icon('unlock')),
+        h('div', null, h('b', null, 'Unlocked'), h('div', { class: 'small muted' }, `Signs with the passphrase you entered. Locks after ${UNLOCK_MINUTES} minutes without activity.`)),
+        btn('Lock', 'xs ghost', () => { unlock.lock(); drawPass(); }, 'lock', { id: 'lock-now' }))
+      : h('div', { class: 'stack' },
+        h('div', { class: 'field' }, h('label', { for: 'pw' }, 'Passphrase'), pass, h('span', { class: 'hint' }, 'Used to sign. Never stored.')),
+        h('label', { class: 'check', for: 'stay' }, stay, `Stay unlocked in this tab for ${UNLOCK_MINUTES} minutes`)));
+    drawPass();
     const sendBtn = btn('Confirm and send', 'lg block', async () => {
       err.replaceChildren();
-      if (!pass.value) { err.append(errorNote({ message: 'Enter your passphrase to sign.' })); return pass.focus(); }
+      const given = unlock.get() ?? pass.value;
+      if (!given) { err.append(errorNote({ message: 'Enter your passphrase to sign.' })); return pass.focus(); }
       sendBtn.disabled = true;
-      const r = await api('/api/batch/send', { recipients: plan.recipients, fundingPools: plan.fundingPools, passphrase: pass.value, acknowledge: [...acks] });
+      const r = await api('/api/batch/send', { recipients: plan.recipients, fundingPools: plan.fundingPools, passphrase: given, acknowledge: [...acks] });
       pass.value = '';
-      if (!r.ok) { sendBtn.disabled = false; return err.append(errorNote(r.error)); }
+      if (!r.ok) {
+        // A remembered passphrase that no longer works (it was changed elsewhere): forget it and ask.
+        if (r.error?.code === 'wrong_passphrase' && unlock.get()) { unlock.lock(); drawPass(); }
+        sendBtn.disabled = false; return err.append(errorNote(r.error));
+      }
+      if (!unlock.get() && stay.checked) unlock.keep(given);
       Object.assign(F, { step: 'sending', jobId: r.result.jobId, job: null });
       draw();
     }, 'lock', { id: 'confirm' });
@@ -393,8 +410,7 @@ export function viewSend(el) {
           ...need.map((code) => h('label', { class: 'check' }, h('input', { type: 'checkbox', onchange: (e) => { if (e.target.checked) acks.add(code); else acks.delete(code); sync(); } }), labels[code] ?? code)),
           plan.sequential ? note('info', `Sent as ${plan.transactions} transactions, in order`, `Each pays up to ${plan.chunkSize} people. Later ones spend change from earlier ones, so Devoid waits for confirmations between them. Keep this window open.`) : null)),
       h('section', { class: 'card' }, h('div', { class: 'stack' },
-        h('div', { class: 'field' }, h('label', { for: 'pw' }, 'Passphrase'), pass, h('span', { class: 'hint' }, 'Used once to sign, never stored.')),
-        err, sendBtn, btn('Back to recipients', 'ghost block', () => { F.step = 'compose'; draw(); }, 'arrowLeft'))));
+        passBox, err, sendBtn, btn('Back to recipients', 'ghost block', () => { F.step = 'compose'; draw(); }, 'arrowLeft'))));
   }
 
   // ---- sending / sent / stopped ---------------------------------------------------------------

@@ -82,6 +82,7 @@ export function renderWelcome(root, onDone) {
     fill(side, h('div', { class: 'form-card stack-lg' },
       h('div', null, h('h2', null, demo() ? 'Create a demo wallet' : WEB ? (network === 'main' ? 'Create a mainnet wallet' : 'Create a testnet wallet') : mode === 'create' ? 'Create your wallet' : 'Restore a wallet'),
         h('p', { class: 'sub' }, demo() ? 'Test coins on a simulated chain, so you can try every screen. It lives in this browser only.' : WEB ? `A real Zcash wallet that runs in this browser, on ${network === 'main' ? 'mainnet' : 'the test network'}. You will get 24 words that can restore it.` : mode === 'create' ? 'It takes a minute. You will get 24 words that can restore it anywhere.' : 'Enter your 24-word recovery phrase. Devoid then scans the chain for your funds.')),
+      WEB ? h('div', { class: 'or-open' }, h('span', { class: 'small' }, h('b', null, 'Back again?'), ' Open your wallet file.'), btn('Open a wallet file', 'ghost sm', () => openFile(), 'upload', { id: 'open-file' })) : null,
       WEB ? seg([['real', 'Real wallet', 'shield'], ['demo', 'Demo', 'info']], engine, (v) => { engine = v; form(); }, 'Wallet kind') : null,
       WEB ? (demo()
         ? note('test', 'Demo: play money', 'Payments are simulated on a made-up chain and have no value. Nothing touches a real network.')
@@ -98,6 +99,34 @@ export function renderWelcome(root, onDone) {
       WEB && !demo() && network === 'main' ? h('label', { class: 'check', for: 'mainnet-ack' }, mainnetAck, 'I understand this wallet holds real ZEC, in this browser.') : null,
       err, go,
       h('p', { class: 'hint' }, demo() ? 'Forgot it later? Reset the demo in Settings and start again.' : WEB ? 'The web version never asks for a recovery phrase. To restore a wallet, or if you forget the passphrase, use your recovery phrase in the desktop app.' : 'If you forget the passphrase, only the recovery phrase can bring your funds back.')));
+  }
+
+  // Back into a wallet from its wallet file (downloaded in Settings): no recovery phrase involved.
+  function openFile() {
+    const err = h('div');
+    const file = h('input', { type: 'file', id: 'wf', accept: '.devoid,application/json' });
+    const pass = h('input', { type: 'password', autocomplete: 'current-password', id: 'wf-pass', placeholder: 'The wallet’s passphrase' });
+    const open = btn('Open wallet', 'lg block', async () => {
+      err.replaceChildren();
+      const f = file.files?.[0];
+      if (!f) return err.append(errorNote({ message: 'Choose your wallet file first.' }));
+      if (!pass.value) return err.append(errorNote({ message: 'Enter the passphrase you used for this wallet.' }));
+      if (f.size > 64 * 1024 * 1024) return err.append(errorNote({ message: 'This file is too large to be a Devoid wallet file.' }));
+      open.disabled = true; open.lastChild.textContent = 'Opening…';
+      const r = await api('/api/web/wallet-file/import', { text: await f.text(), passphrase: pass.value });
+      open.disabled = false; open.lastChild.textContent = 'Open wallet';
+      if (!r.ok) return err.append(errorNote(r.error));
+      pass.value = '';
+      await api('/api/web/keep-storage');
+      onDone();
+    }, 'arrowRight', { id: 'wf-open' });
+    pass.addEventListener('keydown', (e) => { if (e.key === 'Enter') open.click(); });
+    fill(side, h('div', { class: 'form-card stack-lg' },
+      h('div', null, h('h2', null, 'Open your wallet'),
+        h('p', { class: 'sub' }, 'Choose the wallet file you downloaded from Devoid, on any device, and enter its passphrase. It is decrypted here, in this browser.')),
+      h('div', { class: 'field' }, h('label', { for: 'wf' }, 'Wallet file'), file),
+      h('div', { class: 'field' }, h('label', { for: 'wf-pass' }, 'Passphrase'), pass),
+      err, open, btn('Create a new wallet instead', 'ghost block', () => form(), 'arrowLeft')));
   }
 
   function showPhrase(phrase) {
@@ -122,10 +151,11 @@ export function renderWelcome(root, onDone) {
     picks.sort((a, b) => a - b);
     const err = h('div');
     const inputs = picks.map((i) => h('input', { type: 'text', autocomplete: 'off', spellcheck: 'false', 'data-word': String(i + 1), id: `w${i + 1}`, autocapitalize: 'off' }));
-    const done = btn('Open my wallet', 'lg block', () => {
+    const done = btn('Open my wallet', 'lg block', async () => {
       err.replaceChildren();
       const wrong = picks.filter((i, k) => inputs[k].value.trim().toLowerCase() !== list[i]);
       if (wrong.length) return err.append(errorNote({ message: `Word ${wrong.map((i) => i + 1).join(', ')} does not match. Check your paper copy.` }));
+      if (WEB && !demo()) await api('/api/web/keep-storage');
       onDone();
     }, 'arrowRight');
     fill(side, h('div', { class: 'form-card stack-lg' },
