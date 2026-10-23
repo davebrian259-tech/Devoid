@@ -1,5 +1,5 @@
 // Settings: appearance, connection, recovery phrase, passphrase, shielding, and what is running.
-import { S, nav, api, h, btn, note, errorNote, unit, fill, confirmDialog, WEB, webEngine, webReset, isTest, poweredBy } from '../lib.js';
+import { S, nav, api, h, btn, note, errorNote, unit, fill, confirmDialog, download, WEB, webEngine, webReset, isTest, poweredBy, unlock, UNLOCK_MINUTES } from '../lib.js';
 import { icon } from '../icons.js';
 import { fmtZec } from '../calc.js';
 import { themeChoice, setTheme, onThemeChange } from '../theme.js';
@@ -45,15 +45,49 @@ export async function viewSettings(el) {
     h('div', null, btn('Preview shielding', 'ghost sm', async () => {
       const r = await api('/api/engine/shield', { dryRun: true });
       if (!r.ok) return fill(shieldOut, r.error.code === 'nothing_to_shield' ? note('info', 'Nothing to shield', 'There is no transparent balance ready to shield.') : errorNote(r.error));
-      const s = r.result; const p = h('input', { type: 'password', 'aria-label': 'Passphrase', placeholder: 'Passphrase' }); const m = h('div');
+      const s = r.result; const p = h('input', { type: 'password', 'aria-label': 'Passphrase', placeholder: unlock.get() ? 'Unlocked' : 'Passphrase', disabled: Boolean(unlock.get()) }); const m = h('div');
       fill(shieldOut, note('warn', `Shield ${fmtZec(BigInt(s.inputs.transparent.valueZat))} ${unit()}`, `Fee ${fmtZec(s.feeZat, 4)} ${unit()}. ${s.privacy.findings[0]?.message ?? ''}`),
         h('div', { class: 'input-group' }, p, btn('Shield now', 'sm', async () => {
-          const x = await api('/api/engine/shield', { passphrase: p.value, fingerprint: s.fingerprint, acknowledge: s.privacy.requiresAck }); p.value = '';
-          if (!x.ok) return fill(m, errorNote(x.error));
+          const given = unlock.get() ?? p.value;
+          const x = await api('/api/engine/shield', { passphrase: given, fingerprint: s.fingerprint, acknowledge: s.privacy.requiresAck }); p.value = '';
+          if (!x.ok) { if (x.error?.code === 'wrong_passphrase') unlock.lock(); return fill(m, errorNote(x.error)); }
+          unlock.keep(given);
           fill(shieldOut, note('ok', 'Shielding sent', 'It shows in Activity as pending until mined.')); nav.refresh(false);
         }, 'shielded')), m);
     }, 'shield')));
   shieldCard.id = 'shield';
+
+  // Locked or unlocked: after a send, the passphrase stays in this page's memory for a while.
+  const lockRow = h('div');
+  const drawLock = () => fill(lockRow, unlock.get()
+    ? h('div', { class: 'unlocked' }, h('span', { class: 'tile-ico received' }, icon('unlock')),
+      h('div', null, h('b', null, 'Unlocked in this tab'), h('div', { class: 'small muted' }, `Sends and shielding will not ask for the passphrase. Locks after ${UNLOCK_MINUTES} minutes without activity.`)),
+      btn('Lock now', 'xs ghost', () => unlock.lock(), 'lock'))
+    : h('p', { class: 'small muted' }, `After you sign, you can stay unlocked in this tab for ${UNLOCK_MINUTES} minutes. The passphrase is kept in memory only, never stored.`));
+  const onLock = () => (lockRow.isConnected ? drawLock() : document.removeEventListener('devoid-lock', onLock));
+  drawLock(); document.addEventListener('devoid-lock', onLock);
+
+  // Web wallet file: an encrypted copy to open this wallet in another browser or on another device.
+  const fileCard = WEB && webEngine() === 'real' ? (() => {
+    const kept = h('div'); const out = h('div');
+    const pass = h('input', { type: 'password', id: 'wf-pw', autocomplete: 'current-password', placeholder: 'Passphrase' });
+    api('/api/web/keep-storage').then((r) => fill(kept, r.ok && r.result.kept
+      ? note('ok', 'This browser keeps your wallet', 'It will not clear it to free space. Clearing site data yourself still removes it.')
+      : note('warn', 'This browser may clear your wallet', 'Some browsers drop a site’s data after a week without a visit. Keep a wallet file, and your recovery phrase on paper.')));
+    const save = btn('Download wallet file', 'sm', async () => {
+      out.replaceChildren();
+      const given = pass.value || unlock.get();
+      if (!given) return fill(out, errorNote({ message: 'Enter your passphrase to encrypt the file.' }));
+      save.disabled = true;
+      const r = await api('/api/web/wallet-file/export', { passphrase: given }); pass.value = '';
+      save.disabled = false;
+      if (!r.ok) return fill(out, errorNote(r.error));
+      download(r.result.name, r.result.text, 'application/json');
+      fill(out, note('ok', 'Wallet file saved.', 'Keep it somewhere safe. Anyone with the file and your passphrase can open this wallet.'));
+    }, 'download', { id: 'wf-save' });
+    return card('Wallet file', 'Open this wallet in any browser, on any device: download an encrypted copy, then choose “Open a wallet file” there. It opens only with your passphrase.',
+      kept, h('div', { class: 'input-group' }, pass, save), out);
+  })() : null;
 
   const status = S.status;
   el.append(h('div', { class: 'grid g-2' },
@@ -74,6 +108,7 @@ export async function viewSettings(el) {
           await webReset();
           location.replace(location.pathname);
         }, 'trash'))) : null,
+      fileCard,
       WEB ? null : card('Network connection', 'Devoid asks a lightwalletd server for blocks. Tor hides your IP address from that server.', connSeg,
         h('div', { class: 'field' }, h('label', { for: 'srv' }, 'Servers'), servers, h('span', { class: 'hint' }, 'A preset (zecrocks, ywallet) or host:port, comma separated.')), socksRow, connMsg,
         h('div', null, btn('Save connection', 'sm', async () => {
@@ -98,11 +133,13 @@ export async function viewSettings(el) {
           fill(phraseOut, h('div', { class: 'stack' }, h('div', { class: 'phrase' }, r.result.phrase.split(' ').map((w) => h('span', null, w))), h('div', null, btn('Hide', 'ghost sm', () => phraseOut.replaceChildren(), 'eyeOff'))));
         }, 'key'))), phraseOut),
       card('Passphrase', WEB && webEngine() !== 'real' ? 'Change the passphrase this demo asks for before each send.' : WEB ? 'Change the passphrase that encrypts your keys in this browser.' : 'Change the passphrase that encrypts your keys on this computer.',
+        lockRow,
         h('div', { class: 'field' }, h('label', { for: 'o1' }, 'Current passphrase'), o1),
         h('div', { class: 'field' }, h('label', { for: 'n1' }, 'New passphrase'), n1), cm,
         h('div', null, btn('Change passphrase', 'ghost sm', async () => {
           const r = await api('/api/engine/changePassphrase', { passphrase: o1.value, newPassphrase: n1.value }); o1.value = n1.value = '';
-          fill(cm, r.ok ? note('ok', 'Passphrase changed.') : errorNote(r.error));
+          if (r.ok) unlock.lock(); // the old one no longer signs
+          fill(cm, r.ok ? note('ok', 'Passphrase changed.', WEB && webEngine() === 'real' ? 'Wallet files you saved before still open with the old passphrase. Download a new one.' : null) : errorNote(r.error));
         }, 'lock'))),
       shieldCard)));
 

@@ -101,6 +101,16 @@ try:
         expect(pg.locator('.txid')).to_have_count(1)
         shot(pg, '04-sent')
 
+        # Signed once: the next payment does not ask for the passphrase again, until it is locked.
+        pg.click('.side-cta'); pg.wait_for_selector('#batch, .rcp')
+        if not pg.locator('#batch').count():
+            pg.click('[aria-label="How to add recipients"] button:has-text("Paste a list")'); pg.wait_for_selector('#batch')
+        pg.fill('#batch', f'{mine},0.01,again'); pg.click('text=Check recipients'); pg.wait_for_selector('.ledger')
+        pg.click('#review'); pg.wait_for_selector('.sheet')
+        expect(pg.locator('#lock-now')).to_be_visible(); expect(pg.locator('#pw')).to_have_count(0)
+        pg.click('#lock-now'); expect(pg.locator('#pw')).to_be_visible()
+        pg.click('button:has-text("Back to recipients")')
+
         # ---- it is still there after a reload, and Reset clears it ------------------------------------
         pg.reload(); pg.wait_for_selector('.side .nav')  # back on the same screen, wallet intact
         pg.click('a[data-view=activity]')

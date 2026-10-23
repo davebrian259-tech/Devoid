@@ -76,6 +76,21 @@ def steps(pg):
     expect(pg.locator('.note.err, .note.warn').first).to_contain_text('funds', timeout=60_000)
     shot(pg, '05-send', full=True)
 
+    # ---- the wallet file: saved, the wallet deleted, then opened again from the file ------------------
+    pg.click('a[data-view=settings]'); pg.wait_for_selector('#wf-save')
+    pg.fill('#wf-pw', PASS)
+    with pg.expect_download() as dl: pg.click('#wf-save')
+    wallet_file = dl.value.path()
+    assert dl.value.suggested_filename.startswith('devoid-testnet-wallet-'), dl.value.suggested_filename
+    pg.click('button:has-text("Delete this wallet")'); pg.click('dialog button:has-text("Delete wallet")')
+    pg.wait_for_selector('#p1'); pg.click('#open-file')
+    pg.set_input_files('#wf', wallet_file); pg.fill('#wf-pass', 'not the passphrase'); pg.click('#wf-open')
+    expect(pg.locator('.note.err')).to_contain_text('passphrase')
+    pg.fill('#wf-pass', PASS); pg.click('#wf-open'); pg.wait_for_selector('.side .nav')
+    pg.click('a[data-view=receive]'); pg.wait_for_selector('svg.qr')
+    assert pg.inner_text('#addr') == addr, 'the wallet file opened a different wallet'
+    print('wallet file: saved, deleted, opened again with the same address')
+
     # ---- still there after a reload, then deleted ---------------------------------------------------
     pg.reload(); pg.wait_for_selector('.side .nav')
     pg.click('a[data-view=settings]'); pg.wait_for_selector('text=Delete this wallet')

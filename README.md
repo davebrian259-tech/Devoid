@@ -9,7 +9,7 @@ A non-custodial Zcash wallet that pays a whole list of people in one shielded tr
   <img alt="Zcash mainnet: payments confirmed" src="https://img.shields.io/badge/Zcash_mainnet-payments_confirmed-f4b728?labelColor=231f20">
   <img alt="Engine: Rust, librustzcash" src="https://img.shields.io/badge/engine-Rust_%C2%B7_librustzcash-b7410e">
   <img alt="Web: WebAssembly" src="https://img.shields.io/badge/web-WebAssembly-654ff0">
-  <img alt="Tests: 241 passing" src="https://img.shields.io/badge/tests-241_passing-2ea44f">
+  <img alt="Tests: 245 passing" src="https://img.shields.io/badge/tests-245_passing-2ea44f">
   <img alt="Runtime dependencies: 0" src="https://img.shields.io/badge/runtime_deps-0-555">
   <img alt="Licence: MIT" src="https://img.shields.io/badge/licence-MIT-555">
 </p>
@@ -212,13 +212,19 @@ to rebuild the WebAssembly engine (needs Rust and wasm-bindgen). Cloudflare sett
 - **Contacts and lists** for payroll, grants and DAO payouts.
 - **Setup and settings**: create (or restore, on the desktop), a backup check, passphrase change,
   phrase reveal, shielding of transparent funds, and Tor or SOCKS5 on the desktop.
+- **Staying signed in**: after you sign once, the wallet stays unlocked in that tab for 15 minutes
+  (the passphrase in memory only, never stored; Lock any time). On the web, a **wallet file**
+  (encrypted with your passphrase) opens the same wallet in any browser or on any device, with no
+  recovery phrase typed into a website, and the browser is asked to keep the wallet's storage. The
+  desktop app keeps its access key across restarts, so `http://127.0.0.1:8787` opens straight
+  back into the wallet.
 - **Light and dark**, a phone layout, keyboard shortcuts, and the network marked on every screen.
 
 ## Verification
 
 | Check | How |
 |---|---|
-| 241 unit and API tests: Zcash address test vectors, amounts, CSV, SHA-256 (FIPS), fees, ZIP 321, server auth, web backend rules | `npm test` |
+| 245 unit and API tests: Zcash address test vectors, amounts, CSV, SHA-256 (FIPS), fees, ZIP 321, server auth, web backend rules, wallet file encryption | `npm test` |
 | Every screen and feature in a browser, failing on any console error or leaked `null` | `npm run test:ui` |
 | The built site under its real CSP, desktop and phone, 320–1440 px, light and dark. Fails on any overlap, CSP violation or unexpected request. Includes the WebAssembly engine's self-test and a transaction proved in the browser | `npm run test:web` |
 | A live wallet through the UI on testnet and mainnet: create, sync to the tip, exact fee quote, persistence | `npm run test:live` |

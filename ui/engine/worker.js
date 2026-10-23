@@ -3,6 +3,8 @@
 //   { id, type: 'run', request }  ->  { id, event } (progress, any number)  then  { id, result }
 //   { id, type: 'reset' }         ->  { id, result }
 //   { id, type: 'checkProving' }  ->  { id, result }   builds and proves a throw-away transaction
+//   { id, type: 'exportFiles' }   ->  { id, result }   the wallet's files, for its wallet file
+//   { id, type: 'importFiles', files } -> { id, result }  replaces the wallet with a wallet file's
 // The wallet folder lives in this browser's IndexedDB: loaded into the engine on start, saved after
 // every command that can change it. The recovery phrase is in it only inside keys.json, encrypted
 // with the passphrase, as on disk in the desktop app. Nothing else leaves this worker except
@@ -99,6 +101,17 @@ self.onmessage = async ({ data }) => {
       clearFiles();
       await tx(db, 'readwrite', (s) => s.clear());
       postMessage({ id, result: { ok: true, result: { reset: true } } });
+      return;
+    }
+    if (type === 'exportFiles') {
+      postMessage({ id, result: { ok: true, result: { files: exportFiles() } } });
+      return;
+    }
+    if (type === 'importFiles') {
+      clearFiles();
+      for (const [path, bytes] of data.files) importFile(path, bytes);
+      await saveAll(db);
+      postMessage({ id, result: { ok: true, result: { imported: data.files.length } } });
       return;
     }
     if (type === 'checkProving') {

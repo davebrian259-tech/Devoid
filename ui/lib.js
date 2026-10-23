@@ -36,6 +36,8 @@ export async function api(path, body = {}) {
   }
   try {
     const r = await fetch(path, { method: 'POST', headers: { 'content-type': 'application/json', authorization: `Bearer ${S.token}` }, body: JSON.stringify(body) });
+    // A remembered key from an earlier server is no longer valid: forget it, so the page asks for the link.
+    if (r.status === 401) { try { localStorage.removeItem('devoid-token'); sessionStorage.removeItem('devoid-token'); } catch { /* no storage */ } }
     return await r.json();
   } catch {
     return { ok: false, error: { code: 'offline', message: 'Devoid could not reach its local server. Check that it is still running.' } };
@@ -167,3 +169,24 @@ export function poweredBy(cls = '') {
   return h('a', { class: `powered ${cls}`.trim(), href: 'https://z.cash/', target: '_blank', rel: 'noopener noreferrer', 'data-tip': 'Powered by Zcash' },
     zecSign(), h('span', { class: 'lbl' }, 'Powered by ', h('b', null, 'Zcash')));
 }
+
+/**
+ * Unlocking: once the passphrase has signed something, this page keeps it in memory (never in
+ * storage) so the next sends and shielding do not ask again. It is forgotten after 15 minutes
+ * without activity, when you press Lock, when the passphrase changes, or when the page closes.
+ * Revealing the recovery phrase always asks for it.
+ */
+export const UNLOCK_MINUTES = 15;
+export const unlock = (() => {
+  let pass = null; let timer = null;
+  const changed = () => { nav.paintSide(); document.dispatchEvent(new CustomEvent('devoid-lock')); };
+  const arm = () => { clearTimeout(timer); timer = setTimeout(() => api.lock(), UNLOCK_MINUTES * 60_000); };
+  const api = {
+    get: () => pass,
+    keep(p) { if (!p) return; const was = pass; pass = p; arm(); if (!was) changed(); },
+    touch() { if (pass) arm(); },
+    lock() { if (!pass) return; pass = null; clearTimeout(timer); changed(); },
+  };
+  for (const ev of ['pointerdown', 'keydown']) addEventListener(ev, () => api.touch(), { passive: true, capture: true });
+  return api;
+})();

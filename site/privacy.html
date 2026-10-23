@@ -56,8 +56,9 @@
     </ul>
     <p><b>A demo</b> runs on a simulated chain with play money and connects to no Zcash server. It stores a made-up wallet (with words that cannot restore a real one and a salted hash of the passphrase you chose) in this browser's local storage.</p>
     <ul>
-      <li><b>What the web version never asks for.</b> A recovery phrase. It has no restore option; restore a wallet in the desktop app.</li>
-      <li><b>Deleting it.</b> Settings, then Delete this wallet (or Reset the demo); or clear this site's data in your browser. A deleted wallet can only be restored from its recovery phrase, in the desktop app.</li>
+      <li><b>What the web version never asks for.</b> A recovery phrase. To use your wallet in another browser or on another device, download its <b>wallet file</b> in Settings and open it there with your passphrase. The file is encrypted with your passphrase (AES-256, with the key derived by PBKDF2) and goes only where you save it; nothing is uploaded.</li>
+      <li><b>Staying unlocked.</b> After you sign, you can stay unlocked in that tab for 15 minutes. The passphrase is then kept in the page's memory only, never written to storage, and is forgotten when you lock, after 15 minutes without activity, or when the tab closes.</li>
+      <li><b>Deleting it.</b> Settings, then Delete this wallet (or Reset the demo); or clear this site's data in your browser. A deleted wallet can be opened again from a wallet file, or restored from its recovery phrase in the desktop app.</li>
       <li><b>Your lists, contacts and settings</b> are kept in this browser's local storage, separately for each kind of wallet.</li>
     </ul>
 

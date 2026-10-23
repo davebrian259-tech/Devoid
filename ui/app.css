@@ -513,6 +513,8 @@ details.more > summary::-webkit-details-marker { display: none; }
 details.more > summary .ic { transition: transform 0.2s; color: var(--ink-3); }
 details.more[open] > summary .ic { transform: rotate(180deg); }
 .privacy-level { display: flex; align-items: center; gap: 12px; }
+.unlocked { display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-radius: 14px; background: var(--surface-2); border: 1px solid var(--line); }
+.unlocked > div { flex: 1; min-width: 0; }
 .privacy-level .tile-ico { width: 46px; height: 46px; }
 
 /* sending + sent */
@@ -569,6 +571,8 @@ details.more[open] > summary .ic { transform: rotate(180deg); }
 .panel-side { display: flex; align-items: center; justify-content: center; padding: 40px 28px; background: var(--bg); }
 .form-card { width: 100%; max-width: 440px; }
 .form-card h2 { font-size: 26px; letter-spacing: -0.03em; }
+.or-open { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 10px 14px; padding: 12px 14px; border-radius: 14px; border: 1px solid var(--line); background: var(--surface); }
+.form-card input[type=file] { width: 100%; font: inherit; font-size: 14px; color: var(--ink-2); }
 .phrase { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; counter-reset: w; }
 .phrase span { counter-increment: w; display: flex; align-items: baseline; gap: 8px; padding: 9px 11px; border-radius: 11px; background: var(--surface-2); border: 1px solid var(--line); font-family: var(--mono); font-size: 13.5px; }
 .phrase span::before { content: counter(w); color: var(--ink-3); font-size: 11px; min-width: 15px; }

@@ -30,10 +30,12 @@ const narrow = matchMedia('(max-width: 1040px)');
 
 (function loadToken() {
   if (WEB) { S.token = 'web'; return; } // no server to authenticate to
+  // The server keeps the same key across restarts (in its data folder), and this page remembers it,
+  // so reopening http://127.0.0.1:8787 gets straight back to the wallet without the printed link.
   const m = /token=([\w-]+)/.exec(location.hash);
   try {
-    if (m) { sessionStorage.setItem('devoid-token', m[1]); history.replaceState(null, '', location.pathname); }
-    S.token = m ? m[1] : sessionStorage.getItem('devoid-token');
+    if (m) { localStorage.setItem('devoid-token', m[1]); history.replaceState(null, '', location.pathname); }
+    S.token = m ? m[1] : localStorage.getItem('devoid-token') ?? sessionStorage.getItem('devoid-token');
   } catch { S.token = m ? m[1] : null; }
 })();
 applyTheme(themeChoice());
@@ -44,6 +46,7 @@ async function boot() {
     return;
   }
   const r = await api('/api/status');
+  if (!r.ok && r.error?.code === 'unauthorized') { S.token = null; return boot(); }
   if (!r.ok) {
     renderGate(root, 'Cannot reach the wallet', h('div', { class: 'stack' }, errorNote(r.error), h('p', { class: 'sub' }, WEB ? 'Reload the page. If it keeps failing, this browser may be blocking scripts or storage.' : 'Restart the server and open the new link it prints.')));
     return;

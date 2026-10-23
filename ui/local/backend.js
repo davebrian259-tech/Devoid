@@ -11,6 +11,7 @@
 // version never invites anyone to type a real one into a website.
 import { createCore } from '../../server/core.mjs';
 import { createSimEngine } from '../../mock-engine/core.mjs';
+import { sealWalletFile, openWalletFile } from './walletfile.js';
 
 const PREFIX = 'devoid-web:';
 export const ENGINES = ['real', 'demo'];
@@ -68,6 +69,8 @@ function wasmEngine() {
   return {
     run: (request, onEvent) => send({ type: 'run', request }, onEvent),
     reset: () => send({ type: 'reset' }),
+    exportFiles: () => send({ type: 'exportFiles' }),
+    importFiles: (files) => send({ type: 'importFiles', files }),
   };
 }
 
@@ -79,6 +82,43 @@ const ENGINE = {
 export function createBackend({ mainnet = false } = {}) {
   let kind = engineChoice();
   let engine = null; let core = null;
+  const fail = (code, message) => ({ ok: false, error: { code, message, details: null } });
+  const status = async () => (await core.handle('/api/status', {})).body.result;
+
+  // Asks the browser to keep this site's storage, so it never clears the wallet to free space (Safari
+  // otherwise drops it after a week without a visit). `ask: false` only reports the current state.
+  async function keepStorage(ask = true) {
+    try {
+      const kept = Boolean(await navigator.storage?.persisted?.());
+      return { kept: kept || (ask && Boolean(await navigator.storage?.persist?.())), supported: Boolean(navigator.storage?.persist) };
+    } catch { return { kept: false, supported: false }; }
+  }
+
+  // The wallet file: this browser's real wallet, encrypted with its passphrase (see walletfile.js).
+  async function exportWalletFile(passphrase) {
+    if (kind !== 'real') return fail('bad_request', 'Only a real wallet has a wallet file. The demo lives in this browser only.');
+    const v = (await core.handle('/api/engine/verifyPassphrase', { passphrase })).body;
+    if (!v.ok) return v;
+    const out = await engine.exportFiles();
+    if (!out.ok) return out;
+    const network = (await status()).wallet.network === 'main' ? 'main' : 'test';
+    const text = await sealWalletFile(out.result.files, passphrase, { network });
+    return { ok: true, result: { text, name: `devoid-${network === 'main' ? 'mainnet' : 'testnet'}-wallet-${new Date().toISOString().slice(0, 10)}.devoid` } };
+  }
+  async function importWalletFile(text, passphrase) {
+    if (typeof text !== 'string' || !text || typeof passphrase !== 'string' || !passphrase) return fail('bad_request', 'Choose a wallet file and enter its passphrase.');
+    let opened;
+    try { opened = await openWalletFile(text, passphrase); } catch (e) { return fail(e.code ?? 'bad_request', e.message); }
+    if (opened.network === 'main' && !mainnet) return fail('bad_request', 'This is a mainnet wallet, and mainnet is not open in this web wallet.');
+    if (kind !== 'real') { kind = 'real'; store.set('engine', kind); build(); }
+    if ((await status()).wallet.exists) return fail('wallet_exists', 'This browser already has a wallet. Delete it in Settings before opening another.');
+    const put = await engine.importFiles(opened.files);
+    if (!put.ok) return put;
+    // The keys inside must open with the same passphrase; if not, leave nothing half-imported.
+    const v = (await core.handle('/api/engine/verifyPassphrase', { passphrase })).body;
+    if (!v.ok) { await engine.reset(); return v; }
+    return { ok: true, result: { network: opened.network } };
+  }
   const build = () => {
     const spec = ENGINE[kind ?? 'demo'];
     engine = spec.make();
@@ -102,6 +142,9 @@ export function createBackend({ mainnet = false } = {}) {
         if (req.engine !== kind) { kind = req.engine; store.set('engine', kind); build(); }
         return { ok: true, result: { engine: kind } };
       }
+      if (path === '/api/web/wallet-file/export') return exportWalletFile(req.passphrase);
+      if (path === '/api/web/keep-storage') return { ok: true, result: await keepStorage() };
+      if (path === '/api/web/wallet-file/import') return importWalletFile(req.text, req.passphrase);
       if (path === '/api/engine/create') {
         if (req.phrase) return { ok: false, error: { code: 'restore_unavailable', message: 'The web version never asks for a recovery phrase. Restore your wallet in the desktop app.', details: null } };
         // The demo's addresses belong to nobody; only the real engine may hold real ZEC.
