@@ -135,6 +135,23 @@ function serveStatic(res, pathname) {
   res.end(readFileSync(full));
 }
 
+/**
+ * The key the page needs to use the API, kept in the data folder (owner-only) so it survives
+ * restarts: the browser remembers it, and reopening Devoid does not need the printed link again.
+ * Delete the file to issue a new key and sign out every browser.
+ */
+export function keptToken(dataDir) {
+  const file = join(dataDir, 'token');
+  try {
+    const t = readFileSync(file, 'utf8').trim();
+    if (/^[\w-]{32,}$/.test(t)) return t;
+  } catch { /* none yet */ }
+  mkdirSync(dataDir, { recursive: true, mode: 0o700 });
+  const t = randomBytes(24).toString('base64url');
+  writeFileSync(file, t + '\n', { mode: 0o600 });
+  return t;
+}
+
 // ---- main ----------------------------------------------------------------------------------
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   const args = process.argv.slice(2);
@@ -149,7 +166,7 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
     }
   }
   const dataDir = process.env.DEVOID_HOME || (demo ? join(ROOT, '.demo-data') : join(os.homedir(), '.devoid'));
-  const app = createApp({ dataDir, engine, port: portArg ? Number(portArg.slice(7)) : 8787 });
+  const app = createApp({ dataDir, engine, token: keptToken(dataDir), port: portArg ? Number(portArg.slice(7)) : 8787 });
   app.server.on('error', async (e) => {
     if (e.code === 'EADDRINUSE') { const alt = createApp({ dataDir, engine, token: app.token, port: 0 }); const p = await alt.listen(); banner(p, alt.token); } else throw e;
   });

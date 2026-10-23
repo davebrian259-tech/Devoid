@@ -140,3 +140,17 @@ test('a wrong passphrase is rejected before sending, and no phrase is handed bac
     await app.close();
   }
 });
+
+test('the desktop key survives restarts, readable only by its owner', async () => {
+  const { keptToken } = await import('../server/index.mjs');
+  const { mkdtempSync, statSync, writeFileSync } = await import('node:fs');
+  const { tmpdir } = await import('node:os');
+  const { join } = await import('node:path');
+  const dir = mkdtempSync(join(tmpdir(), 'devoid-token-'));
+  const first = keptToken(dir);
+  assert.match(first, /^[\w-]{32}$/);
+  assert.equal(keptToken(dir), first, 'the same key after a restart');
+  assert.equal(statSync(join(dir, 'token')).mode & 0o777, 0o600);
+  writeFileSync(join(dir, 'token'), 'short\n'); // a damaged file is replaced, not trusted
+  assert.notEqual(keptToken(dir), 'short');
+});
