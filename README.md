@@ -3,13 +3,14 @@
 <h1 align="center">Devoid</h1>
 
 <p align="center"><b>Pay everyone at once. Privately.</b><br>
-A non-custodial Zcash wallet that pays a whole list of people in one shielded transaction.</p>
+A non-custodial Zcash wallet that pays a whole list of people in one shielded transaction —
+and the only one that hides how many people were paid.</p>
 
 <p align="center">
   <img alt="Zcash mainnet: payments confirmed" src="https://img.shields.io/badge/Zcash_mainnet-payments_confirmed-f4b728?labelColor=231f20">
   <img alt="Engine: Rust, librustzcash" src="https://img.shields.io/badge/engine-Rust_%C2%B7_librustzcash-b7410e">
   <img alt="Web: WebAssembly" src="https://img.shields.io/badge/web-WebAssembly-654ff0">
-  <img alt="Tests: 245 passing" src="https://img.shields.io/badge/tests-245_passing-2ea44f">
+  <img alt="Tests: 252 passing" src="https://img.shields.io/badge/tests-252_passing-2ea44f">
   <img alt="Runtime dependencies: 0" src="https://img.shields.io/badge/runtime_deps-0-555">
   <img alt="Licence: MIT" src="https://img.shields.io/badge/licence-MIT-555">
 </p>
@@ -31,6 +32,27 @@ publishes who was paid and how much. One transaction per person costs more and l
 payment to the same sender. Devoid builds **one shielded Zcash transaction for up to 25
 recipients**: the chain sees that a transaction happened and its size, never who got what. A
 list of up to 2,000 people goes out as a few transactions, in order.
+
+### Batching leaks the batch
+
+Shielding hides who was paid and how much. It does not hide **how many**. The number of outputs
+is public, and a ZIP 317 fee is 5,000 zatoshis per logical action — so the fee is an arithmetic
+receipt of the headcount. A grant programme paying 40 people looks nothing like one paying 3,
+to anyone, forever. Every shielded wallet has this property; it only matters once you pay people
+in batches, which is what Devoid is for.
+
+So Devoid closes it. Padding rounds a transaction's payment outputs up to 5, 10 or 25 by paying
+this wallet nothing a few more times — real shielded outputs, indistinguishable on chain from
+the ones that carry money. Everyone inside a bucket looks alike: a payment to one person and a
+payment to five are the same shape, and so are six and ten. It costs one action each (0.0001 ZEC
+to pad three up to five), the review screen quotes that before you sign, and the privacy report
+says what is hidden and what is not: **the exact headcount stops being readable; the number of
+inputs and outputs, and the fee that follows from it, are still public.** Padding covers one
+transaction, so a batch split across several still shows roughly how large it was.
+
+Proven on testnet: [`4fbde366…`](https://testnet.zcashexplorer.app/transactions/4fbde3662e5c7b179eae8bd8e09a34da10510f412a4f80e0c2767ff4273ea129)
+pays three people in block 4,536,660; the chain shows six outputs (five payments and the
+change), the same as a payment to five would.
 
 ## Proven on mainnet
 
@@ -240,6 +262,7 @@ to rebuild the WebAssembly engine (needs Rust and wasm-bindgen). Cloudflare sett
 | 245 unit and API tests: Zcash address test vectors, amounts, CSV, SHA-256 (FIPS), fees, ZIP 321, server auth, web backend rules, wallet file encryption | `npm test` |
 | Every screen and feature in a browser, failing on any console error or leaked `null` | `npm run test:ui` |
 | The passkey wrap: what the device's secret protects, and what it refuses | `npm test` (`test/passkey.test.mjs`) |
+| Padding: the bucket rule, the fee it adds, and a padded batch through the request core | `npm test` |
 | The built site under its real CSP, desktop and phone, 320–1440 px, light and dark. Fails on any overlap, CSP violation or unexpected request. Includes the WebAssembly engine's self-test and a transaction proved in the browser | `npm run test:web` |
 | The landing pages at seven widths from 320 to 1440 px, light and dark: no overlap, no clipped box, no sideways scroll, no broken image | `npm run test:site` |
 | Installed and offline: the manifest, the service worker's cache, and the app opening with the network off. A passkey enrolled and used to unlock, against a virtual authenticator | `npm run test:web` |

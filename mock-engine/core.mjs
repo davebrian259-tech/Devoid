@@ -21,6 +21,9 @@ let emit = () => {};
 
 export const SIMULATED = true;
 const MAX_RECIPIENTS = 30;
+// Output buckets a padded batch is rounded up to, as in engine/src/spend.rs.
+const PAD_BUCKETS = [5, 10, 25];
+const padBucket = (n) => PAD_BUCKETS.find((b) => b >= n) ?? n;
 const GENESIS_HEIGHT = 3_500_000;
 const BLOCK_MS = 6_000; // simulated blocks are fast so a demo shows confirmations
 const WORDS = 'able acid aim album alert alpha amber angle apple arch arrow atom aunt award azure badge basic beam bench berry bison blend bloom bonus brave brick brisk cabin cable camel candy cargo cedar chalk charm chess cider civic claim cliff cloud coast comet coral crane crisp daisy dance delta denim dream drift eagle earth ember epoch fable fancy fern field flame flint focus forest frost gamma ginger glide grain grove habit harbor hazel heron honey humble icon igloo index iris ivory jade jelly jolly karma kite lace lemon lunar maple marsh meadow mist nova oasis olive orbit otter pearl pilot plume quartz quest quill raven reef river sable scout shore silk solar spark spruce stone tidal topaz unity vapor velvet violet willow yarn zephyr zinc'.split(' ');
@@ -275,6 +278,14 @@ function plan(st, h, req, kind) {
     return { index: i, address: info.address, amountZat: amt, pool: destinationPool(info, true), memo };
   });
   const total = payments.reduce((a, p) => a + p.amountZat, 0);
+  // Padding: outputs that pay this wallet nothing, so the chain does not show how many people were
+  // paid (engine/src/spend.rs explains it; the simulated chain charges for them the same way).
+  const realCount = payments.length;
+  if (req.padOutputs) {
+    for (let i = payments.length; i < padBucket(realCount); i++) {
+      payments.push({ index: i, address: st.addresses.shielded, amountZat: 0, pool: 'ironwood', memo: null, padding: true });
+    }
+  }
 
   const cand = req.fundingPools?.length ? [req.fundingPools] : [['ironwood'], ['sapling'], ['ironwood', 'sapling']];
   let best = null; let short = null;
@@ -301,6 +312,8 @@ function finish(c) {
   const { kind, st, h, payments, fee, fundingPools, inputs, change, crossing, transparentPaid, transparentIdx } = c;
   const by = (pool) => ({ count: inputs.filter((n) => n.pool === pool).length, valueZat: inputs.filter((n) => n.pool === pool).reduce((a, n) => a + n.value, 0) });
   const to = payments.reduce((a, p) => a + p.amountZat, 0);
+  const padding = payments.filter((p) => p.padding).length;
+  const paid = payments.filter((p) => !p.padding);
   const findings = []; const requiresAck = [];
   if (kind === 'shield') findings.push({ code: 'transparent_inputs_public', severity: 'warn', message: 'The funds you are shielding are already visible on the blockchain. Shielding several transparent addresses in one transaction also shows that they belong together.', paymentIndexes: [] });
   if (transparentPaid > 0) {
@@ -311,15 +324,17 @@ function finish(c) {
     requiresAck.push('pool_crossing');
     findings.push({ code: 'pool_crossing', severity: 'warn', message: `${(crossing / 1e8).toFixed(8)} ZEC moves between shielded pools (spending from ${fundingPools.join(' + ')}). Pool boundaries are visible on the blockchain, so that amount is public; the recipients and your remaining balance stay private.`, paymentIndexes: [] });
   }
-  findings.push({ code: 'shape_visible', severity: 'info', message: 'Anyone can see how many inputs and outputs a transaction has (the fee reflects it). Nobody can see who the recipients are, how much each gets, or which outputs are yours.', paymentIndexes: [] });
+  findings.push({ code: 'shape_visible', severity: 'info', message: padding > 0
+    ? `Padded to ${payments.length} outputs: ${padding} of them pay this wallet nothing, so the chain does not show how many people were paid. The number of inputs and outputs is still public, and so is the fee that follows from it. Nobody can see who the recipients are, how much each gets, or which outputs are yours.`
+    : 'Anyone can see how many inputs and outputs a transaction has (the fee reflects it), so this one shows how many people were paid. Nobody can see who the recipients are, how much each gets, or which outputs are yours.', paymentIndexes: [] });
   const level = kind === 'shield' || transparentPaid > 0 ? 'public' : crossing > 0 ? 'partial' : 'private';
   const changeTotal = change.reduce((a, x) => a + x.valueZat, 0);
   const summary = {
-    kind, network: st.network, targetHeight: h + 1, ironwoodActive: true, fundingPools, recipientCount: payments.length,
+    kind, network: st.network, targetHeight: h + 1, ironwoodActive: true, fundingPools, recipientCount: paid.length, paddingOutputs: padding,
     toRecipientsZat: to, feeZat: fee, changeZat: changeTotal, totalDebitZat: to + fee,
     estimatedSizeBytes: 1200 + 3100 * Math.max(payments.length + 1, inputs.length),
     inputs: { sapling: by('sapling'), orchard: { count: 0, valueZat: 0 }, ironwood: by('ironwood'), transparent: by('transparent') },
-    payments: payments.map((p) => ({ index: p.index, address: p.address, amountZat: p.amountZat, pool: p.pool, memo: p.memo, memoBytes: p.memo ? utf8Length(p.memo) : null })),
+    payments: paid.map((p) => ({ index: p.index, address: p.address, amountZat: p.amountZat, pool: p.pool, memo: p.memo, memoBytes: p.memo ? utf8Length(p.memo) : null })),
     change, privacy: { level, crossingZat: crossing, transparentZat: transparentPaid, findings, requiresAck },
     simulated: true,
   };
@@ -343,7 +358,7 @@ function commit(st, h, p) {
   if (ch && ch.valueZat > 0) st.notes.push({ id: randHex(4), pool: ch.pool, value: ch.valueZat, minedHeight: null, from: txid });
   // Notes created by this transaction become spendable once it is mined.
   const outputs = [
-    ...p.payments.map((x, i) => ({ pool: x.pool, index: i, address: x.address, valueZat: x.amountZat, isChange: false, toSelf: false, memo: x.memo, memoKind: x.memo ? 'text' : null })),
+    ...p.payments.map((x, i) => ({ pool: x.pool, index: i, address: x.address, valueZat: x.amountZat, isChange: Boolean(x.padding), toSelf: Boolean(x.padding), memo: x.memo, memoKind: x.memo ? 'text' : null })),
     ...(ch && ch.valueZat > 0 ? [{ pool: ch.pool, index: p.payments.length, address: null, valueZat: ch.valueZat, isChange: true, toSelf: true, memo: null, memoKind: null }] : []),
   ];
   const spent = p.chosen.reduce((a, n) => a + n.value, 0);

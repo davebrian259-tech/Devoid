@@ -28,14 +28,23 @@ export function chunkSizes(n, size = TX_CHUNK) {
   return out;
 }
 
+/** Output buckets a padded transaction is rounded up to, as in engine/src/spend.rs. */
+export const PAD_BUCKETS = [5, 10, 25];
+
+/** The bucket `n` recipients are padded up to, so the chain does not show how many there were. */
+export const padBucket = (n) => PAD_BUCKETS.find((b) => b >= n) ?? n;
+
 /**
  * ZIP 317 fee estimate for paying `n` shielded recipients: 5,000 zat per logical action with a
  * floor of two, per transaction, counting each transaction's change output as one more action.
  * Matches the engine's quotes for a wallet with few notes; a wallet spending many small notes pays
  * more, and an exact payment with no change pays less, which is why review shows the engine's figure.
+ *
+ * With `pad`, each transaction's outputs are rounded up to a bucket, and those outputs cost an
+ * action each: that is the price of not showing how many people were paid.
  */
-export function estimateFeeZat(n, size = TX_CHUNK) {
-  return chunkSizes(n, size).reduce((sum, k) => sum + 5000n * BigInt(Math.max(2, k + 1)), 0n);
+export function estimateFeeZat(n, size = TX_CHUNK, pad = false) {
+  return chunkSizes(n, size).reduce((sum, k) => sum + 5000n * BigInt(Math.max(2, (pad ? padBucket(k) : k) + 1)), 0n);
 }
 
 /** Splits `totalZat` across `n` recipients; the first ones absorb the remainder, one zat each. */

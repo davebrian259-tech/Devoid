@@ -47,7 +47,9 @@ use zcash_client_backend::{
     wallet::OvkPolicy,
 };
 use zcash_client_sqlite::{AccountUuid, ReceivedNoteId};
-use zcash_keys::{address::Address, encoding::AddressCodec, keys::UnifiedSpendingKey};
+use zcash_keys::{
+    address::Address, encoding::AddressCodec, keys::UnifiedAddressRequest, keys::UnifiedSpendingKey,
+};
 use zcash_primitives::transaction::TxId;
 use zcash_protocol::{
     PoolType, ShieldedPool,
@@ -71,6 +73,22 @@ use crate::{
 /// The most recipients one transaction may carry. Every recipient is one shielded output (about
 /// 3 KB with its proof), and relay policy rejects transactions over 100 KB.
 pub(crate) const MAX_RECIPIENTS_PER_TX: usize = 30;
+
+/// How many outputs a padded transaction is rounded up to.
+///
+/// Shielded transactions hide who is paid and how much, but not *how many*: the number of outputs
+/// is public, and since a ZIP 317 fee is 5,000 zatoshis per logical action, the fee alone narrows
+/// it down. For a batch that is the headcount of a payroll or a grant round. Padding rounds the
+/// output count up to one of these, with the extra outputs paying this wallet zero, so a payment
+/// to three people and a payment to nine look the same on chain. It costs one action each.
+///
+/// The top bucket is the UI's transactions-per-batch size, so a full chunk pays nothing extra.
+pub(crate) const PAD_BUCKETS: [usize; 3] = [5, 10, 25];
+
+/// The bucket a batch of `n` recipients is padded up to (`n` itself when it is already past them).
+pub(crate) fn pad_bucket(n: usize) -> usize {
+    PAD_BUCKETS.into_iter().find(|bucket| *bucket >= n).unwrap_or(n)
+}
 
 /// The largest transaction the engine will build, in bytes (the standard relay limit).
 pub(crate) const MAX_STANDARD_TX_BYTES: usize = 100_000;
@@ -331,6 +349,8 @@ enum Funding {
 pub(crate) struct TransferRequest {
     pub(crate) recipients: Vec<Recipient>,
     funding: Funding,
+    /// Pad the outputs up to a bucket, so the chain does not show how many people were paid.
+    pad: bool,
 }
 
 pub(crate) fn parse_transfer_request(params: &Network, req: &Value) -> R<TransferRequest> {
@@ -385,9 +405,16 @@ pub(crate) fn parse_transfer_request(params: &Network, req: &Value) -> R<Transfe
         Some(_) => return Err(bad_request("fundingPools must be a list.")),
     };
 
+    let pad = match req.get("padOutputs") {
+        None | Some(Value::Null) => false,
+        Some(Value::Bool(on)) => *on,
+        Some(_) => return Err(bad_request("padOutputs must be true or false.")),
+    };
+
     Ok(TransferRequest {
         recipients,
         funding,
+        pad,
     })
 }
 
@@ -586,6 +613,10 @@ fn analyze<N>(
     funding: &[ShieldedPool],
     target_height: u32,
     ironwood_active: bool,
+    // How many of the payments are real recipients; anything after them is padding this wallet
+    // pays itself. It is signed like any other output, so the fingerprint covers it, but it is not
+    // someone being paid and is not listed as one.
+    real_count: usize,
 ) -> R<Analysis> {
     if proposal.steps().len() != 1 {
         return Err(Failure::new(
@@ -619,6 +650,7 @@ fn analyze<N>(
     let mut to_recipients: u64 = 0;
     let mut transparent_paid: u64 = 0;
     let mut transparent_indexes: Vec<usize> = Vec::new();
+    let mut padding_outputs = 0usize;
     for (index, payment) in step.transaction_request().payments() {
         let amount = payment.amount().map(u64::from).unwrap_or(0);
         let pool = step.payment_pools().get(index).copied();
@@ -638,6 +670,11 @@ fn analyze<N>(
             _ => None,
         });
         let pool_label = pool.map(pool_type_name).unwrap_or("unknown");
+        if *index >= real_count {
+            padding_outputs += 1;
+            canonical_payments.push(json!([index, address, amount, Value::Null, pool_label]));
+            continue;
+        }
         payments.push(json!({
             "index": index,
             "address": address,
@@ -739,7 +776,15 @@ fn analyze<N>(
     findings.push(finding(
         "shape_visible",
         "info",
-        "Anyone can see how many inputs and outputs a transaction has (the fee reflects it). Nobody can see who the recipients are, how much each gets, or which outputs are yours.".to_string(),
+        if padding_outputs > 0 {
+            format!(
+                "Padded to {} outputs: {} of them pay this wallet nothing, so the chain does not show how many people were paid. The number of inputs and outputs is still public, and so is the fee that follows from it. Nobody can see who the recipients are, how much each gets, or which outputs are yours.",
+                payments.len() + padding_outputs,
+                padding_outputs
+            )
+        } else {
+            "Anyone can see how many inputs and outputs a transaction has (the fee reflects it), so this one shows how many people were paid. Nobody can see who the recipients are, how much each gets, or which outputs are yours.".to_string()
+        },
         vec![],
     ));
 
@@ -763,6 +808,7 @@ fn analyze<N>(
         "change": canonical_change,
         "inputs": [in_count, in_value, transparent_in_count, transparent_in_value],
         "funding": funding_names,
+        "padding": padding_outputs,
         "ack": requires_ack,
     });
     let fingerprint = fingerprint_of(&canonical);
@@ -774,6 +820,7 @@ fn analyze<N>(
         "ironwoodActive": ironwood_active,
         "fundingPools": funding_names,
         "recipientCount": payments.len(),
+        "paddingOutputs": padding_outputs,
         "toRecipientsZat": to_recipients,
         "feeZat": fee,
         "changeZat": change_total,
@@ -882,6 +929,26 @@ fn chain_state(wallet: &Wallet) -> R<(u32, bool)> {
     ))
 }
 
+/// This wallet's own shielded address, which the padding outputs pay.
+fn own_shielded_address(wallet: &Wallet) -> R<ZcashAddress> {
+    let account = wallet.account()?;
+    let (ua, _) = account
+        .uivk()
+        .default_address(UnifiedAddressRequest::SHIELDED)
+        .map_err(|e| {
+            Failure::new(
+                "internal",
+                format!("Could not derive this wallet's own address: {e:?}"),
+            )
+        })?;
+    ZcashAddress::try_from_encoded(&ua.encode(&wallet.params)).map_err(|e| {
+        Failure::new(
+            "internal",
+            format!("Could not read this wallet's own address: {e}"),
+        )
+    })
+}
+
 /// The wallet must know it has scanned everything up to the tip it knows about.
 fn ensure_scanned(wallet: &Wallet) -> R<()> {
     if !wallet.db.suggest_scan_ranges()?.is_empty() {
@@ -898,7 +965,24 @@ fn build_transfer(wallet: &mut Wallet, parsed: &TransferRequest) -> R<Chosen> {
     } else {
         ShieldedPool::Orchard
     };
-    let request = transaction_request(&parsed.recipients)?;
+    // Padding pays this wallet zero, as many times as it takes to reach the bucket. The outputs are
+    // indistinguishable from the real ones on chain; the only cost is their ZIP 317 actions.
+    let real_count = parsed.recipients.len();
+    let mut recipients = parsed.recipients.clone();
+    if parsed.pad {
+        let target = pad_bucket(real_count);
+        if target > real_count {
+            let own = own_shielded_address(wallet)?;
+            for _ in real_count..target {
+                recipients.push(Recipient {
+                    address: own.clone(),
+                    amount: Zatoshis::ZERO,
+                    memo: None,
+                });
+            }
+        }
+    }
+    let request = transaction_request(&recipients)?;
 
     let mut best: Option<(
         Vec<ShieldedPool>,
@@ -925,6 +1009,7 @@ fn build_transfer(wallet: &mut Wallet, parsed: &TransferRequest) -> R<Chosen> {
                     &pools,
                     target_height,
                     ironwood_active,
+                    real_count,
                 )?;
                 let better = best
                     .as_ref()
@@ -1402,6 +1487,7 @@ fn build_shielding(wallet: &mut Wallet, req: &Value) -> R<ShieldChosen> {
         &[shield_pool],
         u32::from(target_height),
         ironwood_active,
+        usize::MAX, // shielding pays nobody else, so none of its outputs are padding
     )?;
     Ok(ShieldChosen {
         proposal,

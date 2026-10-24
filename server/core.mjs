@@ -105,13 +105,13 @@ export function createCore({ run, engineInfo, settings, lists, wallet, sleep = (
           while (!sent) {
             job.message = chunks.length > 1 ? `Transaction ${i + 1} of ${chunks.length}` : 'Building and sending';
             await syncNow();
-            const pr = await engineCall({ cmd: 'propose', recipients: chunks[i], fundingPools: body.fundingPools });
+            const pr = await engineCall({ cmd: 'propose', recipients: chunks[i], fundingPools: body.fundingPools, padOutputs: Boolean(body.padOutputs) });
             if (!pr.ok) {
               const waiting = pr.error.code === 'insufficient_funds' && i > 0 && Date.now() < deadline;
               if (waiting) { job.message = `Waiting for change from transaction ${i} to confirm`; await sleep(8000); continue; }
               throw Object.assign(new Error(pr.error.message), { code: pr.error.code, details: pr.error.details });
             }
-            const res = await engineCall({ cmd: 'send', recipients: chunks[i], fundingPools: body.fundingPools, passphrase: body.passphrase, fingerprint: pr.result.fingerprint, acknowledge: body.acknowledge ?? [] }, (e) => { const what = STAGES[e.stage]; if (what) job.message = chunks.length > 1 ? `Transaction ${i + 1} of ${chunks.length}: ${what.toLowerCase()}` : what; });
+            const res = await engineCall({ cmd: 'send', recipients: chunks[i], fundingPools: body.fundingPools, padOutputs: Boolean(body.padOutputs), passphrase: body.passphrase, fingerprint: pr.result.fingerprint, acknowledge: body.acknowledge ?? [] }, (e) => { const what = STAGES[e.stage]; if (what) job.message = chunks.length > 1 ? `Transaction ${i + 1} of ${chunks.length}: ${what.toLowerCase()}` : what; });
             if (!res.ok) throw Object.assign(new Error(res.error.message), { code: res.error.code, details: res.error.details });
             job.txids.push(...(res.result.txids ?? [res.result.txid])); job.done = i + 1; sent = true;
           }
@@ -160,7 +160,7 @@ export function createCore({ run, engineInfo, settings, lists, wallet, sleep = (
         if (!Array.isArray(recipients) || !recipients.length) return fail(400, 'bad_request', 'Add at least one recipient.');
         if (recipients.length > 2000) return fail(400, 'too_many_recipients', 'A batch can have at most 2,000 recipients.');
         const chunks = chunkRecipients(recipients);
-        const first = await engineCall({ cmd: 'propose', recipients: chunks[0], fundingPools: body.fundingPools });
+        const first = await engineCall({ cmd: 'propose', recipients: chunks[0], fundingPools: body.fundingPools, padOutputs: Boolean(body.padOutputs) });
         if (!first.ok) return ok(first);
         // Later transactions spend change from earlier ones, so they cannot be proposed yet; their
         // fee is estimated from the first one.
@@ -173,7 +173,7 @@ export function createCore({ run, engineInfo, settings, lists, wallet, sleep = (
         if (typeof body.passphrase !== 'string' || !body.passphrase) return fail(400, 'bad_request', 'Enter your passphrase.');
         // Check the passphrase and acknowledgements up front so a wrong one fails fast, not mid-batch.
         const chunks = chunkRecipients(body.recipients);
-        const pr = await engineCall({ cmd: 'propose', recipients: chunks[0], fundingPools: body.fundingPools });
+        const pr = await engineCall({ cmd: 'propose', recipients: chunks[0], fundingPools: body.fundingPools, padOutputs: Boolean(body.padOutputs) });
         if (!pr.ok) return ok(pr);
         const need = pr.result.privacy?.requiresAck ?? [];
         const have = new Set(body.acknowledge ?? []);

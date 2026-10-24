@@ -3,7 +3,7 @@
 import { S, nav, api, h, btn, iconBtn, copy, download, note, errorNote, modal, unit, isTest, poolName, saveLists, loadLists, toast, emptyState, short, fill, unlock, UNLOCK_MINUTES } from '../lib.js';
 import { icon } from '../icons.js';
 import { savedPasskey, unlockWithPasskey } from '../local/passkey.js';
-import { fmtZec, estimateFeeZat, chunkSizes, parseZecToZat, splitEvenly, rowsToBatchText, zip321Amount, toCsv, monogram, hueOf, TX_CHUNK } from '../calc.js';
+import { fmtZec, estimateFeeZat, padBucket, chunkSizes, parseZecToZat, splitEvenly, rowsToBatchText, zip321Amount, toCsv, monogram, hueOf, TX_CHUNK } from '../calc.js';
 
 const rowOut = (r, amount) => ({ address: r.address, amount: amount ?? (r.amountZat != null ? zip321Amount(r.amountZat) : ''), memo: r.memo ?? '', label: r.label ?? '' });
 
@@ -203,12 +203,28 @@ export function viewSend(el) {
         btn('Clear', 'xs ghost', () => { S.draft.text = ''; if (mode === 'form') { rows = [blankRow()]; S.draft.rows = rows; syncText(); drawCards(); } else ta.value = ''; check(); }, 'x'));
     }
 
+    // Shielded payments hide who and how much, but the number of outputs is public and the ZIP 317
+    // fee follows from it, so a batch shows how many people were paid. Padding pays this wallet
+    // nothing a few more times, up to a bucket, and costs one action for each of those outputs.
+    function padBox(n) {
+      const on = Boolean(S.draft.pad);
+      const extra = n ? estimateFeeZat(n, TX_CHUNK, true) - estimateFeeZat(n, TX_CHUNK, false) : 0n;
+      const box = h('input', { type: 'checkbox', id: 'pad', checked: on, onchange: () => { S.draft.pad = box.checked; drawSummary(); } });
+      return h('div', { class: 'stack-xs' },
+        h('label', { class: 'check', for: 'pad' }, box, 'Hide how many people you are paying'),
+        h('p', { class: 'hint' }, n === 0
+          ? `Pads each transaction up to ${padBucket(1)}, ${padBucket(6)} or ${TX_CHUNK} outputs with payments to yourself, so the chain does not show the headcount.`
+          : on
+            ? `Each transaction is padded to ${chunkSizes(n).map(padBucket).join(', ')} outputs with payments to yourself. Costs ${fmtZec(extra)} ${unit()} more in fees${extra === 0n ? ' — nothing, these transactions are already full' : ''}.`
+            : `Without this, the output count and the fee show that ${n} ${n === 1 ? 'person was' : 'people were'} paid. Padding costs ${fmtZec(extra)} ${unit()} more.`));
+    }
+
     function drawSummary() {
       const rowsOk = checked ? checked.rows.filter((r) => !r.errors.length) : [];
       const bad = checked ? checked.rows.length - rowsOk.length : 0;
       const n = rowsOk.length;
       const total = checked ? BigInt(checked.totalZat) : 0n;
-      const fee = estimateFeeZat(n);
+      const fee = estimateFeeZat(n, TX_CHUNK, Boolean(S.draft.pad));
       const txs = chunkSizes(n).length;
       const spendable = spendableFor(S.draft.fundingPools);
       const remaining = spendable == null ? null : spendable - total - fee;
@@ -228,6 +244,7 @@ export function viewSend(el) {
           poolZat('transparent', 'spendable') > 0n ? ` ${fmtZec(poolZat('transparent', 'spendable'))} ${unit()} is transparent and cannot fund a private payment until you shield it.` : ''].join('')) : null,
         transparent ? note('warn', `${transparent} transparent recipient${transparent === 1 ? '' : 's'}`, 'Their addresses and amounts will be public. You will be asked to confirm.') : null,
         h('div', { class: 'field' }, h('label', { for: 'pools' }, 'Spend from'), pools),
+        padBox(n),
         next,
         h('p', { class: 'hint' }, `${TX_CHUNK} recipients per transaction, up to 2,000 per batch.`));
     }
@@ -237,10 +254,11 @@ export function viewSend(el) {
       const ok = checked.rows.filter((r) => !r.errors.length);
       const recipients = ok.map((r) => ({ address: r.address, amountZat: r.amountZat, memo: r.memo || undefined }));
       const fundingPools = S.draft.fundingPools ? [S.draft.fundingPools] : undefined;
-      const r = await api('/api/batch/plan', { recipients, fundingPools });
+      const padOutputs = Boolean(S.draft.pad);
+      const r = await api('/api/batch/plan', { recipients, fundingPools, padOutputs });
       next.disabled = false;
       if (!r.ok) { msg.append(errorNote(r.error)); msg.scrollIntoView({ block: 'center', behavior: 'smooth' }); return; }
-      Object.assign(F, { step: 'review', plan: { ...r.result, recipients, fundingPools }, labels: ok.map((x) => x.label ?? ''), text: S.draft.text });
+      Object.assign(F, { step: 'review', plan: { ...r.result, recipients, fundingPools, padOutputs }, labels: ok.map((x) => x.label ?? ''), text: S.draft.text });
       draw();
     };
 
@@ -378,7 +396,7 @@ export function viewSend(el) {
       const given = unlock.get() ?? pass.value;
       if (!given) { err.append(errorNote({ message: 'Enter your passphrase to sign.' })); return pass.focus(); }
       sendBtn.disabled = true;
-      const r = await api('/api/batch/send', { recipients: plan.recipients, fundingPools: plan.fundingPools, passphrase: given, acknowledge: [...acks] });
+      const r = await api('/api/batch/send', { recipients: plan.recipients, fundingPools: plan.fundingPools, padOutputs: plan.padOutputs, passphrase: given, acknowledge: [...acks] });
       pass.value = '';
       if (!r.ok) {
         // A remembered passphrase that no longer works (it was changed elsewhere): forget it and ask.
@@ -405,7 +423,8 @@ export function viewSend(el) {
         h('div', { class: 'facts' },
           h('div', null, h('span', { class: 'k' }, icon('wallet'), 'From'), h('span', { class: 'v' }, 'This wallet', h('span', { class: 'sub2' }, f.fundingPools.map((p) => poolName[p]).join(' + ')))),
           h('div', null, h('span', { class: 'k' }, icon('globe'), 'Network'), h('span', { class: 'v' }, h('span', { class: `pill ${isTest() ? 'test' : ''}` }, isTest() ? 'Testnet' : 'Mainnet'))),
-          h('div', null, h('span', { class: 'k' }, icon('users'), 'Recipients'), h('span', { class: 'v' }, n)),
+          h('div', null, h('span', { class: 'k' }, icon('users'), 'Recipients'), h('span', { class: 'v' }, n,
+            f.paddingOutputs ? h('span', { class: 'sub2' }, `${f.recipientCount + f.paddingOutputs} outputs on chain`) : null)),
           h('div', null, h('span', { class: 'k' }, icon('coins'), plan.feeIsEstimate ? 'Network fees' : 'Network fee'), h('span', { class: 'v' }, `${fmtZec(plan.estimatedFeeZat, 4)} ${unit()}`, h('span', { class: 'sub2' }, plan.feeIsEstimate ? 'First transaction quoted, later ones estimated' : 'Quoted by the engine'))),
           h('div', { class: 'total' }, h('span', { class: 'k' }, 'Total'), h('span', { class: 'v' }, `${fmtZec(sum + BigInt(plan.estimatedFeeZat))} ${unit()}`))),
         h('details', { class: 'more facts' }, h('summary', null, `See all ${n} recipient${n === 1 ? '' : 's'}`, icon('chevronDown')),
@@ -414,7 +433,7 @@ export function viewSend(el) {
             h('b', { class: 'num' }, fmtZec(r.amountZat))))))),
       h('section', { class: 'card' }, h('div', { class: 'card-h' }, h('h2', null, 'What others can see')),
         h('div', { class: 'stack' }, levelView,
-          ...f.privacy.findings.filter((x) => x.code !== 'shape_visible').map((x) => note(x.severity === 'info' ? 'info' : 'warn', null, x.message)),
+          ...f.privacy.findings.map((x) => note(x.severity === 'info' ? 'info' : 'warn', null, x.message)),
           ...need.map((code) => h('label', { class: 'check' }, h('input', { type: 'checkbox', onchange: (e) => { if (e.target.checked) acks.add(code); else acks.delete(code); sync(); } }), labels[code] ?? code)),
           plan.sequential ? note('info', `Sent as ${plan.transactions} transactions, in order`, `Each pays up to ${plan.chunkSize} people. Later ones spend change from earlier ones, so Devoid waits for confirmations between them. Keep this window open.`) : null)),
       h('section', { class: 'card' }, h('div', { class: 'stack' },

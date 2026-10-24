@@ -98,7 +98,13 @@ try:
         rows = ['address,amount,memo'] + [f'{mine},0.02,web {i}' for i in range(3)]
         pg.fill('#batch', '\n'.join(rows)); pg.click('text=Check recipients'); pg.wait_for_selector('.ledger')
         expect(pg.locator('#review')).to_be_enabled()
+        # Padding: three recipients, but the chain is shown five outputs, for two more actions.
+        expect(pg.locator('#view')).to_contain_text('the output count and the fee show that 3 people were paid')
+        pg.check('#pad')
+        expect(pg.locator('#view')).to_contain_text('padded to 5 outputs')
         pg.click('#review'); pg.wait_for_selector('.sheet')
+        expect(pg.locator('.sheet')).to_contain_text('5 outputs on chain')
+        expect(pg.locator('.sheet')).to_contain_text('Padded to 5 outputs')
         expect(pg.locator('#review-total')).to_contain_text('0.06')
         pg.fill('#pw', 'wrong-passphrase'); pg.click('#confirm')
         expect(pg.locator('.note.err')).to_contain_text('passphrase')
