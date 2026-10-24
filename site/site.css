@@ -107,6 +107,27 @@ p { margin: 0; }
 .steps .n { width: 46px; height: 46px; border-radius: 15px; background: var(--ink); color: var(--on-ink); display: grid; place-items: center; font-weight: 700; font-size: 18px; }
 .steps h3 { font-size: 21px; margin-bottom: 6px; }
 .steps p { color: var(--ink-2); }
+/* where Devoid runs, and what is still to come */
+.platforms { list-style: none; margin: 26px 0 0; padding: 0; display: grid; gap: 10px; }
+.platforms li { display: grid; grid-template-columns: auto auto 1fr auto; align-items: center; gap: 14px; padding: 14px 18px; border: 1px solid var(--line); border-radius: 16px; background: var(--surface); }
+.platforms b { font-weight: 600; }
+.p-ico { display: inline-flex; width: 34px; height: 34px; align-items: center; justify-content: center; border-radius: 11px; background: var(--surface-2); border: 1px solid var(--line); }
+.p-ico svg { width: 19px; height: 19px; fill: none; stroke: var(--ink-2); stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+.p-note { color: var(--ink-3); font-size: 14px; }
+.platforms + .fine, #headcount .fine { margin-top: 14px; }
+.platforms .pill { justify-self: end; font-size: 12.5px; font-weight: 600; padding: 4px 11px; border-radius: 999px; border: 1px solid var(--line); color: var(--ink-3); background: var(--surface-2); white-space: nowrap; }
+.platforms .pill.ok { color: #1b5e34; border-color: #a8dcbb; background: #e7f6ed; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .platforms .pill.ok { color: #9ff0c0; border-color: #1f6b43; background: #10261a; }
+}
+:root[data-theme="dark"] .platforms .pill.ok { color: #9ff0c0; border-color: #1f6b43; background: #10261a; }
+
+/* the two shapes a batch can have, side by side */
+.split { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; margin: 26px 0; }
+.split .shot-card { display: flex; flex-direction: column; gap: 6px; }
+.big-stat { font-size: 30px; font-weight: 700; letter-spacing: -0.03em; margin: 0; line-height: 1.1; }
+.big-stat span { display: block; font-size: 14px; font-weight: 500; color: var(--ink-2); letter-spacing: 0; margin-top: 4px; font-variant-numeric: tabular-nums; }
+
 .shot-card { margin: 0; border-radius: 26px; background: linear-gradient(160deg, var(--shot-a), var(--shot-b)); padding: 34px; border: 1px solid var(--line); }
 .shot-card img { border-radius: 18px; box-shadow: 0 30px 60px -28px rgb(15 17 21 / 0.4); margin: 0 auto; max-height: 640px; width: auto; }
 
@@ -192,7 +213,10 @@ p { margin: 0; }
   body { font-size: 16px; }
   .hero { padding-top: 30px; }
   .section { padding: 70px 0; }
-  .grid, .sec-grid { grid-template-columns: 1fr; }
+  .grid, .sec-grid, .split { grid-template-columns: 1fr; }
+  .platforms li { grid-template-columns: auto 1fr; row-gap: 4px; }
+  .platforms .p-note { grid-column: 2; }
+  .platforms .pill { grid-column: 2; justify-self: start; }
   .facts b { font-size: 30px; }
   .phone { width: 38%; right: -6px; }
   .lede { font-size: 17px; }

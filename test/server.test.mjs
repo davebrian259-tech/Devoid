@@ -66,6 +66,20 @@ test('wallet lifecycle, validation, batch send over several transactions', async
   assert.equal(plan.body.result.transactions, 2);
   assert.equal(plan.body.result.first.recipientCount, 25);
 
+  // Padding: the same three recipients, but the chain is shown five outputs instead of three.
+  const three = recipients.slice(0, 3);
+  const plain = await call('/api/batch/plan', { recipients: three, fundingPools: ['ironwood'] });
+  const padded = await call('/api/batch/plan', { recipients: three, fundingPools: ['ironwood'], padOutputs: true });
+  assert.equal(plain.body.result.first.paddingOutputs, 0);
+  assert.equal(padded.body.result.first.paddingOutputs, 2);
+  assert.equal(padded.body.result.first.recipientCount, 3); // the padding is not someone being paid
+  assert.equal(padded.body.result.first.payments.length, 3);
+  assert.equal(padded.body.result.first.feeZat - plain.body.result.first.feeZat, 10_000); // 5,000 per action
+  const shape = (r) => r.body.result.first.privacy.findings.find((f) => f.code === 'shape_visible').message;
+  assert.match(shape(plain), /shows how many people were paid/);
+  assert.match(shape(padded), /Padded to 5 outputs/);
+  assert.notEqual(padded.body.result.first.fingerprint, plain.body.result.first.fingerprint); // signed as reviewed
+
   const noPass = await call('/api/batch/send', { recipients, fundingPools: ['ironwood'], passphrase: 'wrong-passphrase' });
   assert.equal(noPass.body.error.code, 'wrong_passphrase');
 

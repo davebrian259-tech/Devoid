@@ -228,6 +228,7 @@ kbd { font: 600 11px/1 var(--sans); padding: 3px 6px; border-radius: 6px; backgr
 .g-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 .stack { display: flex; flex-direction: column; gap: 14px; }
 .stack-lg { display: flex; flex-direction: column; gap: 18px; }
+.stack-xs { display: flex; flex-direction: column; gap: 6px; }
 .row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
 .row.between { justify-content: space-between; }
 .row.end { justify-content: flex-end; }

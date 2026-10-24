@@ -89,6 +89,21 @@ The Rust engine now builds and runs. Against `testnet.zec.rocks:443`
   working, revealing the recovery phrase still asks for it, changing it re-seals or removes the
   passkey, and deleting the wallet takes the passkey record with it. `npm run test:web` drives both
   against a virtual authenticator and with the network switched off.
+- **Padding, so a batch does not show its headcount** (2026-10-24): a shielded transaction hides
+  who was paid and how much, but the number of outputs is public and a ZIP 317 fee is 5,000
+  zatoshis per logical action, so the fee narrows the recipient count. `padOutputs` rounds a
+  transaction's payments up to 5, 10 or 25 (`PAD_BUCKETS` in `engine/src/spend.rs`, mirrored in
+  `mock-engine/core.mjs` and `ui/calc.js`) with zero-value payments to the wallet's own shielded
+  address — real outputs, indistinguishable on chain. Each costs one action: 0.0001 ZEC to pad
+  three recipients up to five, quoted in the review before signing, and nothing at all for a
+  transaction already at 25. The padding is excluded from the recipient list and the amounts, and
+  included in the fingerprint, so what was reviewed is what is signed. The `shape_visible` finding
+  changes from naming the leak to describing what padding did and what is still visible. Limit,
+  stated in the app and on the site: it covers one transaction, so a batch split across several
+  still shows roughly how large it was. Confirmed on testnet:
+  `4fbde3662e5c7b179eae8bd8e09a34da10510f412a4f80e0c2767ff4273ea129`, mined in block 4,536,660,
+  pays three people with the six outputs (five payments and change) a payment to five would have,
+  fee 0.0003 TAZ.
 - **NU7 libraries, and the first confirmed broadcasts** (2026-10-24): the whole librustzcash
   stack moved to the NU7-aware 0.11 release — `zcash_protocol` 0.11, `zcash_client_backend` 0.25,
   `zcash_client_sqlite` 0.23, `zcash_keys` 0.17, `zcash_primitives`/`zcash_proofs` 0.31,

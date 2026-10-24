@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { fmtZec, parseZecToZat, chunkSizes, estimateFeeZat, splitEvenly, csvCell, toCsv, rowsToBatchText, zip321Uri, zip321Amount, monogram, hueOf, dayLabel } from '../ui/calc.js';
+import { fmtZec, parseZecToZat, chunkSizes, estimateFeeZat, padBucket, TX_CHUNK, splitEvenly, csvCell, toCsv, rowsToBatchText, zip321Uri, zip321Amount, monogram, hueOf, dayLabel } from '../ui/calc.js';
 
 test('formats and parses ZEC amounts', () => {
   assert.equal(fmtZec(1_590_000_000n), '15.90');
@@ -61,4 +61,24 @@ test('avatars and day labels', () => {
   assert.equal(dayLabel(null, now), 'Pending');
   assert.equal(dayLabel(new Date(2026, 9, 18, 1, 0).getTime() / 1000, now), 'Today');
   assert.equal(dayLabel(new Date(2026, 9, 17, 23, 0).getTime() / 1000, now), 'Yesterday');
+});
+
+test('padding rounds a transaction up to a bucket, and charges an action for each', () => {
+  // The bucket rule, mirrored from engine/src/spend.rs.
+  assert.equal(padBucket(1), 5);
+  assert.equal(padBucket(5), 5);
+  assert.equal(padBucket(6), 10);
+  assert.equal(padBucket(11), 25);
+  assert.equal(padBucket(26), 26); // past the last bucket, a transaction is as wide as it is
+
+  // Three recipients: the chain sees five outputs instead of three, for two more actions.
+  assert.equal(estimateFeeZat(3).toString(), '20000');
+  assert.equal(estimateFeeZat(3, TX_CHUNK, true).toString(), '30000');
+  // What the engine quoted for the same batch on testnet (txid 4fbde366…).
+  assert.equal(estimateFeeZat(3, TX_CHUNK, true) - estimateFeeZat(3), 10000n);
+
+  // A batch of full transactions is already at the top bucket, so padding is free.
+  assert.equal(estimateFeeZat(60, TX_CHUNK, true), estimateFeeZat(60));
+  // One that is not pays for the difference.
+  assert.ok(estimateFeeZat(11, TX_CHUNK, true) > estimateFeeZat(11));
 });
