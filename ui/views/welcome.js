@@ -2,6 +2,7 @@
 import { h, btn, api, errorNote, note, fill, WEB, WEB_MAINNET, poweredBy } from '../lib.js';
 import { icon, mark } from '../icons.js';
 import { themeButton } from '../theme.js';
+import { canPrompt, onInstallChange, promptInstall } from '../local/install.js';
 
 const NS = 'http://www.w3.org/2000/svg';
 
@@ -42,6 +43,15 @@ export function renderWelcome(root, onDone) {
   let mode = 'create'; let network = WEB ? 'test' : 'main';
   let engine = 'real';
   const demo = () => WEB && engine === 'demo';
+
+  // The browser offers to install Devoid only when it is ready to; otherwise this row stays empty
+  // rather than telling a first-time visitor to hunt through a menu.
+  const installRow = h('div');
+  const drawInstall = () => fill(installRow, canPrompt()
+    ? h('div', { class: 'or-open' }, h('span', { class: 'small' }, h('b', null, 'On this device?'), ' Keep Devoid on your home screen.'), btn('Install Devoid', 'ghost sm', () => promptInstall(), 'download', { id: 'install-here' }))
+    : null);
+  drawInstall();
+  const offInstall = onInstallChange(() => (installRow.isConnected ? drawInstall() : offInstall()));
   const side = h('section', { class: 'panel-side' });
   fill(root, h('div', { class: 'welcome' }, hero(), side, themeButton('icon-btn welcome-theme')));
 
@@ -83,6 +93,7 @@ export function renderWelcome(root, onDone) {
       h('div', null, h('h2', null, demo() ? 'Create a demo wallet' : WEB ? (network === 'main' ? 'Create a mainnet wallet' : 'Create a testnet wallet') : mode === 'create' ? 'Create your wallet' : 'Restore a wallet'),
         h('p', { class: 'sub' }, demo() ? 'Test coins on a simulated chain, so you can try every screen. It lives in this browser only.' : WEB ? `A real Zcash wallet that runs in this browser, on ${network === 'main' ? 'mainnet' : 'the test network'}. You will get 24 words that can restore it.` : mode === 'create' ? 'It takes a minute. You will get 24 words that can restore it anywhere.' : 'Enter your 24-word recovery phrase. Devoid then scans the chain for your funds.')),
       WEB ? h('div', { class: 'or-open' }, h('span', { class: 'small' }, h('b', null, 'Back again?'), ' Open your wallet file.'), btn('Open a wallet file', 'ghost sm', () => openFile(), 'upload', { id: 'open-file' })) : null,
+      WEB ? installRow : null,
       WEB ? seg([['real', 'Real wallet', 'shield'], ['demo', 'Demo', 'info']], engine, (v) => { engine = v; form(); }, 'Wallet kind') : null,
       WEB ? (demo()
         ? note('test', 'Demo: play money', 'Payments are simulated on a made-up chain and have no value. Nothing touches a real network.')

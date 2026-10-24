@@ -8,6 +8,7 @@
 //
 //   node scripts/build-site.mjs [outDir]     (default: dist)
 import { cpSync, existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
+import { createHash } from 'node:crypto';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { PARAMS, saplingParams } from './sapling-params.mjs';
@@ -66,6 +67,29 @@ index = index.replace('<meta name="referrer"', `${marker}\n<meta name="referrer"
   .replace(/<meta name="description" content="[^"]*">/, '<meta name="description" content="Devoid in your browser: private batch payments on Zcash, with the wallet running on your device.">');
 writeFileSync(indexPath, index);
 
+// The service worker holds one whole version of the app, stamped with a hash that changes whenever
+// any file does. It downloads the shell when it installs: the page, its modules, styles, fonts and
+// icons, a quarter of a megabyte. The WebAssembly engine (15 MB) is kept as soon as it is first
+// used instead, so a visitor who only looks at the demo never pays for it, and the Sapling
+// parameters are never cached at all (tens of megabytes, immutable, left to the browser's cache).
+const shell = [], all = [];
+(function list(dir) {
+  for (const e of readdirSync(dir, { withFileTypes: true })) {
+    const p = join(dir, e.name);
+    if (e.isDirectory()) { if (p !== join(APP, 'engine', 'params')) list(p); continue; }
+    const rel = p.slice(APP.length + 1).replaceAll('\\', '/');
+    if (rel === 'sw.js' || rel.endsWith('.txt')) continue;
+    all.push(rel);
+    if (!rel.startsWith('engine/')) shell.push(rel === 'index.html' ? './' : `./${rel}`);
+  }
+})(APP);
+const swPath = join(APP, 'sw.js');
+const stamp = createHash('sha256');
+for (const rel of all.toSorted()) stamp.update(rel).update(readFileSync(join(APP, rel)));
+writeFileSync(swPath, readFileSync(swPath, 'utf8')
+  .replace('__VERSION__', stamp.digest('hex').slice(0, 12))
+  .replace('__FILES__', JSON.stringify(shell.toSorted())));
+
 // Every relative import in the app must resolve to a file in dist, or the page fails to load.
 // (new URL('...', import.meta.url) references, like the worker's, are checked too.)
 const missing = [];
@@ -81,4 +105,4 @@ const missing = [];
 })(APP);
 if (missing.length) { console.error(`Unresolved imports:\n  ${missing.join('\n  ')}`); process.exit(1); }
 
-console.log(`Built ${OUT.slice(ROOT.length + 1) || OUT}: site at /, web app at /app/ (${modules.length} shared modules).`);
+console.log(`Built ${OUT.slice(ROOT.length + 1) || OUT}: site at /, web app at /app/ (${modules.length} shared modules, ${shell.length} files in the app shell).`);

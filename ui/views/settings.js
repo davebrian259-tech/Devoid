@@ -3,6 +3,8 @@ import { S, nav, api, h, btn, note, errorNote, unit, fill, confirmDialog, downlo
 import { icon } from '../icons.js';
 import { fmtZec } from '../calc.js';
 import { themeChoice, setTheme, onThemeChange } from '../theme.js';
+import { standalone, canPrompt, updateWaiting, onInstallChange, promptInstall, installSteps, applyUpdate } from '../local/install.js';
+import { passkeyPossible, savedPasskey, forgetPasskey, enrolPasskey, rewrapPasskey } from '../local/passkey.js';
 
 const card = (title, sub, ...body) => h('section', { class: 'card' }, h('div', { class: 'card-h' }, h('div', null, h('h2', null, title), sub ? h('p', { class: 'small muted' }, sub) : null)), h('div', { class: 'stack' }, ...body));
 const seg = (items, current, pick, label) => h('div', { class: 'seg', role: 'group', 'aria-label': label },
@@ -89,6 +91,66 @@ export async function viewSettings(el) {
       kept, h('div', { class: 'input-group' }, pass, save), out);
   })() : null;
 
+  // Unlocking with a passkey instead of the passphrase (local/passkey.js explains what this is and
+  // is not). Web only: on the desktop the wallet is a file on the computer already.
+  const passkeyCard = WEB ? (() => {
+    const row = h('div'); const out = h('div');
+    const pass = h('input', { type: 'password', id: 'pk-pass', autocomplete: 'current-password' });
+    const draw = () => {
+      pass.disabled = Boolean(unlock.get());
+      pass.placeholder = unlock.get() ? 'Unlocked' : 'Passphrase';
+      const saved = savedPasskey();
+      if (saved) {
+        return fill(row, note('ok', 'A passkey unlocks this wallet here', `Added ${saved.created}. Sending and shielding ask for your face, fingerprint or device PIN. Your passphrase still works, and is still the only way to show the recovery phrase.`),
+          note('warn', 'What this means', 'Anyone who can unlock this device can now spend from this wallet. The passkey works in this browser only; set one up again elsewhere.'),
+          h('div', null, btn('Remove this passkey', 'ghost sm', () => {
+            forgetPasskey(); draw();
+            fill(out, note('info', 'Removed', 'Devoid asks for the passphrase again. The passkey itself is deleted in your device’s own settings.'));
+          }, 'trash', { id: 'pk-remove' })));
+      }
+      if (!passkeyPossible()) return fill(row, note('info', 'Not available in this browser', 'Your passphrase is the way in. Passkeys need a browser and a device that support them.'));
+      return fill(row, h('div', { class: 'input-group' }, pass, btn('Set up a passkey', 'sm', async () => {
+        out.replaceChildren();
+        const given = unlock.get() ?? pass.value;
+        if (!given) return fill(out, errorNote({ message: 'Enter your passphrase, so the passkey can hold it.' }));
+        const v = await api('/api/engine/verifyPassphrase', { passphrase: given }); pass.value = '';
+        if (!v.ok) return fill(out, errorNote(v.error));
+        try {
+          await enrolPasskey(given, { label: /Mobile|Android|iPhone/.test(navigator.userAgent) ? 'This phone' : 'This browser' });
+          unlock.keep(given); draw();
+          fill(out, note('ok', 'Passkey ready', 'Next time you send, choose “Unlock with a passkey”.'));
+        } catch (e) {
+          fill(out, e.code === 'cancelled' ? note('info', 'Nothing was set up', e.message) : errorNote({ message: e.message }));
+        }
+      }, 'key', { id: 'pk-add' })));
+    };
+    draw();
+    const onPkLock = () => (row.isConnected ? draw() : document.removeEventListener('devoid-lock', onPkLock));
+    document.addEventListener('devoid-lock', onPkLock);
+    return card('Unlock with a passkey', 'Your device holds the key that decrypts your passphrase — face, fingerprint or PIN instead of typing. It is not a login: there is no account and no server, and the passkey never leaves your device.', row, out);
+  })() : null;
+
+  // Installing Devoid on this device: its own window, its own icon, and it opens with no connection.
+  const installCard = WEB ? (() => {
+    const row = h('div'); const out = h('div');
+    const draw = () => {
+      const parts = [];
+      if (standalone()) parts.push(note('ok', 'Devoid is installed on this device', 'It opens from your home screen in its own window, and opens even with no connection. Your wallet stays in this browser either way.'));
+      else if (canPrompt()) parts.push(h('div', null, btn('Install Devoid', 'sm', async () => {
+        const outcome = await promptInstall();
+        fill(out, outcome === 'accepted' ? note('ok', 'Installing', 'Devoid will appear with your other apps.') : null);
+        draw();
+      }, 'download', { id: 'install-app' })));
+      else parts.push(h('p', { class: 'small muted' }, installSteps()));
+      if (updateWaiting()) parts.push(note('info', 'A new version is ready', 'It takes over when you reload, all at once, so the app never runs half of one version.'),
+        h('div', null, btn('Reload now', 'sm ghost', () => applyUpdate(), 'refresh')));
+      fill(row, ...parts);
+    };
+    draw();
+    const off = onInstallChange(() => (row.isConnected ? draw() : off()));
+    return card('Install Devoid', 'Add the wallet to your home screen. Nothing is sent anywhere to install it: the same page, kept on your device, in its own window.', row, out);
+  })() : null;
+
   const status = S.status;
   el.append(h('div', { class: 'grid g-2' },
     h('div', { class: 'stack-lg' },
@@ -109,6 +171,8 @@ export async function viewSettings(el) {
           location.replace(location.pathname);
         }, 'trash'))) : null,
       fileCard,
+      installCard,
+      passkeyCard,
       WEB ? null : card('Network connection', 'Devoid asks a lightwalletd server for blocks. Tor hides your IP address from that server.', connSeg,
         h('div', { class: 'field' }, h('label', { for: 'srv' }, 'Servers'), servers, h('span', { class: 'hint' }, 'A preset (zecrocks, ywallet) or host:port, comma separated.')), socksRow, connMsg,
         h('div', null, btn('Save connection', 'sm', async () => {
@@ -137,9 +201,18 @@ export async function viewSettings(el) {
         h('div', { class: 'field' }, h('label', { for: 'o1' }, 'Current passphrase'), o1),
         h('div', { class: 'field' }, h('label', { for: 'n1' }, 'New passphrase'), n1), cm,
         h('div', null, btn('Change passphrase', 'ghost sm', async () => {
-          const r = await api('/api/engine/changePassphrase', { passphrase: o1.value, newPassphrase: n1.value }); o1.value = n1.value = '';
-          if (r.ok) unlock.lock(); // the old one no longer signs
-          fill(cm, r.ok ? note('ok', 'Passphrase changed.', WEB && webEngine() === 'real' ? 'Wallet files you saved before still open with the old passphrase. Download a new one.' : null) : errorNote(r.error));
+          const next = n1.value;
+          const r = await api('/api/engine/changePassphrase', { passphrase: o1.value, newPassphrase: next }); o1.value = n1.value = '';
+          if (!r.ok) return fill(cm, errorNote(r.error));
+          unlock.lock(); // the old one no longer signs
+          let passkeyNote = null;
+          if (WEB && savedPasskey()) {
+            // The passkey holds the old passphrase. Bind it to the new one, or remove it rather
+            // than leave a passkey behind that unlocks nothing.
+            try { await rewrapPasskey(next); passkeyNote = 'Your passkey now holds the new passphrase.'; }
+            catch { forgetPasskey(); passkeyNote = 'Your passkey was removed, because it still held the old passphrase. Set one up again below.'; }
+          }
+          fill(cm, note('ok', 'Passphrase changed.', [WEB && webEngine() === 'real' ? 'Wallet files you saved before still open with the old passphrase. Download a new one.' : null, passkeyNote].filter(Boolean).join(' ') || null));
         }, 'lock'))),
       shieldCard)));
 

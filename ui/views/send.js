@@ -2,6 +2,7 @@
 // see, sign, then follow the transactions out. The flow survives navigating away and back.
 import { S, nav, api, h, btn, iconBtn, copy, download, note, errorNote, modal, unit, isTest, poolName, saveLists, loadLists, toast, emptyState, short, fill, unlock, UNLOCK_MINUTES } from '../lib.js';
 import { icon } from '../icons.js';
+import { savedPasskey, unlockWithPasskey } from '../local/passkey.js';
 import { fmtZec, estimateFeeZat, chunkSizes, parseZecToZat, splitEvenly, rowsToBatchText, zip321Amount, toCsv, monogram, hueOf, TX_CHUNK } from '../calc.js';
 
 const rowOut = (r, amount) => ({ address: r.address, amount: amount ?? (r.amountZat != null ? zip321Amount(r.amountZat) : ''), memo: r.memo ?? '', label: r.label ?? '' });
@@ -356,12 +357,19 @@ export function viewSend(el) {
     const pass = h('input', { type: 'password', id: 'pw', autocomplete: 'current-password', placeholder: 'Your wallet passphrase' });
     const stay = h('input', { type: 'checkbox', id: 'stay', checked: true });
     // Unlocked (it signed recently in this page): no passphrase to type. Otherwise ask once.
-    const passBox = h('div');
+    const passBox = h('div'); const passkeyErr = h('div');
     const drawPass = () => fill(passBox, unlock.get()
       ? h('div', { class: 'unlocked' }, h('span', { class: 'tile-ico received' }, icon('unlock')),
         h('div', null, h('b', null, 'Unlocked'), h('div', { class: 'small muted' }, `Signs with the passphrase you entered. Locks after ${UNLOCK_MINUTES} minutes without activity.`)),
         btn('Lock', 'xs ghost', () => { unlock.lock(); drawPass(); }, 'lock', { id: 'lock-now' }))
       : h('div', { class: 'stack' },
+        savedPasskey() ? h('div', null, btn('Unlock with a passkey', 'sm ghost', async () => {
+          passkeyErr.replaceChildren();
+          try { unlock.keep(await unlockWithPasskey()); drawPass(); } catch (e) {
+            if (e.code !== 'cancelled') fill(passkeyErr, errorNote({ message: e.message }));
+          }
+        }, 'key', { id: 'pk-unlock' })) : null,
+        passkeyErr,
         h('div', { class: 'field' }, h('label', { for: 'pw' }, 'Passphrase'), pass, h('span', { class: 'hint' }, 'Used to sign. Never stored.')),
         h('label', { class: 'check', for: 'stay' }, stay, `Stay unlocked in this tab for ${UNLOCK_MINUTES} minutes`)));
     drawPass();
