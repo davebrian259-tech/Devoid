@@ -22,9 +22,10 @@ futures-util = "0.3"
 hex = "0.4"
 hyper-util = { version = "0.1", features = ["tokio"] }
 prost = "0.14"
-rand = { version = "0.8", default-features = false }
+rand = { version = "0.10", default-features = false, features = ["std", "std_rng", "sys_rng"] }
+rand_core = "0.10"
 rusqlite = { version = "0.37", features = ["time"] }
-schemerz = "0.2"
+schemerz = "0.3"
 secrecy = "0.8"
 serde_json = "1"
 sha2 = "0.10"
@@ -37,18 +38,18 @@ tracing-subscriber = { version = "0.3", features = ["env-filter", "fmt"] }
 uuid = "1"
 
 # Zcash
-orchard = { version = "0.15.0", default-features = false }
-sapling = { package = "sapling-crypto", version = "0.7" }
-transparent = { package = "zcash_transparent", version = "0.10.0", features = ["test-dependencies", "transparent-inputs"] }
-zcash_address = "0.13.0"
-zcash_client_backend = { version = "0.24.0", features = ["lightwalletd-tonic-tls-webpki-roots", "orchard", "pczt", "tor", "unstable"] }
-zcash_client_sqlite = { version = "0.22.0", features = ["transparent-inputs", "unstable", "orchard", "serde", "test-dependencies"] }
-zcash_keys = { version = "0.16.1", features = ["orchard", "sapling", "unstable", "unstable-frost"] }
-zcash_primitives = "0.30.0"
-zcash_proofs = { version = "0.30.0", features = ["bundled-prover"] }
-zcash_protocol = { version = "0.10.3", features = ["local-consensus"] }
-zcash_script = "0.4"
-zip321 = "0.9"
+orchard = { version = "0.16.0", default-features = false }
+sapling = { package = "sapling-crypto", version = "0.9" }
+transparent = { package = "zcash_transparent", version = "0.11.0", features = ["test-dependencies", "transparent-inputs"] }
+zcash_address = "0.14.0"
+zcash_client_backend = { version = "0.25.0", features = ["lightwalletd-tonic-tls-webpki-roots", "orchard", "pczt", "tor", "unstable"] }
+zcash_client_sqlite = { version = "0.23.0", features = ["transparent-inputs", "unstable", "orchard", "serde", "test-dependencies"] }
+zcash_keys = { version = "0.17.0", features = ["orchard", "sapling", "unstable", "unstable-frost"] }
+zcash_primitives = "0.31.0"
+zcash_proofs = { version = "0.31.0", features = ["bundled-prover"] }
+zcash_protocol = { version = "0.11.0", features = ["local-consensus"] }
+zcash_script = "0.6.0"
+zip321 = "0.10.0"
 
 # Passphrase encryption of the recovery phrase
 age = { version = "0.12", features = ["armor"] }

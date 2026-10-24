@@ -49,6 +49,13 @@ pie showData title Where the 0.0032 ZEC went
     "Network fees (ZIP 317)" : 0.00025
 ```
 
+**And on testnet, under NU7.** Zcash activates its next network upgrade, NU7, on mainnet at block
+3,543,405 (expected 2026-11-05); testnet has run it since block 4,465,026. Devoid is already on the
+NU7 libraries, and on 2026-10-24 both engines sent shielded batches that the NU7 testnet accepted
+and mined: `ba406e5b…` in block 4,534,144 (native) and `e454e9c1…` in block 4,534,177 (in the
+browser). A wallet still on the older libraries will have every mainnet send rejected from block
+3,543,405 on.
+
 The full log, including a bug this run caught before it reached anyone, is in
 [`docs/STATUS.md`](docs/STATUS.md).
 
@@ -230,9 +237,10 @@ to rebuild the WebAssembly engine (needs Rust and wasm-bindgen). Cloudflare sett
 | A live wallet through the UI on testnet and mainnet: create, sync to the tip, exact fee quote, persistence | `npm run test:live` |
 | Engine: 11 Rust tests and a 10-check self-test | `cargo test`, `npm run engine:selftest` |
 | Real payments on mainnet, from both engines | [`docs/STATUS.md`](docs/STATUS.md) |
+| Real payments on testnet under NU7, from both engines | [`docs/STATUS.md`](docs/STATUS.md) |
 
-Not yet: sending on testnet, which needs the NU7-aware (pre-release) Zcash libraries; ZIP 318
-migration; TEX addresses.
+Not yet: a mainnet send under NU7 rules, which cannot happen until mainnet activates NU7 at
+block 3,543,405 (expected 2026-11-05); ZIP 318 migration; TEX addresses.
 
 ## Project layout
 
@@ -251,8 +259,6 @@ docs/          protocol, status, deployment, Windows
 
 ## Roadmap
 
-- **NU7**: move to the NU7-aware Zcash libraries (already needed to send on testnet) before NU7
-  activates on mainnet.
 - **Faster proving on the web** with WebAssembly threads, which need cross-origin isolation.
 - **A Chrome extension** on the same in-browser engine.
 

@@ -982,6 +982,10 @@ pub(crate) fn propose(wallet: &mut Wallet, req: &Value) -> R<Value> {
 }
 
 // ---------------------------------------------------------------------------------------------
+use crate::platform::WalletClock;
+use rand::rngs::SysRng;
+use rand_core::UnwrapErr;
+
 // Building and broadcasting
 // ---------------------------------------------------------------------------------------------
 
@@ -1007,6 +1011,8 @@ fn create_transfer_transactions(
     let result: Result<_, WalletErrorT> = create_proposed_transactions(
         db,
         params,
+        &WalletClock,
+        &mut UnwrapErr(SysRng),
         prover,
         prover,
         &SpendingKeys::from_unified_spending_key(usk),
@@ -1028,6 +1034,8 @@ fn create_shielding_transactions(
     let result: Result<_, ShieldErrorT> = create_proposed_transactions(
         db,
         params,
+        &WalletClock,
+        &mut UnwrapErr(SysRng),
         prover,
         prover,
         &SpendingKeys::from_unified_spending_key(usk),
