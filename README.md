@@ -3,8 +3,8 @@
 <h1 align="center">Devoid</h1>
 
 <p align="center"><b>Pay everyone at once. Privately.</b><br>
-A non-custodial Zcash wallet that pays a whole list of people in one shielded transaction —
-and the only one that hides how many people were paid.</p>
+A non-custodial Zcash wallet that pays a whole list of people in one shielded transaction,
+and conceals how many were paid.</p>
 
 <p align="center">
   <img alt="Zcash mainnet: payments confirmed" src="https://img.shields.io/badge/Zcash_mainnet-payments_confirmed-f4b728?labelColor=231f20">
@@ -35,24 +35,22 @@ list of up to 2,000 people goes out as a few transactions, in order.
 
 ### Batching leaks the batch
 
-Shielding hides who was paid and how much. It does not hide **how many**. The number of outputs
-is public, and a ZIP 317 fee is 5,000 zatoshis per logical action — so the fee is an arithmetic
-receipt of the headcount. A grant programme paying 40 people looks nothing like one paying 3,
-to anyone, forever. Every shielded wallet has this property; it only matters once you pay people
-in batches, which is what Devoid is for.
+Shielding conceals who was paid and how much. It does not conceal **how many**: output counts are
+public, and a ZIP 317 fee is 5,000 zatoshis per logical action, so the fee amounts to a receipt for
+the headcount. A grant programme paying 40 people is plainly distinguishable from one paying 3.
+Every shielded wallet behaves this way; it matters once you pay people in batches.
 
-So Devoid closes it. Padding rounds a transaction's payment outputs up to 5, 10 or 25 by paying
-this wallet nothing a few more times — real shielded outputs, indistinguishable on chain from
-the ones that carry money. Everyone inside a bucket looks alike: a payment to one person and a
-payment to five are the same shape, and so are six and ten. It costs one action each (0.0001 ZEC
-to pad three up to five), the review screen quotes that before you sign, and the privacy report
-says what is hidden and what is not: **the exact headcount stops being readable; the number of
-inputs and outputs, and the fee that follows from it, are still public.** Padding covers one
-transaction, so a batch split across several still shows roughly how large it was.
+Devoid closes it. Padding rounds a transaction's payments up to 5, 10 or 25 with genuine shielded
+outputs to itself, indistinguishable on chain from the ones carrying money — a payment to one
+person and a payment to five then share a shape, as do six and ten. Each padding output costs one
+logical action (0.0001 ZEC to pad three recipients up to five), quoted to the zatoshi before you
+sign, and a transaction already carrying 25 pays nothing extra. Padding covers a single
+transaction, so a batch spread across several still reveals its rough size; the privacy report
+says as much.
 
 Proven on testnet: [`4fbde366…`](https://testnet.zcashexplorer.app/transactions/4fbde3662e5c7b179eae8bd8e09a34da10510f412a4f80e0c2767ff4273ea129)
-pays three people in block 4,536,660; the chain shows six outputs (five payments and the
-change), the same as a payment to five would.
+pays three people in block 4,536,660, presenting the chain with the six outputs (five payments and
+the change) a payment to five would have.
 
 ## Proven on mainnet
 
@@ -234,6 +232,8 @@ to rebuild the WebAssembly engine (needs Rust and wasm-bindgen). Cloudflare sett
 - **Review**: total, source pools, network, exact fee and a privacy report. Public disclosures
   need explicit acknowledgement. A receipt CSV marks who was paid, even if a multi-transaction
   batch stops halfway.
+- **Padding**: round a transaction's payments up to 5, 10 or 25 so the chain does not show how
+  many people were paid. Optional, with the extra fee quoted before you sign.
 - **Receive**: unified, Sapling and transparent addresses with QR codes, fresh addresses, and
   ZIP 321 payment requests.
 - **Activity**: pending, confirmed and expired, grouped by day, with per-output detail and CSV
@@ -248,12 +248,13 @@ to rebuild the WebAssembly engine (needs Rust and wasm-bindgen). Cloudflare sett
   desktop app keeps its access key across restarts, so `http://127.0.0.1:8787` opens straight
   back into the wallet.
 - **Light and dark**, a phone layout, keyboard shortcuts, and the network marked on every screen.
-- **Installs to a home screen**, opens in its own window and opens offline: the service worker keeps
-  one whole version of the app at a time, so its modules never come from two different builds.
-- **Unlock with a passkey** instead of typing the passphrase. Not a login — there is no account and
-  no server. The authenticator derives a secret of its own (the WebAuthn PRF extension), that key
+- **Installs to a home screen**, opens in its own window and runs offline: the service worker holds
+  one complete version of the app at a time, so its modules never come from two different builds.
+- **Unlock with a passkey** rather than a typed passphrase. Not a login: there is no account and no
+  server. The authenticator derives a secret of its own (the WebAuthn PRF extension); that key
   encrypts the passphrase into this browser, and your face, fingerprint or PIN decrypts it again.
-  Without PRF, Devoid refuses to enrol rather than pretend. The passphrase always still works.
+  Authenticators without PRF are declined rather than quietly downgraded, and the passphrase always
+  works.
 
 ## Verification
 
@@ -271,8 +272,8 @@ to rebuild the WebAssembly engine (needs Rust and wasm-bindgen). Cloudflare sett
 | Real payments on mainnet, from both engines | [`docs/STATUS.md`](docs/STATUS.md) |
 | Real payments on testnet under NU7, from both engines | [`docs/STATUS.md`](docs/STATUS.md) |
 
-Not yet: a mainnet send under NU7 rules, which cannot happen until mainnet activates NU7 at
-block 3,543,405 (expected 2026-11-05); ZIP 318 migration; TEX addresses.
+A mainnet send under NU7 rules waits on the activation itself, at block 3,543,405 (expected
+2026-11-05); both engines have already sent batches confirmed on the NU7 testnet.
 
 ## Project layout
 
@@ -291,12 +292,15 @@ docs/          protocol, status, deployment, Windows
 
 ## Roadmap
 
+- **Air-gapped signing** with PCZT, so the spending key never sits on a networked machine, and
+  then **FROST threshold approval**: two of three signatures before a payroll batch goes out.
 - **Faster proving on the web** with WebAssembly threads, which need cross-origin isolation.
-- **A Chrome extension** on the same in-browser engine.
+- **A Chrome extension**, then iOS and Android, all on the same in-browser engine.
+- **ZIP 318 migration and TEX addresses.**
 
 ## Design and licences
 
 Type: Righteous, Outfit and JetBrains Mono (SIL OFL), vendored in `ui/fonts`. Icons: Lucide (ISC).
 The app is MIT. The engine is MIT or Apache-2.0 and builds on librustzcash from the Electric
 Coin Company and the Zcash Foundation. Screens in this README show demo data from the simulated
-engine; the mainnet proof above is real.
+engine; the mainnet transactions above are real.
