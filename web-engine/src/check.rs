@@ -7,7 +7,8 @@
 //! not exist and is thrown away; nothing touches the network. The timings say how long a real
 //! batch will take on this device.
 
-use rand::rngs::OsRng;
+use rand::rngs::SysRng;
+use rand_core::UnwrapErr;
 use serde_json::{Value, json};
 use transparent::{
     address::TransparentAddress,
@@ -58,7 +59,7 @@ pub(crate) async fn prove_one_transaction() -> R<Value> {
         )
     };
     let mut signing = TransparentSigningSet::new();
-    let sk = secp256k1::SecretKey::from_slice(&[7u8; 32]).map_err(|e| internal(e.to_string()))?;
+    let sk = secp256k1::SecretKey::from_byte_array([7u8; 32]).map_err(|e| internal(e.to_string()))?;
     let pubkey = signing.add_key(sk);
     let coin = TxOut::new(
         Zatoshis::const_from_u64(45_000),
@@ -68,7 +69,9 @@ pub(crate) async fn prove_one_transaction() -> R<Value> {
         .add_transparent_p2pkh_input(pubkey, OutPoint::new([1u8; 32], 0), coin)
         .map_err(|e| internal(format!("{e:?}")))?;
 
+    // sapling-crypto 0.9 returns None for a seed it cannot derive from.
     let sapling_to = sapling::zip32::ExtendedSpendingKey::master(&[3u8; 32])
+        .ok_or_else(|| internal("the check transaction's Sapling key could not be derived".into()))?
         .default_address()
         .1;
     builder
@@ -99,7 +102,7 @@ pub(crate) async fn prove_one_transaction() -> R<Value> {
             &signing,
             &[],
             &[],
-            OsRng,
+            UnwrapErr(SysRng),
             &prover,
             &prover,
             &FeeRule::standard(),

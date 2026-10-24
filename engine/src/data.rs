@@ -14,7 +14,10 @@
 
 use std::path::{Path, PathBuf};
 
-use rand::rngs::OsRng;
+// rand 0.10 has no OsRng: SysRng reads the OS, fallibly, and UnwrapErr makes it the infallible
+// Rng the wallet database wants (a failure to read OS entropy is not something to carry on from).
+use rand::rngs::SysRng;
+use rand_core::UnwrapErr;
 use zcash_client_sqlite::{WalletDb, chain::BlockMeta, wallet::init::init_wallet_db};
 use zcash_protocol::consensus::Network;
 
@@ -28,7 +31,7 @@ const DATA_DB: &str = "data.sqlite";
 const TOR_DIR: &str = "tor";
 
 /// The wallet database type used throughout the engine.
-pub(crate) type Db = WalletDb<rusqlite::Connection, Network, WalletClock, OsRng>;
+pub(crate) type Db = WalletDb<rusqlite::Connection, Network, WalletClock, UnwrapErr<SysRng>>;
 
 pub(crate) fn parse_network(name: &str) -> R<Network> {
     match name {
@@ -91,7 +94,7 @@ impl WalletPaths {
 pub(crate) fn init_dbs(params: Network, paths: &WalletPaths) -> R<Db> {
     files::create_dir_all(paths.root())?;
     BlockCache::init(paths)?;
-    let mut db_data = WalletDb::for_path(paths.data_db(), params, WalletClock, OsRng)?;
+    let mut db_data = WalletDb::for_path(paths.data_db(), params, WalletClock, UnwrapErr(SysRng))?;
     init_wallet_db(&mut db_data, None)?;
     Ok(db_data)
 }
@@ -108,7 +111,7 @@ pub(crate) fn open_db(params: Network, paths: &WalletPaths) -> R<Db> {
         paths.data_db(),
         params,
         WalletClock,
-        OsRng,
+        UnwrapErr(SysRng),
     )?)
 }
 

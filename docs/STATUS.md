@@ -38,10 +38,8 @@ The Rust engine now builds and runs. Against `testnet.zec.rocks:443`
   acknowledgement correctly required), built, proved and signed in 7 s, and broadcast as
   `fe3f530ffc399636cca88e6063ef28faae661ccc5f40db3253c2be334a8f78d5`. The node rejected it:
   *transaction uses an incorrect consensus branch id*. Testnet activated **NU7** at block
-  4,465,026 (branch `0x77190AD9`), which only the 0.11 pre-release of the Zcash libraries knows;
-  Devoid pins the stable ones, which match **mainnet** (NU6.3). So on testnet today Devoid can sync
-  and quote but not send; on mainnet its libraries are the current ones. Before NU7 activates on
-  mainnet, Devoid must move to NU7-aware libraries, or sends there will be rejected the same way.
+  4,465,026 (branch `0x77190AD9`), which the libraries pinned at the time did not know. Fixed by
+  the NU7 upgrade below; this attempt expired unmined, and nothing was spent.
 - Transactions the engine cannot parse (like testnet's NU7 ones) no longer stop a sync: they are
   logged and skipped, and balances still come from the compact blocks.
 - **Mainnet, read-only, both engines** (2026-10-19): a new mainnet wallet created, synced to the
@@ -76,12 +74,28 @@ The Rust engine now builds and runs. Against `testnet.zec.rocks:443`
   checked from 320px to 1440px wide in light and dark. The test proves the check by planting an
   overlap and expecting it to be caught. The web version refuses a recovery phrase, and keeps the
   demo on testnet, in the UI and again in its backend.
+- **NU7 libraries, and the first confirmed broadcasts** (2026-10-24): the whole librustzcash
+  stack moved to the NU7-aware 0.11 release — `zcash_protocol` 0.11, `zcash_client_backend` 0.25,
+  `zcash_client_sqlite` 0.23, `zcash_keys` 0.17, `zcash_primitives`/`zcash_proofs` 0.31,
+  `orchard` 0.16, `sapling-crypto` 0.9, `zcash_transparent` 0.11 — with `rand` 0.10 (whose
+  `OsRng` is gone; `UnwrapErr(SysRng)` replaces it) and the jubjub 0.11 / bls12_381 0.9 /
+  secp256k1 0.33 that stack requires. `create_proposed_transactions` also gained explicit clock
+  and rng arguments. The existing wallet database migrated in place (`upgrade`).
+  With that, **sending on testnet works**, from both engines, each confirmed on chain:
+  - native engine, a 2-recipient shielded batch with memos, fee 0.00015 TAZ as quoted:
+    `ba406e5bf48a377b41a3897e0bc14571967d13ce5aeb283e8cde47eecf16ad50`, mined in block 4,534,144;
+  - the WebAssembly engine in Chromium, through ChainSafe's testnet gRPC-web proxy, fee
+    0.0001 TAZ: `e454e9c19eda5bde4a95a2aacdcd2f427205b6a74ab7cba0c99a92fe878a55cc`, mined in
+    block 4,534,177.
+  Mainnet activates NU7 at block 3,543,405 (expected 2026-11-05), so this had to land first:
+  on the old libraries every mainnet send would have been rejected from that block on.
 
 ## Still not verified
-1. **Sending on testnet**, which needs the NU7-aware (pre-release) Zcash libraries; mainnet will
-   need them too once NU7 activates there.
-2. **Sapling and transparent spends on mainnet.** The mainnet payments above spent Ironwood
+1. **Sapling and transparent spends on mainnet.** The mainnet payments above spent Ironwood
    notes; Sapling spends are proved in the browser's self-check but have not been broadcast.
+2. **A mainnet send after NU7 activates** (block 3,543,405, expected 2026-11-05). The NU7
+   libraries are in and proven on testnet, which has run NU7 since block 4,465,026, but no
+   mainnet transaction has yet been built under NU7 rules because mainnet is still on NU6.3.
 
 Also unimplemented: ZIP 318 migration, TEX addresses.
 

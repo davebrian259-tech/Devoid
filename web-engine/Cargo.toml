@@ -24,9 +24,10 @@ bip0039 = { version = "0.14", features = ["std", "all-languages"] }
 futures-util = "0.3"
 hex = "0.4"
 prost = "0.14"
-rand = { version = "0.8", default-features = false, features = ["std", "std_rng", "getrandom"] }
+rand = { version = "0.10", default-features = false, features = ["std", "std_rng", "sys_rng"] }
+rand_core = "0.10"
 rusqlite = { version = "0.37", features = ["time"] }
-schemerz = "0.2"
+schemerz = "0.3"
 secrecy = "0.8"
 serde_json = "1"
 sha2 = "0.10"
@@ -36,33 +37,32 @@ tracing-subscriber = { version = "0.3", default-features = false, features = ["f
 uuid = { version = "1", features = ["js"] }
 
 # Zcash (versions as in engine/Cargo.toml; multicore needs threads, which this build does not use)
-orchard = { version = "0.15.0", default-features = false }
-sapling = { package = "sapling-crypto", version = "0.7", default-features = false, features = ["circuit", "std"] }
-transparent = { package = "zcash_transparent", version = "0.10.0", features = ["transparent-inputs"] }
-zcash_address = "0.13.0"
-zcash_client_backend = { version = "0.24.0", default-features = false, features = ["lightwalletd-tonic", "orchard", "pczt", "unstable"] }
-zcash_client_sqlite = { version = "0.22.0", default-features = false, features = ["transparent-inputs", "unstable", "orchard", "serde"] }
-zcash_keys = { version = "0.16.1", features = ["orchard", "sapling", "unstable", "unstable-frost"] }
-zcash_primitives = { version = "0.30.0", default-features = false, features = ["std", "circuits", "transparent-inputs"] }
-zcash_proofs = { version = "0.30.0", default-features = false }
-zcash_protocol = { version = "0.10.3", features = ["local-consensus"] }
-zcash_script = "0.4"
-zip321 = "0.9"
+orchard = { version = "0.16.0", default-features = false }
+sapling = { package = "sapling-crypto", version = "0.9", default-features = false, features = ["circuit", "std"] }
+transparent = { package = "zcash_transparent", version = "0.11.0", features = ["transparent-inputs"] }
+zcash_address = "0.14.0"
+zcash_client_backend = { version = "0.25.0", default-features = false, features = ["lightwalletd-tonic", "orchard", "pczt", "unstable"] }
+zcash_client_sqlite = { version = "0.23.0", default-features = false, features = ["transparent-inputs", "unstable", "orchard", "serde"] }
+zcash_keys = { version = "0.17.0", features = ["orchard", "sapling", "unstable", "unstable-frost"] }
+zcash_primitives = { version = "0.31.0", default-features = false, features = ["std", "circuits", "transparent-inputs"] }
+zcash_proofs = { version = "0.31.0", default-features = false }
+zcash_protocol = { version = "0.11.0", features = ["local-consensus"] }
+zcash_script = "0.6.0"
+zip321 = "0.10.0"
 
 age = { version = "0.12", features = ["armor"] }
 
 # The browser
 blake2b_simd = "1"
-bls12_381 = "0.8"
-jubjub = "0.10"
+bls12_381 = "0.9"
+jubjub = "0.11"
 getrandom = { version = "0.2", features = ["js"] }
 # bip0039 generates phrases with rand 0.10, which uses getrandom 0.4.
 getrandom04 = { package = "getrandom", version = "0.4", features = ["wasm_js"] }
 gloo-timers = { version = "0.3", features = ["futures"] }
 js-sys = "0.3"
-rand_core = "0.6"
 rayon = "1"
-secp256k1 = "0.29"
+secp256k1 = "0.33"
 sqlite-wasm-rs = { version = "=0.5.5", default-features = false }
 # zcash_client_backend stamps each new transaction with OffsetDateTime::now_utc(), which panics in a
 # browser unless time reads the clock through JavaScript.
