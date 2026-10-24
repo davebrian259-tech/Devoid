@@ -1,8 +1,9 @@
 // Devoid UI: boot, shell, router, sidebar, shortcuts, balance refresh. Each screen lives in views/.
-import { S, nav, api, h, iconBtn, errorNote, isTest, storage, loadLists, fill, sens, unit, modal, WEB, webEngine, poweredBy } from './lib.js';
+import { S, nav, api, h, iconBtn, errorNote, isTest, storage, loadLists, fill, sens, unit, modal, toast, WEB, webEngine, poweredBy } from './lib.js';
 import { icon, mark } from './icons.js';
 import { fmtZec } from './calc.js';
 import { applyTheme, themeChoice, themeSwitch, themeButton, toggleTheme } from './theme.js';
+import { keepFresh } from './local/install.js';
 import { renderWelcome, renderGate } from './views/welcome.js';
 import { viewHome } from './views/home.js';
 import { viewSend } from './views/send.js';
@@ -227,3 +228,7 @@ nav.refresh = refresh;
 nav.setReveal = setReveal;
 nav.paintSide = paintSide;
 boot();
+
+// The web version installs to a home screen and opens without a connection; the service worker
+// holds one whole version of the app, and a new one takes over only when the app lets the old go.
+keepFresh(() => toast('A new version is ready. Reload to use it.', 'refresh'));

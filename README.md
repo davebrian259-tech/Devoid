@@ -226,6 +226,12 @@ to rebuild the WebAssembly engine (needs Rust and wasm-bindgen). Cloudflare sett
   desktop app keeps its access key across restarts, so `http://127.0.0.1:8787` opens straight
   back into the wallet.
 - **Light and dark**, a phone layout, keyboard shortcuts, and the network marked on every screen.
+- **Installs to a home screen**, opens in its own window and opens offline: the service worker keeps
+  one whole version of the app at a time, so its modules never come from two different builds.
+- **Unlock with a passkey** instead of typing the passphrase. Not a login — there is no account and
+  no server. The authenticator derives a secret of its own (the WebAuthn PRF extension), that key
+  encrypts the passphrase into this browser, and your face, fingerprint or PIN decrypts it again.
+  Without PRF, Devoid refuses to enrol rather than pretend. The passphrase always still works.
 
 ## Verification
 
@@ -233,8 +239,10 @@ to rebuild the WebAssembly engine (needs Rust and wasm-bindgen). Cloudflare sett
 |---|---|
 | 245 unit and API tests: Zcash address test vectors, amounts, CSV, SHA-256 (FIPS), fees, ZIP 321, server auth, web backend rules, wallet file encryption | `npm test` |
 | Every screen and feature in a browser, failing on any console error or leaked `null` | `npm run test:ui` |
+| The passkey wrap: what the device's secret protects, and what it refuses | `npm test` (`test/passkey.test.mjs`) |
 | The built site under its real CSP, desktop and phone, 320–1440 px, light and dark. Fails on any overlap, CSP violation or unexpected request. Includes the WebAssembly engine's self-test and a transaction proved in the browser | `npm run test:web` |
 | The landing pages at seven widths from 320 to 1440 px, light and dark: no overlap, no clipped box, no sideways scroll, no broken image | `npm run test:site` |
+| Installed and offline: the manifest, the service worker's cache, and the app opening with the network off. A passkey enrolled and used to unlock, against a virtual authenticator | `npm run test:web` |
 | A live wallet through the UI on testnet and mainnet: create, sync to the tip, exact fee quote, persistence | `npm run test:live` |
 | Engine: 11 Rust tests and a 10-check self-test | `cargo test`, `npm run engine:selftest` |
 | Real payments on mainnet, from both engines | [`docs/STATUS.md`](docs/STATUS.md) |

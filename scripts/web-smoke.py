@@ -5,7 +5,7 @@
 #
 #   python3 scripts/web-smoke.py
 #   DEVOID_CHROMIUM=/path/to/chrome python3 scripts/web-smoke.py
-import os, re, glob, sys
+import json, os, re, glob, sys
 from playwright.sync_api import sync_playwright, expect
 
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
@@ -18,6 +18,9 @@ errors, requests = [], []
 LAYOUT_CHECK = open(os.path.join(ROOT, 'scripts', 'overlap.js')).read()
 # Whether the web wallet offers mainnet yet (ui/lib.js); the tests follow the switch.
 WEB_MAINNET = 'export const WEB_MAINNET = true;' in open(os.path.join(ROOT, 'ui', 'lib.js')).read()
+# The files the service worker keeps so the app opens offline: it fetches them itself, from this
+# site, when it installs. Anything else fetched is a leak (see watch()).
+SHELL = set()
 
 
 def check(pg, name):
@@ -40,7 +43,7 @@ def watch(pg):
     pg.on('pageerror', lambda e: errors.append(str(e)))
     # The page loads its own files; anything else, or any fetch at all, would be a leak. The one
     # fetches allowed are the real engine's own, on this site: its WebAssembly and the Sapling parameters.
-    pg.on('request', lambda r: requests.append(r.url) if not r.url.startswith(base) or (r.resource_type in ('fetch', 'xhr', 'websocket', 'eventsource') and not r.url.startswith(base + '/app/engine/')) else None)
+    pg.on('request', lambda r: requests.append(r.url) if not r.url.startswith(base) or (r.resource_type in ('fetch', 'xhr', 'websocket', 'eventsource') and not r.url.startswith(base + '/app/engine/') and r.url not in SHELL) else None)
 
 
 def create_wallet(pg, passphrase):
@@ -64,6 +67,9 @@ def create_wallet(pg, passphrase):
     for inp in pg.query_selector_all('input[data-word]'): inp.fill(words[int(inp.get_attribute('data-word')) - 1])
     pg.click('text=Open my wallet'); pg.wait_for_selector('.poolbar')
 
+
+SHELL.update(base + '/app/' + f.removeprefix('./') for f in json.loads(
+    re.search(r'const FILES = (\[.*?\]);', open(os.path.join(ROOT, 'dist', 'app', 'sw.js')).read(), re.S).group(1)))
 
 try:
     with sync_playwright() as p:
@@ -111,6 +117,34 @@ try:
         pg.click('#lock-now'); expect(pg.locator('#pw')).to_be_visible()
         pg.click('button:has-text("Back to recipients")')
 
+        # ---- a passkey unlocks the wallet, with no passphrase typed (WebAuthn PRF) --------------------
+        # A virtual authenticator that supports PRF stands in for a phone's face or fingerprint.
+        cdp = ctx.new_cdp_session(pg)
+        cdp.send('WebAuthn.enable', {'enableUI': False})
+        cdp.send('WebAuthn.addVirtualAuthenticator', {'options': {
+            'protocol': 'ctap2', 'ctap2Version': 'ctap2_1', 'transport': 'internal',
+            'hasResidentKey': True, 'hasUserVerification': True, 'hasPrf': True,
+            'isUserVerified': True, 'automaticPresenceSimulation': True}})
+        pg.click('a[data-view=settings]'); pg.wait_for_selector('#pk-add')
+        pg.fill('#pk-pass', 'demo passphrase 1'); pg.click('#pk-add')
+        expect(pg.locator('#view')).to_contain_text('A passkey unlocks this wallet here')
+        expect(pg.locator('#view')).to_contain_text('Passkey ready')
+        kept = pg.evaluate("localStorage.getItem('devoid-web:passkey')")
+        assert 'demo passphrase 1' not in kept, 'the passphrase is in storage in the clear'
+        assert json.loads(kept)['cipher']['name'] == 'AES-256-GCM', kept
+        pg.click('button:has-text("Lock now")')
+        pg.click('.side-cta'); pg.wait_for_selector('#batch, .rcp')
+        if not pg.locator('#batch').count():
+            pg.click('[aria-label="How to add recipients"] button:has-text("Paste a list")'); pg.wait_for_selector('#batch')
+        pg.fill('#batch', f'{mine},0.01,by passkey'); pg.click('text=Check recipients'); pg.wait_for_selector('.ledger')
+        pg.click('#review'); pg.wait_for_selector('.sheet')
+        expect(pg.locator('#pw')).to_be_visible()
+        pg.click('#pk-unlock')  # the device gives back the passphrase it sealed
+        expect(pg.locator('#lock-now')).to_be_visible(); expect(pg.locator('#pw')).to_have_count(0)
+        pg.click('#confirm'); pg.wait_for_selector('#sent-total', timeout=60_000)
+        shot(pg, '05-passkey')
+        # A passkey is this browser's: deleting the wallet takes it with everything else (below).
+
         # ---- it is still there after a reload, and Reset clears it ------------------------------------
         pg.reload(); pg.wait_for_selector('.side .nav')  # back on the same screen, wallet intact
         pg.click('a[data-view=activity]')
@@ -121,6 +155,30 @@ try:
         pg.click('button:has-text("Reset the demo")'); pg.click('dialog button:has-text("Reset")')
         pg.wait_for_selector('#p1')
         assert pg.evaluate("Object.keys(localStorage).filter((k) => k.startsWith('devoid-web:')).length") == 0
+        ctx.close()
+
+        # ---- installable: its own manifest, its own copy of the app, and it opens with no network ------
+        ctx = b.new_context(viewport={'width': 1200, 'height': 900}, service_workers='allow')
+        pg = ctx.new_page(); watch(pg)
+        pg.goto(base + '/app/')
+        manifest = pg.evaluate("async () => { const r = await fetch(document.querySelector('link[rel=manifest]').href); return { type: r.headers.get('content-type'), body: await r.json() }; }")
+        assert manifest['type'].startswith('application/manifest+json'), manifest['type']
+        assert manifest['body']['display'] == 'standalone' and manifest['body']['start_url'] == './', manifest['body']
+        sizes = {i['sizes'] for i in manifest['body']['icons']}
+        assert {'192x192', '512x512'} <= sizes and any(i['purpose'] == 'maskable' for i in manifest['body']['icons']), sizes
+        for i in manifest['body']['icons']:
+            assert pg.evaluate("(src) => fetch(src).then((r) => r.ok)", i['src']), i['src']
+        pg.evaluate('() => navigator.serviceWorker.ready')
+        kept = pg.evaluate("async () => { const [k] = await caches.keys(); return [k, (await (await caches.open(k)).keys()).length]; }")
+        assert kept[0].startswith('devoid-app-') and kept[1] > 20, kept
+        # The 15 MB engine is not downloaded until it is wanted; the shell is.
+        assert not any(u.endswith('.wasm') for u in pg.evaluate("async () => { const [k] = await caches.keys(); return (await (await caches.open(k)).keys()).map((r) => r.url); }"))
+        pg.reload(); pg.wait_for_selector('.form-card')
+        assert pg.evaluate('Boolean(navigator.serviceWorker.controller)'), 'the service worker is not serving the app'
+        ctx.set_offline(True)
+        pg.reload(); pg.wait_for_selector('.form-card')  # the whole app, with no connection at all
+        check(pg, '06-offline')
+        ctx.set_offline(False)
         ctx.close()
 
         # ---- the site's pages at every common width, light and dark ------------------------------------

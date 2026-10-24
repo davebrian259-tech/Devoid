@@ -12,6 +12,7 @@
 import { createCore } from '../../server/core.mjs';
 import { createSimEngine } from '../../mock-engine/core.mjs';
 import { sealWalletFile, openWalletFile } from './walletfile.js';
+import { forgetPasskey } from './passkey.js';
 
 const PREFIX = 'devoid-web:';
 export const ENGINES = ['real', 'demo'];
@@ -117,6 +118,7 @@ export function createBackend({ mainnet = false } = {}) {
     // The keys inside must open with the same passphrase; if not, leave nothing half-imported.
     const v = (await core.handle('/api/engine/verifyPassphrase', { passphrase })).body;
     if (!v.ok) { await engine.reset(); return v; }
+    forgetPasskey();  // a passkey here would hold some other wallet's passphrase
     return { ok: true, result: { network: opened.network } };
   }
   const build = () => {

@@ -78,6 +78,17 @@ The Rust engine now builds and runs. Against `testnet.zec.rocks:443`
   test proves the check by planting an overlap and expecting it to be caught.
 - The web version refuses a recovery phrase, and keeps the demo on testnet, in the UI and again in
   its backend.
+- **Staying in the wallet, and installing it** (2026-10-24): the web wallet can be added to a home
+  screen (`ui/manifest.webmanifest`, `ui/sw.js`), where it opens in its own window and opens with no
+  connection. The service worker holds one whole version at a time — `scripts/build-site.mjs` stamps
+  it with a hash of every file and lists the shell (about 490 KB); the 15 MB WebAssembly engine is
+  kept only once it is first used, and the Sapling parameters never. Unlocking can be a passkey
+  rather than the passphrase (`ui/local/passkey.js`), through the WebAuthn PRF extension: the
+  authenticator derives a secret, HKDF-SHA-256 turns it into an AES-256-GCM key, and that encrypts
+  the passphrase into this browser. An authenticator without PRF is refused, the passphrase keeps
+  working, revealing the recovery phrase still asks for it, changing it re-seals or removes the
+  passkey, and deleting the wallet takes the passkey record with it. `npm run test:web` drives both
+  against a virtual authenticator and with the network switched off.
 - **NU7 libraries, and the first confirmed broadcasts** (2026-10-24): the whole librustzcash
   stack moved to the NU7-aware 0.11 release — `zcash_protocol` 0.11, `zcash_client_backend` 0.25,
   `zcash_client_sqlite` 0.23, `zcash_keys` 0.17, `zcash_primitives`/`zcash_proofs` 0.31,

@@ -5,7 +5,7 @@ import functools, http.server, mimetypes, os, subprocess, threading
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DIST = os.path.join(ROOT, 'dist')
-TYPES = {'.wasm': 'application/wasm', '.params': 'application/octet-stream', '.js': 'text/javascript', '.mjs': 'text/javascript', '.css': 'text/css', '.html': 'text/html', '.svg': 'image/svg+xml', '.woff2': 'font/woff2', '.png': 'image/png', '.webp': 'image/webp', '.txt': 'text/plain'}
+TYPES = {'.wasm': 'application/wasm', '.params': 'application/octet-stream', '.js': 'text/javascript', '.mjs': 'text/javascript', '.css': 'text/css', '.html': 'text/html', '.svg': 'image/svg+xml', '.woff2': 'font/woff2', '.png': 'image/png', '.webp': 'image/webp', '.txt': 'text/plain', '.webmanifest': 'application/manifest+json'}
 
 
 def parse_headers(path):
@@ -53,9 +53,13 @@ class Handler(http.server.BaseHTTPRequestHandler):
 
 
 def build_and_serve():
-    """Builds dist/ and serves it on a free local port. Returns (server, base URL)."""
+    """Builds dist/ and serves it on a free local port. Returns (server, base URL).
+
+    On localhost rather than 127.0.0.1: a browser treats both as secure, but a passkey belongs to a
+    domain, and an IP address is not one, so WebAuthn would refuse to make one.
+    """
     subprocess.run(['node', 'scripts/build-site.mjs'], cwd=ROOT, check=True)
     rules = parse_headers(os.path.join(DIST, '_headers'))
     srv = http.server.ThreadingHTTPServer(('127.0.0.1', 0), functools.partial(Handler, rules))
     threading.Thread(target=srv.serve_forever, daemon=True).start()
-    return srv, f'http://127.0.0.1:{srv.server_address[1]}'
+    return srv, f'http://localhost:{srv.server_address[1]}'
