@@ -9,7 +9,8 @@ const POOLS = ['ironwood', 'orchard', 'sapling', 'transparent'];
 
 export function viewHome(el) {
   const figure = h('span', { class: 'figure' }, '—');
-  const redact = h('button', { class: 'redact', type: 'button', 'aria-pressed': String(S.revealed), 'aria-label': 'Spendable balance. Press to show or hide balances.', onclick: () => nav.setReveal(!S.revealed) },
+  // data-overlap-ok: the bar covers the balance and carries "Tap to reveal" on top of it by design.
+  const redact = h('button', { class: 'redact', type: 'button', 'data-overlap-ok': true, 'aria-pressed': String(S.revealed), 'aria-label': 'Spendable balance. Press to show or hide balances.', onclick: () => nav.setReveal(!S.revealed) },
     figure, h('span', { class: 'unit' }, unit()), h('span', { class: 'bar' }), h('span', { class: 'hint-tap' }, icon('eye'), 'Tap to reveal'));
   const meta = h('div', { class: 'balance-meta' });
   const share = h('span', { class: 'pill' });

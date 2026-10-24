@@ -49,6 +49,7 @@ it locally:
 ```bash
 node scripts/build-site.mjs         # writes dist/
 python3 scripts/web-smoke.py        # builds, serves dist/ with site/_headers, drives it in Chromium
+python3 scripts/site-smoke.py       # the landing pages at seven widths, light and dark
 python3 scripts/web-live.py         # the real web wallet against the live testnet (needs the network)
 ```
 
