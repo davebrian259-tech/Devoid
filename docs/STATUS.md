@@ -69,11 +69,15 @@ The Rust engine now builds and runs. Against `testnet.zec.rocks:443`
 - Web wallet UI (`npm run test:web`): the built site served with its real `_headers`, from the front
   page's Open the wallet to a sent batch, a reload, a reset, and a phone screen. Fails on any
   console error, CSP violation or network request.
-- Layout (`scripts/overlap.js`, run on every screenshot of both browser tests): no component may
-  overlap another, spill out of its box, scroll the page sideways or sit under the phone tab bar,
-  checked from 320px to 1440px wide in light and dark. The test proves the check by planting an
-  overlap and expecting it to be caught. The web version refuses a recovery phrase, and keeps the
-  demo on testnet, in the UI and again in its backend.
+- Layout (`scripts/overlap.js`, run on every screenshot of both browser tests and on every landing
+  page by `npm run test:site`): no component may overlap another, spill out of its box, scroll the
+  page sideways or sit under the phone tab bar, checked from 320px to 1440px wide in light and
+  dark. Decoration lifted out of the flow is held to the same rule: two absolutely positioned
+  siblings may not overlap, and a picture may not cover text in the flow, unless the overlay is
+  marked `data-overlap-ok` (the balance bar that carries "Tap to reveal" on top of itself). Each
+  test proves the check by planting an overlap and expecting it to be caught.
+- The web version refuses a recovery phrase, and keeps the demo on testnet, in the UI and again in
+  its backend.
 - **NU7 libraries, and the first confirmed broadcasts** (2026-10-24): the whole librustzcash
   stack moved to the NU7-aware 0.11 release — `zcash_protocol` 0.11, `zcash_client_backend` 0.25,
   `zcash_client_sqlite` 0.23, `zcash_keys` 0.17, `zcash_primitives`/`zcash_proofs` 0.31,
