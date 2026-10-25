@@ -1,0 +1,26 @@
+#!/usr/bin/env bash
+# A Piper-compatible front for Kokoro, so Ultrademo's offline voice path speaks with Kokoro instead.
+# Ultrademo calls: piper --model M --download-dir D --data-dir D --output_file OUT.wav  (text on stdin)
+# PIPER_MODEL is read as "kokoro-<voice>[@<speed>]", e.g. kokoro-am_michael@0.95.
+# KOKORO_DIR must hold kokoro-v1.0.onnx and voices-v1.0.bin; KOKORO_PY is a Python with kokoro_onnx.
+set -euo pipefail
+model=""; out=""
+while [ $# -gt 0 ]; do
+  case "$1" in
+    --help) echo "piper (kokoro shim)"; exit 0 ;;
+    --model) model="$2"; shift 2 ;;
+    --output_file) out="$2"; shift 2 ;;
+    *) shift ;;
+  esac
+done
+spec="${model#kokoro-}"; voice="${spec%@*}"; speed="1.0"
+[ "$spec" != "$voice" ] && speed="${spec#*@}"
+text="$(cat)"
+cd "$KOKORO_DIR"
+exec "$KOKORO_PY" - "$voice" "$speed" "$out" "$text" <<'PY'
+import sys, soundfile as sf
+from kokoro_onnx import Kokoro
+voice, speed, out, text = sys.argv[1], float(sys.argv[2]), sys.argv[3], sys.argv[4]
+samples, rate = Kokoro('kokoro-v1.0.onnx', 'voices-v1.0.bin').create(text, voice=voice, speed=speed, lang='en-us')
+sf.write(out, samples, rate)
+PY

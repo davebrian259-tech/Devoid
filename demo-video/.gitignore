@@ -1,0 +1,8 @@
+# Skill installs (npx skills add ...): reinstallable, and about 80 MB
+.agents/
+.claude/
+skills-lock.json
+# Rendered media: attached to the release and the submission, not versioned
+output/*.mp4
+output/*.wav
+output/.work/
