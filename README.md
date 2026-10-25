@@ -4,7 +4,7 @@
 
 <p align="center"><b>Pay everyone at once. Privately.</b><br>
 A non-custodial Zcash wallet that pays a whole list of people in one shielded transaction,
-and conceals how many were paid.</p>
+and hides how many were paid.</p>
 
 <p align="center">
   <img alt="Zcash mainnet: payments confirmed" src="https://img.shields.io/badge/Zcash_mainnet-payments_confirmed-f4b728?labelColor=231f20">
@@ -35,22 +35,21 @@ list of up to 2,000 people goes out as a few transactions, in order.
 
 ### Batching leaks the batch
 
-Shielding conceals who was paid and how much. It does not conceal **how many**: output counts are
-public, and a ZIP 317 fee is 5,000 zatoshis per logical action, so the fee amounts to a receipt for
-the headcount. A grant programme paying 40 people is plainly distinguishable from one paying 3.
-Every shielded wallet behaves this way; it matters once you pay people in batches.
+Shielding hides who was paid and how much. It does not hide **how many**: the number of outputs is
+public, and a ZIP 317 fee is 5,000 zatoshis per action, so the fee gives the headcount away. A
+grant programme paying 40 people looks nothing like one paying 3. Every shielded wallet works this
+way, and it matters once you pay people in batches.
 
-Devoid closes it. Padding rounds a transaction's payments up to 5, 10 or 25 with genuine shielded
-outputs to itself, indistinguishable on chain from the ones carrying money — a payment to one
-person and a payment to five then share a shape, as do six and ten. Each padding output costs one
-logical action (0.0001 ZEC to pad three recipients up to five), quoted to the zatoshi before you
-sign, and a transaction already carrying 25 pays nothing extra. Padding covers a single
-transaction, so a batch spread across several still reveals its rough size; the privacy report
-says as much.
+Devoid closes it. Padding rounds a transaction's payments up to 5, 10 or 25 with real shielded
+outputs that pay the wallet nothing. On chain they look like the ones carrying money, so a payment
+to one person looks like a payment to five, and six looks like ten. Each padding output costs one
+action — 0.0001 ZEC to pad three recipients up to five, quoted exactly before you sign — and a
+transaction already paying 25 people costs nothing extra to pad. Padding covers one transaction, so
+a batch split across several still shows roughly how big it was, and the privacy report says so.
 
 Proven on testnet: [`4fbde366…`](https://testnet.zcashexplorer.app/transactions/4fbde3662e5c7b179eae8bd8e09a34da10510f412a4f80e0c2767ff4273ea129)
-pays three people in block 4,536,660, presenting the chain with the six outputs (five payments and
-the change) a payment to five would have.
+pays three people in block 4,536,660 and shows the chain six outputs (five payments and the
+change), the same as a payment to five.
 
 ## Proven on mainnet
 
@@ -248,13 +247,13 @@ to rebuild the WebAssembly engine (needs Rust and wasm-bindgen). Cloudflare sett
   desktop app keeps its access key across restarts, so `http://127.0.0.1:8787` opens straight
   back into the wallet.
 - **Light and dark**, a phone layout, keyboard shortcuts, and the network marked on every screen.
-- **Installs to a home screen**, opens in its own window and runs offline: the service worker holds
-  one complete version of the app at a time, so its modules never come from two different builds.
+- **Installs to a home screen**, opens in its own window and works offline: the service worker
+  keeps one whole version of the app at a time, so its files never come from two different builds.
 - **Unlock with a passkey** rather than a typed passphrase. Not a login: there is no account and no
   server. The authenticator derives a secret of its own (the WebAuthn PRF extension); that key
   encrypts the passphrase into this browser, and your face, fingerprint or PIN decrypts it again.
-  Authenticators without PRF are declined rather than quietly downgraded, and the passphrase always
-  works.
+  A device without PRF is turned down rather than quietly given something weaker, and the
+  passphrase always works.
 
 ## Verification
 

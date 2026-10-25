@@ -38,7 +38,7 @@
     <div class="wrap hero-in">
       <div class="hero-copy">
         <h1>Pay everyone at once. <em>Privately.</em></h1>
-        <p class="lede">Devoid pays a whole list of people in one shielded Zcash transaction. Shielding conceals who was paid and how much; Devoid conceals <em>how many</em>, which the output count and the fee would otherwise betray. Read what the chain will record, then sign once.</p>
+        <p class="lede">Devoid pays a whole list of people in one shielded Zcash transaction. Shielding hides who was paid and how much. Devoid also hides <em>how many</em>, which the number of outputs and the fee would otherwise give away. See what the chain will show, then sign once.</p>
         <div class="ctas">
           <a class="btn" href="app/" id="open-wallet">Open the wallet
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
@@ -74,8 +74,8 @@
     <div class="wrap narrow">
       <p class="kicker">The leak nobody closes</p>
       <h2>Batching leaks the batch.</h2>
-      <p class="lede">A shielded transaction conceals who was paid and how much. It does not conceal how many. Output counts are public, and a ZIP 317 fee is 5,000 zatoshis per logical action, so the fee amounts to a receipt for the headcount.</p>
-      <p>Pay forty contributors and the chain records as much, permanently, for anyone who cares to look. Every shielded wallet behaves this way; it matters only once you pay people in batches, which is precisely what Devoid is for.</p>
+      <p class="lede">A shielded transaction hides who was paid and how much. It does not hide how many. The number of outputs is public, and a ZIP 317 fee is 5,000 zatoshis per action, so the fee gives the headcount away.</p>
+      <p>Pay 40 people and the chain shows it, to anyone, for good. Every shielded wallet works this way. It only matters when you pay people in batches, which is what Devoid is for.</p>
       <div class="split">
         <div class="shot-card">
           <p class="kicker">Without padding</p>
@@ -85,12 +85,12 @@
         <div class="shot-card">
           <p class="kicker">With padding</p>
           <p class="big-stat">6 outputs<span>five payments and the change · fee 0.0003 ZEC</span></p>
-          <p class="fine">Two of those payments carry nothing. One recipient or five, the shape is identical.</p>
+          <p class="fine">Two of those payments carry nothing. One recipient or five, it looks the same.</p>
         </div>
       </div>
-      <p>Padding rounds a transaction's payments up to five, ten or twenty-five with genuine shielded outputs to yourself, indistinguishable on chain from the ones carrying money. Every batch within a bracket then looks alike: one recipient and five share a shape, as do six and ten.</p>
-      <p>Each padding output costs one logical action, quoted to the zatoshi before you sign, and a transaction already carrying twenty-five pays nothing extra. The privacy report goes on naming what remains in view — the input and output counts, and the fee — and says plainly that padding covers a single transaction, so a batch spread across several still betrays its rough size.</p>
-      <p class="fine">Proven on the Zcash testnet: <a href="https://testnet.zcashexplorer.app/transactions/4fbde3662e5c7b179eae8bd8e09a34da10510f412a4f80e0c2767ff4273ea129"><code>4fbde366…</code></a>, mined in block 4,536,660, pays three people and presents the chain with the six outputs a payment to five would have.</p>
+      <p>Padding rounds a transaction's payments up to 5, 10 or 25 with real shielded outputs that pay you nothing. On chain they look like the ones carrying money, so a payment to one person looks like a payment to five, and six looks like ten.</p>
+      <p>Each padding output costs one action, and Devoid quotes the exact fee before you sign. A transaction already paying 25 people costs nothing extra to pad. The privacy report still names what anyone can see — the number of inputs and outputs, and the fee — and says that padding covers one transaction, so a batch split across several still shows roughly how big it was.</p>
+      <p class="fine">Proven on the Zcash testnet: <a href="https://testnet.zcashexplorer.app/transactions/4fbde3662e5c7b179eae8bd8e09a34da10510f412a4f80e0c2767ff4273ea129"><code>4fbde366…</code></a>, mined in block 4,536,660, pays three people and shows the chain the same six outputs a payment to five would.</p>
     </div>
   </section>
 
@@ -209,7 +209,7 @@
     <div class="wrap narrow">
       <p class="kicker">Install it</p>
       <h2>Keep Devoid on your device.</h2>
-      <p class="lede">The wallet is a web app you can add to your home screen. It opens in a window of its own and runs with no connection at all. Installing uploads nothing: the browser simply keeps a copy. Your wallet stays where it was, in this browser.</p>
+      <p class="lede">The wallet is a web app you can add to your home screen. It opens in its own window and works with no connection. Installing uploads nothing — the browser just keeps a copy of the app. Your wallet stays where it already is, in this browser.</p>
       <div class="ctas">
         <a class="btn" href="app/" id="install-wallet">Open the wallet to install
           <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v12M7 10l5 5 5-5M5 21h14"/></svg></a>
