@@ -36,9 +36,9 @@
   #header h1 { font-size: 64px; font-weight: 700; letter-spacing: -0.045em; line-height: 1.12; margin: 18px 0 0; }
   #header h1 em { font-style: normal; background: var(--ink); color: #fff; padding: 0 0.12em; border-radius: 0.14em; }
   #header p { font-size: 22px; color: var(--ink-2); margin: 22px 0 0; line-height: 1.4; }
-  #header .cards { position: absolute; right: 70px; top: 86px; display: grid; gap: 18px; width: 380px; }
-  #header .card { padding: 22px 26px; border-radius: 22px; background: #fff; }
-  #header .stat { font-size: 40px; }
+  #header .cards { position: absolute; right: 70px; top: 62px; display: grid; gap: 14px; width: 400px; }
+  #header .card { padding: 18px 24px; border-radius: 20px; background: #fff; }
+  #header .stat { font-size: 32px; }
   #header .stat-sub { font-size: 16px; }
 
   /* posts */
@@ -55,11 +55,14 @@
   #launch .shot .bar i { width: 11px; height: 11px; border-radius: 50%; background: #d4d6db; }
   #launch .shot img { display: block; width: 100%; }
 
-  #padding h1 { position: absolute; left: 90px; top: 196px; font-size: 76px; font-weight: 700; letter-spacing: -0.045em; line-height: 1.02; margin: 0; width: 1100px; }
-  #padding .lede { position: absolute; left: 90px; top: 368px; width: 1100px; font-size: 25px; line-height: 1.45; color: var(--ink-2); margin: 0; }
-  #padding .pair { position: absolute; left: 90px; right: 90px; top: 500px; display: grid; grid-template-columns: 1fr 1fr; gap: 26px; }
-  #padding .proof { position: absolute; left: 90px; bottom: 64px; font-size: 18px; color: var(--ink-3); }
-  #padding .proof .mono { color: var(--ink-2); }
+  #why h1 { position: absolute; left: 90px; top: 190px; font-size: 80px; font-weight: 700; letter-spacing: -0.045em; line-height: 1.1; margin: 0; }
+  #why h1 em { font-style: normal; background: var(--ink); color: #fff; padding: 0 0.1em; border-radius: 0.12em; }
+  #why .grid4 { position: absolute; left: 90px; right: 90px; top: 360px; display: grid; grid-template-columns: 1fr 1fr; gap: 22px; }
+  #why .card { padding: 30px 32px; }
+  #why .stat { font-size: 38px; }
+  #why .note { font-size: 20px; color: var(--ink-2); margin-top: 12px; }
+  #why .proof { position: absolute; left: 90px; bottom: 56px; font-size: 18px; color: var(--ink-3); }
+  #why .proof .mono { color: var(--ink-2); }
   .tag { display: inline-block; font-size: 14px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-3); }
   .tag.on { color: #9a6c00; }
 </style>
@@ -76,11 +79,12 @@
   <div class="copy">
     <div class="kicker">Shielded Zcash payouts</div>
     <h1>One transaction. <em>Multiple</em> payments.</h1>
-    <p>Pay a whole list of people privately, and give the chain less to count.</p>
+    <p>Pay a whole list of people in one shielded transaction, from your browser.</p>
   </div>
   <div class="cards">
-    <div class="card"><span class="tag">Without padding</span><div class="stat" style="margin-top:8px">4 outputs</div><div class="stat-sub">3 payments + change</div></div>
-    <div class="card"><span class="tag on">With padding</span><div class="stat" style="margin-top:8px">6 outputs</div><div class="stat-sub">3 payments + change + 2 padding</div></div>
+    <div class="card"><div class="stat">One signature</div><div class="stat-sub">Up to 25 people per transaction</div></div>
+    <div class="card"><div class="stat">Private</div><div class="stat-sub">Amounts, recipients and memos shielded</div></div>
+    <div class="card"><div class="stat">Your keys</div><div class="stat-sub">No account, and keys stay on your device</div></div>
   </div>
 </section>
 
@@ -95,17 +99,17 @@
   <div class="shot"><div class="bar"><i></i><i></i><i></i></div><img src="../../site/img/overview.jpg" alt=""></div>
 </section>
 
-<section class="board post" id="padding">
+<section class="board post" id="why">
   <div class="grain"></div>
   <div class="top"><span data-mark style="width:44px;height:44px"></span><span class="wordmark">devoid</span></div>
-  <div class="kicker" style="position:absolute;left:90px;top:150px">What the chain reveals</div>
-  <h1>Private payments can still leave clues.</h1>
-  <p class="lede">Shielding hides amounts and recipients, but output counts and fees are public. Devoid pads a batch to 5, 10 or 25 payment slots, so a small payout looks like a larger one.</p>
-  <div class="pair">
-    <div class="card"><span class="tag">Without padding</span><div class="stat" style="margin-top:10px">4 outputs</div><div class="stat-sub">3 payments + change · fee 0.0002 ZEC</div><div class="note">The output count gives away how many people were paid.</div></div>
-    <div class="card" style="background:#fff;border-color:#f0d58c"><span class="tag on">With padding</span><div class="stat" style="margin-top:10px">6 outputs</div><div class="stat-sub">3 payments + change + 2 padding · fee 0.0003 ZEC</div><div class="note">One recipient or five, it looks the same.</div></div>
+  <h1>Pay everyone at once. <em>Privately.</em></h1>
+  <div class="grid4">
+    <div class="card"><div class="stat">One transaction</div><div class="note">Up to 25 people in each, and a list of up to 2,000 sent in order. One signature.</div></div>
+    <div class="card"><div class="stat">Private by default</div><div class="note">Shielded Zcash: amounts, recipients and memos stay hidden from everyone else.</div></div>
+    <div class="card"><div class="stat">Checked before you sign</div><div class="note">Every address validated as you type, and the exact fee quoted on one review screen.</div></div>
+    <div class="card"><div class="stat">Your keys, your device</div><div class="note">Runs in your browser. No account, and your keys never leave your device.</div></div>
   </div>
-  <div class="proof">Verified on the Zcash testnet · <span class="mono">4fbde366…</span> · block 4,536,660</div>
+  <div class="proof">Confirmed on Zcash mainnet · <span class="mono">82731e0e…</span> · block 3,522,904</div>
 </section>
 
 <script>

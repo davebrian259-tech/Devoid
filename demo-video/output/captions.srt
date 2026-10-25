@@ -1,43 +1,43 @@
 1
-00:00:00,750 --> 00:00:12,774
-Paying a team in Zcash usually means a transaction per person. Devoid pays the whole list in one shielded transaction. Let me show you a payout, start to finish.
+00:00:00,750 --> 00:00:11,310
+Paying a team in Zcash usually means a transaction per person. Devoid pays the whole list at once, privately. Here's a payout, start to finish.
 
 2
-00:00:13,467 --> 00:00:21,363
-It's a non-custodial wallet that runs entirely in your browser. No account, and no server holding your keys.
+00:00:12,000 --> 00:00:18,528
+It's a Zcash wallet built for one job: paying many people in a single shielded transaction.
 
 3
-00:00:22,067 --> 00:00:33,827
-Here's the catch. Shielding hides amounts and recipients, but the number of outputs is public, and the fee follows from it. So a payout still hints at how many people you paid.
+00:00:19,233 --> 00:00:28,497
+You bring a list, check it, and sign once. Up to twenty-five people go in each shielded transaction, and longer lists go out in order.
 
 4
-00:00:34,533 --> 00:00:39,621
-This is a demo wallet on a simulated chain. Play money, real app.
+00:00:29,200 --> 00:00:40,432
+This is a demo wallet on a simulated chain. Play money, but the real app, running entirely in your browser. No account, and your keys never leave your device.
 
 5
-00:00:40,333 --> 00:00:48,805
-Let's pay three contributors. I'll paste the list into "Send" and hit "Check recipients". Every address is validated first.
+00:00:41,133 --> 00:00:51,333
+Let's pay three contributors. I'll paste the list into "Send" and hit "Check recipients". Every address is validated, so a typo can't cost you.
 
 6
-00:00:49,500 --> 00:01:00,804
-Now the part I like most. Tick "Hide how many people you are paying", and Devoid pads the transaction to five payment slots, with the extra fee shown up front.
+00:00:52,033 --> 00:00:58,081
+Devoid totals it up as you go: what everyone gets, the network fee, and what you'll have left.
 
 7
-00:01:01,500 --> 00:01:09,684
-The review spells it out: three recipients, five outputs on chain, the exact fee, and what an observer can still see.
+00:00:59,167 --> 00:01:07,015
+Then one review screen, with everything in one place: three recipients, the total, and the exact fee, before you sign.
 
 8
-00:01:10,400 --> 00:01:19,448
-I'll confirm with the passphrase. Here the send is simulated; on a real wallet, this same screen builds, proves and broadcasts it.
+00:01:07,700 --> 00:01:17,300
+One passphrase, one confirmation, and it's sent. Here it's simulated; on a real wallet, this same screen builds, proves and broadcasts it.
 
 9
-00:01:20,133 --> 00:01:27,237
-In "Activity" it reads "Sent to 3 recipients". The padding is yours, so it never counts as a payment.
+00:01:18,000 --> 00:01:24,648
+In "Activity", it reads "Sent to 3 recipients": three people paid, in a single transaction.
 
 10
-00:01:27,933 --> 00:01:40,461
-And it's real. One Rust engine on librustzcash runs natively and as WebAssembly. Both have sent shielded payments mined on mainnet, and padding is verified on testnet.
+00:01:25,333 --> 00:01:35,293
+And it's not a mock-up. Devoid's Rust engine has sent shielded payments that were mined on the Zcash mainnet, from the desktop app and from the browser.
 
 11
-00:01:41,917 --> 00:01:49,261
-One transaction, multiple payments, and fewer clues on chain. Devoid is open source, on GitHub.
+00:01:36,750 --> 00:01:42,174
+One transaction. Multiple payments. Devoid is open source, on GitHub.
