@@ -49,13 +49,17 @@ def watch(pg):
 def create_wallet(pg, passphrase):
     pg.wait_for_selector('#p1')
     expect(pg.locator('.seg button:has-text("Restore")')).to_have_count(0)  # the web version never takes a phrase
-    expect(pg.locator('.note.test')).to_contain_text('test network')  # a real testnet wallet is the default
     if WEB_MAINNET:
-        pg.click('[aria-label=Network] button:has-text("Mainnet")')  # mainnet asks for a deliberate tick
+        # Mainnet is the default, and it asks for a deliberate tick before it holds real ZEC.
         expect(pg.locator('.note.warn')).to_contain_text('real ZEC')
         expect(pg.locator('#mainnet-ack')).to_have_count(1)
+        pg.click('[aria-label=Network] button:has-text("Testnet")')
+        expect(pg.locator('.note.test')).to_contain_text('test network')
+        expect(pg.locator('#mainnet-ack')).to_have_count(0)  # no tick needed for play money
+        pg.click('[aria-label=Network] button:has-text("Mainnet")')
     else:
         expect(pg.locator('[aria-label=Network]')).to_have_count(0)  # not open on the web yet
+        expect(pg.locator('.note.test')).to_contain_text('test network')
     pg.click('.seg button:has-text("Demo")')
     expect(pg.locator('.note.test')).to_contain_text('play money')
     expect(pg.locator('[aria-label=Network]')).to_have_count(0)  # the demo is testnet only
