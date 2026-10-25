@@ -14,24 +14,24 @@
     "title": "Devoid",
     "subtitle": "One transaction. Multiple payments.",
     "layout": "split",
-    "script": "Paying a team in Zcash usually means a transaction per person. Devoid pays the whole list in one shielded transaction. Let me show you a payout, start to finish.",
+    "script": "Paying a team in Zcash usually means a transaction per person. Devoid pays the whole list at once, privately. Here's a payout, start to finish.",
     "audio": "audio/intro-slide.mp3",
-    "audioDuration": 12.024
+    "audioDuration": 10.56
   },
   "outro": {
     "title": "Devoid",
     "subtitle": "One transaction. Multiple payments.",
     "url": "github.com/davebrian259-tech/Devoid",
-    "script": "One transaction, multiple payments, and fewer clues on chain. Devoid is open source, on GitHub.",
+    "script": "One transaction. Multiple payments. Devoid is open source, on GitHub.",
     "audio": "audio/outro-slide.mp3",
-    "audioDuration": 7.344
+    "audioDuration": 5.424
   },
   "scenes": [
     {
       "id": "s1-hero",
       "media": "still",
       "screenshot": "captures/s1-hero.png",
-      "script": "It's a non-custodial wallet that runs entirely in your browser. No account, and no server holding your keys.",
+      "script": "It's a Zcash wallet built for one job: paying many people in a single shielded transaction.",
       "focus": {
         "x": 629,
         "y": 297,
@@ -44,32 +44,32 @@
       },
       "durationHint": 4,
       "audio": "audio/s1-hero.mp3",
-      "audioDuration": 7.896
+      "audioDuration": 6.528
     },
     {
-      "id": "s2-leak",
+      "id": "s2-how",
       "media": "still",
-      "screenshot": "captures/s2-leak.png",
-      "script": "Here's the catch. Shielding hides amounts and recipients, but the number of outputs is public, and the fee follows from it. So a payout still hints at how many people you paid.",
+      "screenshot": "captures/s2-how.png",
+      "script": "You bring a list, check it, and sign once. Up to twenty-five people go in each shielded transaction, and longer lists go out in order.",
       "focus": {
-        "x": 960,
-        "y": 540,
-        "zoom": 1.3
+        "x": 667,
+        "y": 184,
+        "zoom": 1.12
       },
       "action": {
         "type": "none",
-        "x": 960,
-        "y": 540
+        "x": 667,
+        "y": 184
       },
       "durationHint": 4,
-      "audio": "audio/s2-leak.mp3",
-      "audioDuration": 11.76
+      "audio": "audio/s2-how.mp3",
+      "audioDuration": 9.264
     },
     {
       "id": "s3-wallet",
       "media": "still",
       "screenshot": "captures/s3-wallet.png",
-      "script": "This is a demo wallet on a simulated chain. Play money, real app.",
+      "script": "This is a demo wallet on a simulated chain. Play money, but the real app, running entirely in your browser. No account, and your keys never leave your device.",
       "focus": {
         "x": 908,
         "y": 18,
@@ -82,15 +82,15 @@
       },
       "durationHint": 4,
       "audio": "audio/s3-wallet.mp3",
-      "audioDuration": 5.088
+      "audioDuration": 11.232
     },
     {
       "id": "s4-paste",
       "media": "clip",
       "clip": "captures/s4-paste.mp4",
-      "clipDuration": 5.877,
+      "clipDuration": 5.934,
       "screenshot": "captures/s4-paste.png",
-      "script": "Let's pay three contributors. I'll paste the list into \"Send\" and hit \"Check recipients\". Every address is validated first.",
+      "script": "Let's pay three contributors. I'll paste the list into \"Send\" and hit \"Check recipients\". Every address is validated, so a typo can't cost you.",
       "events": [
         {
           "t": 0,
@@ -99,49 +99,49 @@
           "y": 18
         },
         {
-          "t": 0.86,
+          "t": 0.881,
           "type": "move",
           "x": 908,
           "y": 18
         },
         {
-          "t": 1.351,
+          "t": 1.43,
           "type": "move",
           "x": 940,
           "y": 313
         },
         {
-          "t": 1.532,
+          "t": 1.611,
           "type": "click",
           "x": 940,
           "y": 313
         },
         {
-          "t": 1.736,
+          "t": 1.805,
           "type": "move",
           "x": 940,
           "y": 313
         },
         {
-          "t": 2.202,
+          "t": 2.266,
           "type": "move",
           "x": 729,
           "y": 443
         },
         {
-          "t": 3.092,
+          "t": 3.158,
           "type": "move",
           "x": 729,
           "y": 443
         },
         {
-          "t": 3.668,
+          "t": 3.71,
           "type": "move",
           "x": 384,
           "y": 638
         },
         {
-          "t": 3.849,
+          "t": 3.891,
           "type": "click",
           "x": 384,
           "y": 638
@@ -149,15 +149,15 @@
       ],
       "durationHint": 4,
       "audio": "audio/s4-paste.mp3",
-      "audioDuration": 8.472
+      "audioDuration": 10.2
     },
     {
-      "id": "s5-pad",
+      "id": "s5-totals",
       "media": "clip",
-      "clip": "captures/s5-pad.mp4",
-      "clipDuration": 5.093,
-      "screenshot": "captures/s5-pad.png",
-      "script": "Now the part I like most. Tick \"Hide how many people you are paying\", and Devoid pads the transaction to five payment slots, with the extra fee shown up front.",
+      "clip": "captures/s5-totals.mp4",
+      "clipDuration": 6.974,
+      "screenshot": "captures/s5-totals.png",
+      "script": "Devoid totals it up as you go: what everyone gets, the network fee, and what you'll have left.",
       "events": [
         {
           "t": 0,
@@ -166,137 +166,131 @@
           "y": 638
         },
         {
-          "t": 0.872,
+          "t": 0.895,
           "type": "move",
           "x": 384,
           "y": 638
         },
         {
-          "t": 1.838,
+          "t": 2.215,
           "type": "move",
-          "x": 1226,
-          "y": 657
+          "x": 1364,
+          "y": 435
         },
         {
-          "t": 2.677,
-          "type": "click",
-          "x": 1226,
-          "y": 657
+          "t": 4.978,
+          "type": "move",
+          "x": 1364,
+          "y": 435
+        },
+        {
+          "t": 5.472,
+          "type": "move",
+          "x": 1364,
+          "y": 768
         }
       ],
       "durationHint": 4,
-      "audio": "audio/s5-pad.mp3",
-      "audioDuration": 11.304
+      "audio": "audio/s5-totals.mp3",
+      "audioDuration": 6.048
     },
     {
       "id": "s6-review",
       "media": "clip",
       "clip": "captures/s6-review.mp4",
-      "clipDuration": 7.557,
+      "clipDuration": 6.349,
       "screenshot": "captures/s6-review.png",
-      "script": "The review spells it out: three recipients, five outputs on chain, the exact fee, and what an observer can still see.",
+      "script": "Then one review screen, with everything in one place: three recipients, the total, and the exact fee, before you sign.",
       "events": [
         {
           "t": 0,
-          "type": "move",
-          "x": 1226,
-          "y": 657
-        },
-        {
-          "t": 0.861,
-          "type": "move",
-          "x": 1226,
-          "y": 657
-        },
-        {
-          "t": 1.355,
           "type": "move",
           "x": 1364,
           "y": 768
         },
         {
-          "t": 1.535,
+          "t": 1.043,
           "type": "click",
           "x": 1364,
           "y": 768
         },
         {
-          "t": 2.626,
+          "t": 2.025,
           "type": "move",
           "x": 1364,
           "y": 768
         },
         {
-          "t": 3.147,
+          "t": 2.544,
           "type": "move",
           "x": 908,
-          "y": 595
+          "y": 585
         }
       ],
       "durationHint": 4,
       "audio": "audio/s6-review.mp3",
-      "audioDuration": 8.184
+      "audioDuration": 7.848
     },
     {
       "id": "s7-send",
       "media": "clip",
       "clip": "captures/s7-send.mp4",
-      "clipDuration": 6.28,
+      "clipDuration": 6.348,
       "screenshot": "captures/s7-send.png",
-      "script": "I'll confirm with the passphrase. Here the send is simulated; on a real wallet, this same screen builds, proves and broadcasts it.",
+      "script": "One passphrase, one confirmation, and it's sent. Here it's simulated; on a real wallet, this same screen builds, proves and broadcasts it.",
       "events": [
         {
           "t": 0,
           "type": "move",
           "x": 908,
-          "y": 595
+          "y": 585
         },
         {
-          "t": 0.863,
+          "t": 0.858,
           "type": "move",
           "x": 908,
-          "y": 595
+          "y": 585
         },
         {
-          "t": 1.318,
+          "t": 1.333,
           "type": "move",
           "x": 908,
-          "y": 878
+          "y": 746
         },
         {
-          "t": 1.318,
+          "t": 1.334,
           "type": "click",
           "x": 908,
-          "y": 878
+          "y": 746
         },
         {
-          "t": 3.446,
+          "t": 3.487,
           "type": "move",
           "x": 908,
-          "y": 878
+          "y": 746
         },
         {
-          "t": 3.972,
+          "t": 4.037,
           "type": "move",
           "x": 908,
-          "y": 1015
+          "y": 883
         },
         {
-          "t": 4.152,
+          "t": 4.218,
           "type": "click",
           "x": 908,
-          "y": 1015
+          "y": 883
         }
       ],
       "durationHint": 4,
       "audio": "audio/s7-send.mp3",
-      "audioDuration": 9.048
+      "audioDuration": 9.6
     },
     {
       "id": "s8-activity",
       "media": "still",
       "screenshot": "captures/s8-activity.png",
-      "script": "In \"Activity\" it reads \"Sent to 3 recipients\". The padding is yours, so it never counts as a payment.",
+      "script": "In \"Activity\", it reads \"Sent to 3 recipients\": three people paid, in a single transaction.",
       "focus": {
         "x": 871,
         "y": 269,
@@ -309,13 +303,13 @@
       },
       "durationHint": 4,
       "audio": "audio/s8-activity.mp3",
-      "audioDuration": 7.104
+      "audioDuration": 6.648
     },
     {
       "id": "s9-proof",
       "media": "still",
       "screenshot": "captures/s9-proof.png",
-      "script": "And it's real. One Rust engine on librustzcash runs natively and as WebAssembly. Both have sent shielded payments mined on mainnet, and padding is verified on testnet.",
+      "script": "And it's not a mock-up. Devoid's Rust engine has sent shielded payments that were mined on the Zcash mainnet, from the desktop app and from the browser.",
       "focus": {
         "x": 960,
         "y": 540,
@@ -328,7 +322,7 @@
       },
       "durationHint": 4,
       "audio": "audio/s9-proof.mp3",
-      "audioDuration": 12.528
+      "audioDuration": 9.96
     }
   ]
 }

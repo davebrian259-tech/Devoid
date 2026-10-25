@@ -5,7 +5,7 @@ from playwright.sync_api import sync_playwright
 HERE = os.path.dirname(os.path.abspath(__file__))
 OUT = os.path.join(os.path.dirname(HERE), 'output', 'x')
 os.makedirs(OUT, exist_ok=True)
-BOARDS = [('profile', 'x-profile.png'), ('header', 'x-header.png'), ('launch', 'x-post-launch.png'), ('padding', 'x-post-padding.png')]
+BOARDS = [('profile', 'x-profile.png'), ('header', 'x-header.png'), ('launch', 'x-post-launch.png'), ('why', 'x-post-why.png')]
 with sync_playwright() as p:
     b = p.chromium.launch(executable_path=os.environ.get('DEVOID_CHROMIUM') or None)
     for scale in (1, 2):
