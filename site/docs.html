@@ -1,0 +1,179 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Documentation · Devoid</title>
+<meta name="description" content="How to use Devoid: create a wallet, pay a list of people in one shielded Zcash transaction, read the fees and the privacy report, and run it yourself.">
+<meta name="theme-color" content="#0b0b0e">
+<link rel="icon" href="mark.svg" type="image/svg+xml">
+<script src="theme.js"></script>
+<link rel="stylesheet" href="site.css">
+</head>
+<body>
+<header class="nav">
+  <div class="wrap nav-in">
+    <a class="brand" href="index.html" aria-label="Devoid home"><img src="mark.svg" alt="" width="32" height="32"><span class="wordmark">devoid</span></a>
+    <button class="theme-toggle" type="button" data-theme-toggle aria-label="Switch theme"><svg class="i-moon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20.985 12.486a9 9 0 1 1-9.473-9.472c.405-.022.617.46.402.803a6 6 0 0 0 8.268 8.268c.344-.215.825-.004.803.401"/></svg><svg class="i-sun" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></svg></button>
+    <a class="btn small ghost push" href="index.html">Back to the site</a>
+  </div>
+</header>
+
+<main class="section prose" id="top">
+  <div class="wrap narrow">
+    <p class="kicker">Documentation</p>
+    <h1>Using Devoid</h1>
+    <p class="lede">Devoid pays a list of people in one shielded Zcash transaction. This page covers everything you need to use it: creating a wallet, sending a batch, reading the review, and running it yourself.</p>
+    <p class="fine">Last updated 25 October 2026.</p>
+
+    <h2>Contents</h2>
+    <ul>
+      <li><a href="#start">Getting started</a></li>
+      <li><a href="#send">Sending a batch</a></li>
+      <li><a href="#csv">The list format</a></li>
+      <li><a href="#review">The review screen</a></li>
+      <li><a href="#fees">Fees</a></li>
+      <li><a href="#access">Signing in again, and other devices</a></li>
+      <li><a href="#desktop">Running it yourself</a></li>
+      <li><a href="#faq">Questions</a></li>
+    </ul>
+
+    <h2 id="start">Getting started</h2>
+    <p>Open the <a href="app/">web wallet</a> on any phone or computer. Choose one of three kinds of wallet:</p>
+    <ul>
+      <li><b>Mainnet</b> holds real ZEC. You tick a box to confirm this before the wallet is created. Start with small amounts.</li>
+      <li><b>Testnet</b> uses free coins from a faucet. Nothing on it has value.</li>
+      <li><b>Demo</b> runs on a simulated chain with play money, so you can try every screen without funds.</li>
+    </ul>
+    <p>Pick a passphrase, then write down the 24-word recovery phrase on paper and confirm it. The passphrase encrypts your keys in this browser; the recovery phrase restores the wallet in the desktop app if this browser's data is ever lost.</p>
+    <p>To receive ZEC, open <b>Receive</b> and share your shielded address or a payment request with the amount filled in.</p>
+
+    <h2 id="send">Sending a batch</h2>
+    <ol>
+      <li>Open <b>Send</b>. Add people one by one, paste a list, import a CSV file, or pick from your contacts and saved lists.</li>
+      <li>Devoid checks every row as you type: the wrong network, duplicates, missing amounts, and addresses it cannot read.</li>
+      <li>Watch the totals: what everyone gets, the network fee, and what you will have left.</li>
+      <li>Press <b>Review payment</b>, check the review screen, enter your passphrase and confirm.</li>
+      <li>Follow progress in <b>Activity</b>. Each transaction shows as pending until it is mined.</li>
+    </ol>
+    <p>Up to 25 people go in each transaction, and a list can hold up to 2,000. Longer lists are sent as several transactions, in order, and you get a receipt with every transaction ID.</p>
+
+    <h2 id="csv">The list format</h2>
+    <p>One recipient per line. A header row is optional; the columns are address, amount, memo and label.</p>
+    <pre class="code"><code>address,amount,memo,label
+u1examplefirstaddress…,1.25,October design work,Ada
+u1examplesecondaddress…,0.80,Docs and translations,Grace</code></pre>
+    <ul>
+      <li><b>Amount</b> is in ZEC (TAZ on testnet), up to eight decimal places.</li>
+      <li><b>Memo</b> is optional, up to 512 bytes, and is encrypted with the payment. Transparent addresses cannot receive memos.</li>
+      <li><b>Label</b> is optional and stays on your device; it is never sent.</li>
+    </ul>
+    <p>Tools on the Send screen can give everyone the same amount or split a total evenly, to the zatoshi.</p>
+
+    <h2 id="review">The review screen</h2>
+    <p>Nothing is signed until you have seen the review. It shows the total, which pools the money comes from, the network, the exact fee, and a privacy report on what the chain will see.</p>
+    <ul>
+      <li>Paying a <b>transparent address</b>, or moving money between shielded pools, makes part of the payment public. Devoid asks you to tick an acknowledgement before it will send.</li>
+      <li>A <b>fingerprint</b> ties the reviewed payment to the signed one. If anything changes in between, the send is refused.</li>
+      <li><b>Hide how many people you are paying</b> is optional. It pads a transaction to 5, 10 or 25 payment slots so the output count does not show the real number, for one action's fee per extra slot.</li>
+    </ul>
+
+    <h2 id="fees">Fees</h2>
+    <p>Zcash fees follow ZIP 317: 5,000 zatoshis (0.00005 ZEC) per logical action, with a minimum of two, and the change output counts as one. Paying 3 people costs 0.0002 ZEC; paying 25 costs 0.0013 ZEC. The review always shows the engine's exact quote, which can be higher if the wallet has to spend many small notes.</p>
+
+    <h2 id="access">Signing in again, and other devices</h2>
+    <ul>
+      <li>Your wallet stays in this browser. Coming back needs no sign-in; only signing a payment asks for the passphrase.</li>
+      <li>After you sign, you can stay unlocked in that tab for 15 minutes. The passphrase is held in memory only.</li>
+      <li><b>Passkey:</b> in Settings, a passkey can unlock the wallet with your face, fingerprint or device PIN instead of the passphrase, where your device supports it.</li>
+      <li><b>Wallet file:</b> download an encrypted copy in Settings, then choose “Open a wallet file” in any other browser and enter your passphrase.</li>
+      <li><b>Install:</b> add Devoid to your home screen from the browser menu. It opens in its own window and works offline.</li>
+    </ul>
+
+    <h2 id="desktop">Running it yourself</h2>
+    <p>The desktop app runs the same engine natively, on Linux, macOS, or Windows through WSL. It adds Tor or your own SOCKS5 proxy, and restoring from a recovery phrase.</p>
+    <pre class="code"><code><span class="c"># get the code</span>
+git clone https://github.com/davebrian259-tech/Devoid.git
+cd Devoid
+
+<span class="c"># try it on the simulated chain</span>
+node server/index.mjs --demo
+
+<span class="c"># real Zcash: build the engine (Rust 1.88+), then run</span>
+npm run engine:build
+node server/index.mjs</code></pre>
+    <p>The server prints a private link; open it in your browser. For developers:</p>
+    <ul>
+      <li><a href="https://github.com/davebrian259-tech/Devoid/blob/main/docs/ENGINE_PROTOCOL.md">Engine protocol</a></li>
+      <li><a href="https://github.com/davebrian259-tech/Devoid/blob/main/docs/DEPLOY.md">Deploy guide</a></li>
+    </ul>
+
+    <h2 id="faq">Questions</h2>
+    <p><b>Does Devoid ever hold my funds?</b> No. It is non-custodial: your keys are created and kept on your device, encrypted with your passphrase.</p>
+    <p><b>Why does the web wallet never ask for a recovery phrase?</b> So that no one is ever trained to type one into a website. To use a wallet elsewhere, use the wallet file, or restore the phrase in the desktop app.</p>
+    <p><b>What does the server see?</b> The lightwalletd server sees your IP address and the transactions you broadcast. Shielded transactions hide recipients, amounts and memos from it. Read the <a href="privacy.html">privacy policy</a> for the full picture.</p>
+    <p><b>A payment says “Expired”.</b> It was never mined, so nothing was spent. Send it again.</p>
+    <p><b>Found a problem?</b> Open an issue on <a href="https://github.com/davebrian259-tech/Devoid/issues">GitHub</a>.</p>
+  </div>
+</main>
+
+<footer class="foot">
+  <div class="wrap">
+    <section class="foot-cta" aria-labelledby="foot-cta-title">
+      <div>
+        <h2 id="foot-cta-title">Pay everyone at once. <em>Privately.</em></h2>
+        <p>Try it now in your browser, on any phone or computer. No account, no download.</p>
+      </div>
+      <div class="foot-actions">
+        <a class="btn invert" href="app/">Open the wallet
+          <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14M13 6l6 6-6 6"/></svg></a>
+        <a class="btn ghost invert" href="./#start">Install it yourself</a>
+      </div>
+    </section>
+
+    <div class="foot-grid">
+      <div class="foot-about">
+        <a class="brand" href="./#top" aria-label="Devoid home"><img src="mark.svg" alt="" width="30" height="30"><span class="wordmark">devoid</span></a>
+        <p>A non-custodial Zcash wallet for paying many people in one shielded transaction. Keys stay on your device.</p>
+        <p class="foot-state"><span class="dot" aria-hidden="true"></span>Testnet verified · web wallet live · mainnet next</p>
+      </div>
+      <nav class="foot-col" aria-label="Product">
+        <h3>Product</h3>
+        <ul>
+          <li><a href="app/">Open the wallet</a></li>
+          <li><a href="./#how">How it works</a></li>
+          <li><a href="./#features">Features</a></li>
+          <li><a href="./#status">Where it stands</a></li>
+        </ul>
+      </nav>
+      <nav class="foot-col" aria-label="Developers">
+        <h3>Developers</h3>
+        <ul>
+          <li><a href="docs.html">Documentation</a></li>
+          <li><a href="https://github.com/davebrian259-tech/Devoid">Source code <svg class="ext" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17 17 7M8 7h9v9"/></svg></a></li>
+          <li><a href="https://github.com/davebrian259-tech/Devoid/blob/main/docs/ENGINE_PROTOCOL.md">Engine protocol <svg class="ext" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17 17 7M8 7h9v9"/></svg></a></li>
+          <li><a href="https://github.com/davebrian259-tech/Devoid/blob/main/docs/DEPLOY.md">Deploy guide <svg class="ext" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17 17 7M8 7h9v9"/></svg></a></li>
+          <li><a href="https://github.com/davebrian259-tech/Devoid/issues">Report an issue <svg class="ext" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17 17 7M8 7h9v9"/></svg></a></li>
+        </ul>
+      </nav>
+      <nav class="foot-col" aria-label="Trust">
+        <h3>Trust</h3>
+        <ul>
+          <li><a href="privacy.html">Privacy policy</a></li>
+          <li><a href="./#privacy">What the chain sees</a></li>
+          <li><a href="https://github.com/davebrian259-tech/Devoid/blob/main/docs/STATUS.md">Verification status <svg class="ext" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17 17 7M8 7h9v9"/></svg></a></li>
+          <li><a href="https://github.com/davebrian259-tech/Devoid/blob/main/LICENSE">MIT licence <svg class="ext" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 17 17 7M8 7h9v9"/></svg></a></li>
+        </ul>
+      </nav>
+    </div>
+
+    <div class="foot-base">
+      <p>Open source. The app is MIT; the engine is MIT or Apache-2.0, built on librustzcash.<br>
+      Type: Righteous, Outfit and JetBrains Mono (SIL OFL). Icons: Lucide (ISC). No cookies, no analytics.</p>
+      <a class="powered" href="https://z.cash/" rel="noopener"><svg class="zec-sign" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="12" fill="#f4b728"/><path d="M12 4.6v2.7M12 16.7v2.7M7.9 8.1h8.2l-8.2 7.8h8.2" fill="none" stroke="#231f20" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Powered by <b>Zcash</b></span></a>
+      <a class="to-top" href="#top">Back to top <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 19V5M6 11l6-6 6 6"/></svg></a>
+    </div>
+  </div>
+</footer>
+</body>
+</html>
