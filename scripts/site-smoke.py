@@ -12,7 +12,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
 from site_server import build_and_serve  # noqa: E402  (serves dist/ the way Cloudflare does)
 
-PAGES = ['/', '/privacy.html', '/404.html']
+PAGES = ['/', '/docs.html', '/privacy.html', '/404.html']
 WIDTHS = [1440, 1180, 980, 760, 560, 390, 320]
 CHECK = open(os.path.join(HERE, 'overlap.js')).read()
 # An image that tried and failed leaves an empty box, so no layout check downstream means anything.
