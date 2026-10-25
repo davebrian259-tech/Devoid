@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Devoid X assets</title>
+<!-- Artboards for X: profile 400×400, header 1500×500, two posts 1600×900. Rendered by render-x.py;
+     open the file in a browser to edit them by eye. Fonts and images come from the repository. -->
+<style>
+  @font-face { font-family: "Righteous"; src: url("../../ui/fonts/righteous.woff2") format("woff2"); }
+  @font-face { font-family: "Outfit"; src: url("../../ui/fonts/outfit.woff2") format("woff2"); font-weight: 100 900; }
+  @font-face { font-family: "JetBrains Mono"; src: url("../../ui/fonts/jetbrains-mono-400.woff2") format("woff2"); }
+  :root { --ink: #0f1115; --ink-2: #4b5160; --ink-3: #8a8f9c; --line: #e6e7eb; --paper: #ffffff; --wash: #f5f6f8; --amber: #e3a008; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: #d9dbe0; font-family: Outfit, sans-serif; color: var(--ink); display: grid; gap: 40px; padding: 40px; justify-content: start; }
+  .board { position: relative; overflow: hidden; background: var(--paper); }
+  h1 { text-wrap: balance; }
+  .mark { display: block; }
+  .wordmark { font-family: Righteous, sans-serif; letter-spacing: -0.01em; line-height: 1; }
+  .kicker { font-size: 15px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-3); }
+  .mono { font-family: "JetBrains Mono", monospace; }
+  .card { border: 1px solid var(--line); border-radius: 26px; background: linear-gradient(160deg, #f4f5f7, #fbfbfc); padding: 30px 32px; }
+  .stat { font-size: 54px; font-weight: 700; letter-spacing: -0.035em; line-height: 1; }
+  .stat-sub { font-size: 19px; font-weight: 500; color: var(--ink-2); margin-top: 10px; }
+  .note { font-size: 18px; color: var(--ink-3); margin-top: 16px; line-height: 1.4; }
+  .zec { display: inline-flex; align-items: center; gap: 10px; border: 1px solid var(--line); border-radius: 999px; padding: 7px 16px 7px 7px; font-size: 18px; color: var(--ink-2); background: #fff; }
+  .zec b { color: var(--ink); }
+  .grain { position: absolute; inset: 0; background: radial-gradient(900px 500px at 85% -10%, rgb(227 160 8 / 0.10), transparent 60%), radial-gradient(700px 400px at -10% 110%, rgb(15 17 21 / 0.05), transparent 60%); pointer-events: none; }
+
+  /* profile */
+  #profile { width: 400px; height: 400px; display: grid; place-items: center; }
+  #profile .mark { width: 236px; height: 236px; filter: drop-shadow(0 18px 30px rgb(15 17 21 / 0.18)); }
+
+  /* header: X lays the avatar over the bottom left, so the copy sits right of it */
+  #header { width: 1500px; height: 500px; background: var(--wash); }
+  #header .copy { position: absolute; left: 430px; top: 92px; width: 560px; }
+  #header h1 { font-size: 64px; font-weight: 700; letter-spacing: -0.045em; line-height: 1.12; margin: 18px 0 0; }
+  #header h1 em { font-style: normal; background: var(--ink); color: #fff; padding: 0 0.12em; border-radius: 0.14em; }
+  #header p { font-size: 22px; color: var(--ink-2); margin: 22px 0 0; line-height: 1.4; }
+  #header .cards { position: absolute; right: 70px; top: 86px; display: grid; gap: 18px; width: 380px; }
+  #header .card { padding: 22px 26px; border-radius: 22px; background: #fff; }
+  #header .stat { font-size: 40px; }
+  #header .stat-sub { font-size: 16px; }
+
+  /* posts */
+  .post { width: 1600px; height: 900px; }
+  .post .top { position: absolute; left: 90px; top: 78px; display: flex; align-items: center; gap: 14px; }
+  .post .top .wordmark { font-size: 34px; }
+  #launch .col { position: absolute; left: 90px; top: 196px; width: 610px; display: flex; flex-direction: column; gap: 30px; }
+  #launch h1 { font-size: 74px; font-weight: 700; letter-spacing: -0.045em; line-height: 1.14; margin: 0; }
+  #launch h1 em { font-style: normal; background: var(--ink); color: #fff; padding: 0 0.1em; border-radius: 0.12em; }
+  #launch .lede { font-size: 25px; line-height: 1.45; color: var(--ink-2); margin: 0; }
+  #launch .zec { position: absolute; left: 90px; bottom: 82px; }
+  #launch .shot { position: absolute; left: 760px; top: 120px; width: 960px; border-radius: 22px; border: 1px solid var(--line); box-shadow: 0 50px 90px -40px rgb(15 17 21 / 0.45), 0 2px 6px rgb(15 17 21 / 0.06); overflow: hidden; background: #fff; }
+  #launch .shot .bar { height: 38px; background: #f1f2f4; border-bottom: 1px solid var(--line); display: flex; align-items: center; gap: 8px; padding: 0 16px; }
+  #launch .shot .bar i { width: 11px; height: 11px; border-radius: 50%; background: #d4d6db; }
+  #launch .shot img { display: block; width: 100%; }
+
+  #padding h1 { position: absolute; left: 90px; top: 196px; font-size: 76px; font-weight: 700; letter-spacing: -0.045em; line-height: 1.02; margin: 0; width: 1100px; }
+  #padding .lede { position: absolute; left: 90px; top: 368px; width: 1100px; font-size: 25px; line-height: 1.45; color: var(--ink-2); margin: 0; }
+  #padding .pair { position: absolute; left: 90px; right: 90px; top: 500px; display: grid; grid-template-columns: 1fr 1fr; gap: 26px; }
+  #padding .proof { position: absolute; left: 90px; bottom: 64px; font-size: 18px; color: var(--ink-3); }
+  #padding .proof .mono { color: var(--ink-2); }
+  .tag { display: inline-block; font-size: 14px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-3); }
+  .tag.on { color: #9a6c00; }
+</style>
+</head>
+<body>
+
+<template id="markT"><svg class="mark" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><rect width="32" height="32" rx="9" fill="#0f1115"/><circle cx="16" cy="16" r="8" fill="none" stroke="#ffffff" stroke-width="3.4"/><rect x="5" y="14" width="17" height="4.2" rx="2.1" fill="#e3a008"/></svg></template>
+<template id="zecT"><svg width="28" height="28" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="12" fill="#f4b728"/><path d="M12 4.6v2.7M12 16.7v2.7M7.9 8.1h8.2l-8.2 7.8h8.2" fill="none" stroke="#231f20" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"/></svg></template>
+
+<section class="board" id="profile"><span data-mark></span></section>
+
+<section class="board" id="header">
+  <div class="grain"></div>
+  <div class="copy">
+    <div class="kicker">Shielded Zcash payouts</div>
+    <h1>One transaction. <em>Multiple</em> payments.</h1>
+    <p>Pay a whole list of people privately, and give the chain less to count.</p>
+  </div>
+  <div class="cards">
+    <div class="card"><span class="tag">Without padding</span><div class="stat" style="margin-top:8px">4 outputs</div><div class="stat-sub">3 payments + change</div></div>
+    <div class="card"><span class="tag on">With padding</span><div class="stat" style="margin-top:8px">6 outputs</div><div class="stat-sub">3 payments + change + 2 padding</div></div>
+  </div>
+</section>
+
+<section class="board post" id="launch">
+  <div class="grain"></div>
+  <div class="top"><span data-mark style="width:44px;height:44px"></span><span class="wordmark">devoid</span></div>
+  <div class="col">
+    <h1>One transaction.<br><em>Multiple</em> payments.</h1>
+    <p class="lede">Send ZEC to a whole list of people in a single shielded transaction. Review everything before signing, then send in one go.</p>
+  </div>
+  <span class="zec"><span data-zec></span><span>Powered by <b>Zcash</b></span></span>
+  <div class="shot"><div class="bar"><i></i><i></i><i></i></div><img src="../../site/img/overview.jpg" alt=""></div>
+</section>
+
+<section class="board post" id="padding">
+  <div class="grain"></div>
+  <div class="top"><span data-mark style="width:44px;height:44px"></span><span class="wordmark">devoid</span></div>
+  <div class="kicker" style="position:absolute;left:90px;top:150px">What the chain reveals</div>
+  <h1>Private payments can still leave clues.</h1>
+  <p class="lede">Shielding hides amounts and recipients, but output counts and fees are public. Devoid pads a batch to 5, 10 or 25 payment slots, so a small payout looks like a larger one.</p>
+  <div class="pair">
+    <div class="card"><span class="tag">Without padding</span><div class="stat" style="margin-top:10px">4 outputs</div><div class="stat-sub">3 payments + change · fee 0.0002 ZEC</div><div class="note">The output count gives away how many people were paid.</div></div>
+    <div class="card" style="background:#fff;border-color:#f0d58c"><span class="tag on">With padding</span><div class="stat" style="margin-top:10px">6 outputs</div><div class="stat-sub">3 payments + change + 2 padding · fee 0.0003 ZEC</div><div class="note">One recipient or five, it looks the same.</div></div>
+  </div>
+  <div class="proof">Verified on the Zcash testnet · <span class="mono">4fbde366…</span> · block 4,536,660</div>
+</section>
+
+<script>
+  for (const el of document.querySelectorAll('[data-mark]')) el.replaceWith(document.getElementById('markT').content.cloneNode(true).firstElementChild);
+  for (const el of document.querySelectorAll('[data-zec]')) el.replaceWith(document.getElementById('zecT').content.cloneNode(true).firstElementChild);
+  for (const m of document.querySelectorAll('.top .mark')) { m.style.width = '44px'; m.style.height = '44px'; }
+</script>
+</body>
+</html>

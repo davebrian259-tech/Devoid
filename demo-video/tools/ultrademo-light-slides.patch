@@ -1,0 +1,92 @@
+diff --git a/capture/capture.mjs b/capture/capture.mjs
+index 55ea029..7e7df03 100644
+--- a/capture/capture.mjs
++++ b/capture/capture.mjs
+@@ -400,6 +400,7 @@ await writeFile(
+       // Optional presentation metadata carried straight through to the renderer:
+       // brand accent (#hex), caption style, and intro/outro title cards.
+       ...(flow.brand ? {brand: flow.brand} : {}),
++      ...(flow.slideTheme ? {slideTheme: flow.slideTheme} : {}),
+       ...(flow.caption ? {caption: flow.caption} : {}),
+       // Intro card defaults its screenshot to the first captured scene, so the
+       // author can just write `intro: {title, subtitle}` without knowing paths.
+diff --git a/render/src/Demo.tsx b/render/src/Demo.tsx
+index 2dba7b9..0d2cf3b 100644
+--- a/render/src/Demo.tsx
++++ b/render/src/Demo.tsx
+@@ -650,7 +650,7 @@ const SlideView: React.FC<{
+       <div style={{width: 54, height: 5, background: brand, borderRadius: 3, margin: split ? '0 0 30px' : '0 auto 30px'}} />
+       <div
+         style={{
+-          color: '#f8fafc',
++          color: PAL.title,
+           fontSize: split ? 68 : layout === 'vertical' ? 66 : 76,
+           fontWeight: 700,
+           letterSpacing: '-0.02em',
+@@ -661,12 +661,12 @@ const SlideView: React.FC<{
+         {title}
+       </div>
+       {subtitle ? (
+-        <div style={{color: '#9aa3b5', fontSize: layout === 'vertical' ? 34 : 34, marginTop: 22}}>
++        <div style={{color: PAL.subtitle, fontSize: layout === 'vertical' ? 34 : 34, marginTop: 22}}>
+           {subtitle}
+         </div>
+       ) : null}
+       {kind === 'outro' && outro?.url ? (
+-        <div style={{color: brand, fontSize: layout === 'vertical' ? 34 : 32, marginTop: 30, fontWeight: 600}}>
++        <div style={{color: PAL.url ?? brand, fontSize: layout === 'vertical' ? 34 : 32, marginTop: 30, fontWeight: 600}}>
+           {outro.url}
+         </div>
+       ) : null}
+@@ -676,7 +676,7 @@ const SlideView: React.FC<{
+   return (
+     <AbsoluteFill
+       style={{
+-        background: 'radial-gradient(ellipse at 50% 35%, #16233b 0%, #0b1120 70%)',
++        background: PAL.slide,
+         flexDirection: split ? 'row' : 'column',
+         justifyContent: 'center',
+         alignItems: 'center',
+@@ -717,7 +717,7 @@ const SceneView: React.FC<{
+   // fade-from-black / fade-to-black tops and tails the whole video, so scenes
+   // never dip to the dark background between cuts (that was the visible flash).
+   return (
+-    <AbsoluteFill style={{backgroundColor: '#0f172a'}}>
++    <AbsoluteFill style={{backgroundColor: PAL.base}}>
+       {scene.frame === 'phone' ? (
+         <PhoneScene scene={scene} layout={layout} />
+       ) : layout === 'vertical' ? (
+@@ -777,9 +777,15 @@ const TopTail: React.FC<{total: number}> = ({total}) => {
+     [1, 0, 0, 1],
+     {extrapolateLeft: 'clamp', extrapolateRight: 'clamp'},
+   );
+-  return <AbsoluteFill style={{backgroundColor: '#000', opacity, pointerEvents: 'none'}} />;
++  return <AbsoluteFill style={{backgroundColor: PAL.fade, opacity, pointerEvents: 'none'}} />;
+ };
+ 
++// Slide palette. Dark by default; a flow with slideTheme: 'light' gets white slides, a white base and
++// a fade from and to white (local patch for the Devoid demo).
++const DARK = {slide: 'radial-gradient(ellipse at 50% 35%, #16233b 0%, #0b1120 70%)', title: '#f8fafc', subtitle: '#9aa3b5', url: undefined as string | undefined, fade: '#000', base: '#0f172a'};
++const LIGHT = {slide: 'radial-gradient(ellipse at 50% 30%, #ffffff 0%, #f3f4f6 75%)', title: '#0f1115', subtitle: '#5b6170', url: '#0f1115', fade: '#ffffff', base: '#ffffff'};
++let PAL = DARK;
++
+ export const Demo: React.FC<{
+   storyboard: Storyboard | null;
+   layout?: Layout;
+@@ -790,6 +796,7 @@ export const Demo: React.FC<{
+   if (!storyboard) {
+     return null;
+   }
++  PAL = (storyboard as {slideTheme?: string}).slideTheme === 'light' ? LIGHT : DARK;
+   const brand = storyboard.brand ?? BRAND_DEFAULT;
+   // Precedence: per-render caption overrides > storyboard.caption. Accent stays
+   // unset by default so captions use the readable dark pill; brand tints slides,
+@@ -799,7 +806,7 @@ export const Demo: React.FC<{
+   let cursor = introFrames(storyboard);
+ 
+   return (
+-    <AbsoluteFill style={{backgroundColor: '#0f172a'}}>
++    <AbsoluteFill style={{backgroundColor: PAL.base}}>
+       {storyboard.intro ? (
+         <Sequence from={0} durationInFrames={introFrames(storyboard)}>
+           <SlideView kind="intro" intro={storyboard.intro} brand={brand} layout={layout} captionPosition={captionStyle.position} />
