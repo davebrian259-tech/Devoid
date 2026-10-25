@@ -40,7 +40,7 @@ function strengthOf(p) {
 
 export function renderWelcome(root, onDone) {
   // The web version never takes a recovery phrase, and its demo is testnet only: see local/backend.js.
-  let mode = 'create'; let network = WEB ? 'test' : 'main';
+  let mode = 'create'; let network = WEB && !WEB_MAINNET ? 'test' : 'main';
   let engine = 'real';
   const demo = () => WEB && engine === 'demo';
 

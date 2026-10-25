@@ -78,6 +78,10 @@ The Rust engine now builds and runs. Against `testnet.zec.rocks:443`
   test proves the check by planting an overlap and expecting it to be caught.
 - The web version refuses a recovery phrase, and keeps the demo on testnet, in the UI and again in
   its backend.
+- A new web wallet is on mainnet by default, and holding real ZEC in a browser needs an explicit
+  tick before the wallet is created. Where mainnet is not open on the web (`WEB_MAINNET` in
+  `ui/lib.js`) the network picker is hidden and the default falls back to testnet, so the screen
+  never offers what the backend would refuse.
 - **Staying in the wallet, and installing it** (2026-10-24): the web wallet can be added to a home
   screen (`ui/manifest.webmanifest`, `ui/sw.js`), where it opens in its own window and opens with no
   connection. The service worker holds one whole version at a time — `scripts/build-site.mjs` stamps

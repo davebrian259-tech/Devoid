@@ -4,7 +4,7 @@
 
 <p align="center"><b>Pay everyone at once. Privately.</b><br>
 A non-custodial Zcash wallet that pays a whole list of people in one shielded transaction,
-and hides how many were paid.</p>
+without revealing how many were paid.</p>
 
 <p align="center">
   <img alt="Zcash mainnet: payments confirmed" src="https://img.shields.io/badge/Zcash_mainnet-payments_confirmed-f4b728?labelColor=231f20">
@@ -33,23 +33,24 @@ payment to the same sender. Devoid builds **one shielded Zcash transaction for u
 recipients**: the chain sees that a transaction happened and its size, never who got what. A
 list of up to 2,000 people goes out as a few transactions, in order.
 
-### Batching leaks the batch
+### What the chain reveals
 
-Shielding hides who was paid and how much. It does not hide **how many**: the number of outputs is
-public, and a ZIP 317 fee is 5,000 zatoshis per action, so the fee gives the headcount away. A
-grant programme paying 40 people looks nothing like one paying 3. Every shielded wallet works this
-way, and it matters once you pay people in batches.
+A shielded transaction conceals payment amounts and recipient details. It does not conceal how
+many. Output counts are public, and a ZIP 317 fee is 5,000 zatoshis per logical action, so the fee
+itself offers a clue about the size of a batch: a payroll of 40 looks nothing like one of 3. Every
+shielded wallet works this way, and it starts to matter once you pay people in batches.
 
-Devoid closes it. Padding rounds a transaction's payments up to 5, 10 or 25 with real shielded
-outputs that pay the wallet nothing. On chain they look like the ones carrying money, so a payment
-to one person looks like a payment to five, and six looks like ten. Each padding output costs one
-action — 0.0001 ZEC to pad three recipients up to five, quoted exactly before you sign — and a
-transaction already paying 25 people costs nothing extra to pad. Padding covers one transaction, so
-a batch split across several still shows roughly how big it was, and the privacy report says so.
+Devoid can pad a transaction to 5, 10 or 25 payment slots by adding shielded outputs that carry no
+value and go to your own wallet. On chain they are indistinguishable from the payments beside them,
+so a smaller batch resembles a larger one: one recipient looks like five, six looks like ten. Each
+padding output adds one logical action to the fee — 0.0001 ZEC to pad three recipients up to five,
+quoted before you sign — and a batch that already fills the slot costs nothing extra. Padding
+protects one transaction rather than a payment history: a batch over 25 recipients is sent as
+several transactions, and that still indicates its rough size, which the privacy report says.
 
-Proven on testnet: [`4fbde366…`](https://testnet.zcashexplorer.app/transactions/4fbde3662e5c7b179eae8bd8e09a34da10510f412a4f80e0c2767ff4273ea129)
-pays three people in block 4,536,660 and shows the chain six outputs (five payments and the
-change), the same as a payment to five.
+Verified on testnet: [`4fbde366…`](https://testnet.zcashexplorer.app/transactions/4fbde3662e5c7b179eae8bd8e09a34da10510f412a4f80e0c2767ff4273ea129)
+pays three recipients in block 4,536,660 and produces six outputs — five payments and the change —
+the count a five-recipient batch would produce.
 
 ## Proven on mainnet
 
@@ -231,8 +232,8 @@ to rebuild the WebAssembly engine (needs Rust and wasm-bindgen). Cloudflare sett
 - **Review**: total, source pools, network, exact fee and a privacy report. Public disclosures
   need explicit acknowledgement. A receipt CSV marks who was paid, even if a multi-transaction
   batch stops halfway.
-- **Padding**: round a transaction's payments up to 5, 10 or 25 so the chain does not show how
-  many people were paid. Optional, with the extra fee quoted before you sign.
+- **Padding**: round a transaction up to 5, 10 or 25 payment slots, so the output count reveals
+  less about how many people were paid. Optional, with the added fee quoted before you sign.
 - **Receive**: unified, Sapling and transparent addresses with QR codes, fresh addresses, and
   ZIP 321 payment requests.
 - **Activity**: pending, confirmed and expired, grouped by day, with per-output detail and CSV
