@@ -16,8 +16,8 @@ without revealing how many were paid.</p>
 </p>
 
 <p align="center">
-  <a href="https://devoid-site.davebrian259.workers.dev/app/"><b>Open the web wallet</b></a> ·
-  <a href="https://devoid-site.davebrian259.workers.dev/">Product page</a> ·
+  <a href="https://devoid-wallet.site/app/"><b>Open the web wallet</b></a> ·
+  <a href="https://devoid-wallet.site/">Product page</a> ·
   <a href="docs/STATUS.md">What is verified</a> ·
   <a href="docs/ENGINE_PROTOCOL.md">Engine protocol</a>
 </p>
@@ -200,7 +200,7 @@ The hard parts of the browser build:
 
 ## Try it
 
-**In a browser, nothing to install.** [Open the web wallet](https://devoid-site.davebrian259.workers.dev/app/)
+**In a browser, nothing to install.** [Open the web wallet](https://devoid-wallet.site/app/)
 on a phone or computer and choose:
 - a **real wallet** on mainnet (it asks you to confirm that it holds real ZEC) or testnet;
 - a **demo** with play money on a simulated chain.
