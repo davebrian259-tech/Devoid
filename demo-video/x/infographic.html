@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Devoid infographic</title>
+<!-- How Devoid works, at 1600x2000 (4:5, shown uncropped on X). Rendered by render-infographic.py. -->
+<style>
+  @font-face { font-family: "Righteous"; src: url("../../ui/fonts/righteous.woff2") format("woff2"); }
+  @font-face { font-family: "Outfit"; src: url("../../ui/fonts/outfit.woff2") format("woff2"); font-weight: 100 900; }
+  @font-face { font-family: "JetBrains Mono"; src: url("../../ui/fonts/jetbrains-mono-400.woff2") format("woff2"); }
+  :root { --ink: #0f1115; --ink-2: #4b5160; --ink-3: #8a8f9c; --line: #e6e7eb; --wash: #f5f6f8; --amber: #e3a008; --green: #1f8a4c; }
+  * { box-sizing: border-box; }
+  body { margin: 0; font-family: Outfit, sans-serif; color: var(--ink); }
+  #board { width: 1600px; height: 2000px; position: relative; overflow: hidden; background: #fff; padding: 90px 100px; display: flex; flex-direction: column; justify-content: space-between; }
+  .glow { position: absolute; inset: 0; background: radial-gradient(1100px 600px at 90% -5%, rgb(227 160 8 / 0.10), transparent 60%); pointer-events: none; }
+  .top { display: flex; align-items: center; justify-content: space-between; }
+  .brand { display: flex; align-items: center; gap: 16px; }
+  .brand svg { width: 56px; height: 56px; }
+  .wordmark { font-family: Righteous, sans-serif; font-size: 44px; }
+  .handle { font-size: 24px; color: var(--ink-3); }
+  .kicker { font-size: 18px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-3); }
+  h1 { font-size: 92px; font-weight: 700; letter-spacing: -0.045em; line-height: 1.08; margin: 14px 0 0; }
+  h1 em { font-style: normal; background: var(--ink); color: #fff; padding: 0 0.12em; border-radius: 0.12em; }
+  .lede { font-size: 30px; color: var(--ink-2); line-height: 1.45; margin: 24px 0 0; max-width: 1240px; }
+
+  .flow { display: grid; grid-template-columns: repeat(4, 1fr); gap: 0; position: relative; }
+  .step { position: relative; padding: 0 18px; }
+  .step:not(:last-child)::after { content: ""; position: absolute; top: 38px; left: calc(50% + 46px); right: calc(-50% + 46px); height: 3px; background: repeating-linear-gradient(90deg, var(--ink) 0 10px, transparent 10px 18px); opacity: 0.35; }
+  .num { width: 78px; height: 78px; border-radius: 22px; background: var(--ink); color: #fff; display: grid; place-items: center; font-size: 34px; font-weight: 700; margin: 0 auto; }
+  .step:last-child .num { background: var(--amber); color: var(--ink); }
+  .step h3 { text-align: center; font-size: 32px; letter-spacing: -0.02em; margin: 22px 0 10px; }
+  .step p { text-align: center; font-size: 21px; color: var(--ink-2); line-height: 1.45; margin: 0; }
+
+  .stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; }
+  .stat { border: 1px solid var(--line); border-radius: 24px; padding: 30px 28px; background: linear-gradient(160deg, #f6f7f9, #fcfcfd); }
+  .stat b { display: block; font-size: 62px; letter-spacing: -0.04em; line-height: 1; }
+  .stat span { display: block; font-size: 21px; color: var(--ink-2); margin-top: 12px; line-height: 1.35; }
+
+  .split { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+  .panel { border: 1px solid var(--line); border-radius: 26px; padding: 34px 36px; }
+  .panel.hidden { background: var(--ink); color: #fff; border-color: var(--ink); }
+  .panel h4 { margin: 0 0 20px; font-size: 18px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--ink-3); }
+  .panel.hidden h4 { color: #f0c552; }
+  .panel ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 14px; }
+  .panel li { font-size: 25px; display: flex; gap: 14px; align-items: baseline; }
+  .panel li i { font-style: normal; width: 26px; flex: none; color: var(--green); font-weight: 700; }
+  .panel.hidden li i { color: #f0c552; }
+
+  .proof { display: flex; gap: 20px; }
+  .chip { flex: 1; border: 1px solid var(--line); border-radius: 20px; padding: 22px 26px; }
+  .chip .k { font-size: 16px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--green); font-weight: 700; }
+  .chip .v { font-size: 22px; margin-top: 8px; color: var(--ink-2); }
+  .mono { font-family: "JetBrains Mono", monospace; color: var(--ink); }
+
+  .foot { display: flex; align-items: center; justify-content: space-between; border-top: 1px solid var(--line); padding-top: 34px; }
+  .foot .links { font-size: 24px; color: var(--ink-2); display: flex; gap: 34px; }
+  .foot .links b { color: var(--ink); font-weight: 600; }
+  .zec { display: inline-flex; align-items: center; gap: 12px; border: 1px solid var(--line); border-radius: 999px; padding: 8px 20px 8px 8px; font-size: 22px; color: var(--ink-2); }
+  .zec b { color: var(--ink); }
+</style>
+</head>
+<body>
+<div id="board">
+  <div class="glow"></div>
+
+  <div class="top">
+    <div class="brand"><svg viewBox="0 0 32 32"><rect width="32" height="32" rx="9" fill="#0f1115"/><circle cx="16" cy="16" r="8" fill="none" stroke="#fff" stroke-width="3.4"/><rect x="5" y="14" width="17" height="4.2" rx="2.1" fill="#e3a008"/></svg><span class="wordmark">devoid</span></div>
+    <span class="handle">@devoidwallet</span>
+  </div>
+
+  <div>
+    <div class="kicker">How it works</div>
+    <h1>One transaction.<br><em>Multiple</em> payments.</h1>
+    <p class="lede">Pay a whole list of people in one shielded Zcash transaction: payroll, grants, DAO payouts. Non-custodial, and it runs in your browser.</p>
+  </div>
+
+  <div class="flow">
+    <div class="step"><div class="num">1</div><h3>Bring your list</h3><p>Paste it, import a CSV, or pick from contacts and saved lists.</p></div>
+    <div class="step"><div class="num">2</div><h3>Every row checked</h3><p>Wrong network, duplicates, missing amounts and bad addresses caught as you type.</p></div>
+    <div class="step"><div class="num">3</div><h3>One review</h3><p>The total, the exact fee, what you have left, and what the chain will see.</p></div>
+    <div class="step"><div class="num">4</div><h3>Sign once</h3><p>One passphrase, or a passkey. Everyone is paid, privately.</p></div>
+  </div>
+
+  <div class="stats">
+    <div class="stat"><b>25</b><span>people in one shielded transaction</span></div>
+    <div class="stat"><b>2,000</b><span>people in one batch, sent in order</span></div>
+    <div class="stat"><b>0.0013</b><span>ZEC network fee to pay 25 people</span></div>
+    <div class="stat"><b>0</b><span>accounts to sign up for; your keys stay with you</span></div>
+  </div>
+
+  <div class="split">
+    <div class="panel hidden">
+      <h4>Stays private</h4>
+      <ul><li><i>✓</i>Who you paid</li><li><i>✓</i>How much each person got</li><li><i>✓</i>Every memo</li><li><i>✓</i>Your keys, which never leave your device</li></ul>
+    </div>
+    <div class="panel">
+      <h4>Checked before you sign</h4>
+      <ul><li><i>✓</i>Every address validated</li><li><i>✓</i>Exact ZIP 317 fee, quoted up front</li><li><i>✓</i>Anything public needs your OK</li><li><i>✓</i>What you review is what you sign</li></ul>
+    </div>
+  </div>
+
+  <div class="proof">
+    <div class="chip"><div class="k">● Confirmed on mainnet</div><div class="v">Batch from the Rust engine · <span class="mono">82731e0e…</span> · block 3,522,904</div></div>
+    <div class="chip"><div class="k">● Sent from a browser</div><div class="v">Proved in WebAssembly · <span class="mono">f95a7846…</span> · block 3,522,951</div></div>
+  </div>
+
+  <div class="foot">
+    <div class="links"><span>Try it · <b>devoid-site.davebrian259.workers.dev</b></span><span>Open source · <b>GitHub</b></span></div>
+    <span class="zec"><svg width="32" height="32" viewBox="0 0 24 24"><circle cx="12" cy="12" r="12" fill="#f4b728"/><path d="M12 4.6v2.7M12 16.7v2.7M7.9 8.1h8.2l-8.2 7.8h8.2" fill="none" stroke="#231f20" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"/></svg><span>Powered by <b>Zcash</b></span></span>
+  </div>
+</div>
+</body>
+</html>
