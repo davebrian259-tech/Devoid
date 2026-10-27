@@ -19,6 +19,7 @@ without revealing how many were paid.</p>
   <a href="https://devoid-wallet.site/app/"><b>Open the web wallet</b></a> ·
   <a href="https://devoid-wallet.site/">Product page</a> ·
   <a href="docs/STATUS.md">What is verified</a> ·
+  <a href="HACKATHON.md">Hackathon</a> ·
   <a href="docs/ENGINE_PROTOCOL.md">Engine protocol</a>
 </p>
 
